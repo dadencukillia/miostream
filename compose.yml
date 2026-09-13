@@ -16,6 +16,9 @@ services:
     restart: always
     environment:
       DATABASE_URL: postgresql://postgres:${DB_PASS}@postgresql:5432/miostream
+      POSTGRES_HOST: postgresql:5432
+      REDIS_HOST: redis:6379
+      RUSTFS_HOST: rustfs:9000
     depends_on:
       - postgresql
       - redis
