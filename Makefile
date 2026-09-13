@@ -25,7 +25,9 @@ dev_backend:
 	echo Rerunning is required to see changes
 	echo Port: 8080
 	cd server && \
-	POSTGRES_HOST=localhost:5432 REDIS_HOST=localhost:6379 RUSTFS_HOST=localhost:9000 bun serve
+	POSTGRES_HOST=localhost:5432 REDIS_HOST=localhost:6379 RUSTFS_HOST=localhost:9000 \
+	DATABASE_URL=postgresql://postgres:mypass@postgresql:5432/miostream \
+	bun serve
 
 test:
 	echo --- PREBUILD ---
@@ -45,7 +47,9 @@ local_test:
 	echo --- FRONTEND ---; \
 	cd client && bun test && \
 	echo --- BACKEND --- && \
-	cd ../server && POSTGRES_HOST=localhost:5432 REDIS_HOST=localhost:6379 RUSTFS_HOST=localhost:9000 bun test && \
+	cd ../server && \
+	POSTGRES_HOST=localhost:5432 REDIS_HOST=localhost:6379 RUSTFS_HOST=localhost:9000 \
+		DATABASE_URL=postgresql://postgres:mypass@postgresql:5432/miostream bun test && \
 	export SUCCESS_TEST=true; \
 	echo --- SUCCESS: $$SUCCESS_TEST ---; \
 	"$$SUCCESS_TEST" == "true"
