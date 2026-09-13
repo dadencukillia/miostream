@@ -8,6 +8,8 @@ services:
   backend:
     build: server
     restart: always
+    environment:
+      DATABASE_URL: postgresql://postgres:${DB_PASS}@postgresql:5432/miostream
     depends_on:
       - postgresql
       - redis
