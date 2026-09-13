@@ -24,6 +24,7 @@
         # LSPs
         dockerfile-language-server-nodejs
         docker-compose-language-service
+        typescript-language-server
       ];
 
       shellHook = ''
