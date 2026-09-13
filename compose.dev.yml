@@ -1,0 +1,50 @@
+services:
+  caddy:
+    image: "caddy:2.11.4-alpine"
+    command: caddy run --config /etc/caddy/Caddyfile.dev --adapter caddyfile
+    restart: always
+    cap_add:
+      - NET_ADMIN
+    network_mode: host
+    volumes:
+      - ./caddy/:/etc/caddy:ro
+      - caddy-data-dev:/data
+      - caddy-config-dev:/config
+
+  postgresql:
+    image: "postgres:18.6-alpine3.24"
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_DB: miostream
+    volumes:
+      - postgres-data-dev:/var/lib/postgresql
+    ports:
+      - 5432:5432
+
+  redis:
+    image: "redis:8.2.2-alpine"
+    restart: always
+    volumes:
+      - redis-data-dev:/data
+    ports:
+      - 6379:6379
+
+  rustfs:
+    image: "rustfs/rustfs:latest"
+    restart: always
+    volumes:
+      - rustfs-data-dev:/data
+    environment:
+      RUSTFS_ACCESS_KEY: ${RUSTFS_ACCESS_KEY}
+      RUSTFS_SECRET_KEY: mysecretkey
+    ports:
+      - 9000:9000
+      - 9001:9001
+    
+volumes:
+  caddy-data-dev: {}
+  caddy-config-dev: {}
+  postgres-data-dev: {}
+  redis-data-dev: {}
+  rustfs-data-dev: {}
