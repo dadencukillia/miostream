@@ -1,5 +1,5 @@
-.PHONY: build_images production devenv devfrontend devbackend test local_test
-.SILENT: build_images production devenv devfrontend devbackend test local_test
+.PHONY: build_images production dev_env dev_frontend dev_backend test local_test
+.SILENT: build_images production dev_env dev_frontend dev_backend test local_test
 
 build_images:
 	docker-compose build frontend
@@ -8,20 +8,20 @@ build_images:
 production:
 	docker-compose up -d
 
-devenv:
+dev_env:
 	echo PostgreSQL: 5432
 	echo Redis: 6379
 	echo RustFS API: 9000
 	echo RustFS Dashboard: 9001
 	docker-compose -f compose.dev.yml up
 
-devfrontend:
+dev_frontend:
 	echo Rerunning is not required to see changes
 	echo Port: 4321
 	cd client && \
 	bun dev --host 0.0.0.0 --port 4321
 
-devbackend:
+dev_backend:
 	echo Rerunning is required to see changes
 	echo Port: 8080
 	cd server && \
