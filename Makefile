@@ -29,12 +29,13 @@ devbackend:
 
 test:
 	echo --- PREBUILD ---
-	docker-compose -f compose.test.yml build 
+	docker-compose -f compose.test.yml build frontend
+	docker-compose -f compose.test.yml build backend
 	export SUCCESS_TEST=false; \
 	echo --- FRONTEND ---; \
-	docker-compose --profile frontend -f compose.test.yml up --build --abort-on-container-exit --exit-code-from frontend && \
+	docker-compose --profile frontend -f compose.test.yml up --abort-on-container-exit --exit-code-from frontend && \
 	echo --- BACKEND --- && \
-	docker-compose --profile backend -f compose.test.yml up --build --abort-on-container-exit --exit-code-from backend && \
+	docker-compose --profile backend -f compose.test.yml up --abort-on-container-exit --exit-code-from backend && \
 	export SUCCESS_TEST=true; \
 	echo --- SUCCESS: $$SUCCESS_TEST ---; \
 	"$$SUCCESS_TEST" == "true"
