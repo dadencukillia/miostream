@@ -20,6 +20,10 @@
 
         bun
         biome
+
+        # LSPs
+        dockerfile-language-server-nodejs
+        docker-compose-language-service
       ];
 
       shellHook = ''

@@ -1,8 +1,11 @@
 {
   "name": "server",
-  "module": "index.ts",
+  "module": "src/index.ts",
   "type": "module",
   "private": true,
+  "scripts": {
+    "serve": "bun run ./src/index.ts"
+  },
   "devDependencies": {
     "@types/bun": "latest",
     "biome": "^0.3.3"
