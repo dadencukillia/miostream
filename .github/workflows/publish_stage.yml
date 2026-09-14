@@ -26,6 +26,8 @@ jobs:
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -53,6 +55,9 @@ jobs:
     needs: build-and-push
     if: vars.ENABLE_STAGING == 'true'
     runs-on: [stage-runner]
+    permissions:
+      contents: read
+
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
@@ -62,14 +67,23 @@ jobs:
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Dotenv generation
+        run: |
+          echo "GITHUB_REPO=${{ env.REPO_LOWER }}" > .env
+          echo "IMAGES_TAG=dev-${{ github.sha }}" >> .env
+          echo "DB_PASS=${{ secrets.DEV_DB_PASS }}" >> .env
+          echo "SITE_ADDRESS=${{ secrets.DEV_SITE_ADDRESS }}" >> .env
+          echo "RUSTFS_ACCESS_KEY=${{ secrets.DEV_RUSTFS_ACCESS_KEY }}" >> .env
+          echo "RUSTFS_SECRET_KEY=${{ secrets.DEV_RUSTFS_SECRET_KEY }}" >> .env
+
       - name: Deploy
         run: |
-          set -a && source .env && set +a
-          export GITHUB_REPO="${{ env.REPO_LOWER }}"
-          export IMAGES_TAG=dev-${{ github.sha }} # Uses last development version we built before
-          docker stack deploy -c docker-stack.yml miostream-dev --with-registry-auth
+          sudo env $(cat .env | xargs) \
+            docker stack deploy -c docker-stack.yml miostream-dev --with-registry-auth
