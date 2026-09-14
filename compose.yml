@@ -17,7 +17,7 @@ services:
     build: server
     restart: always
     environment:
-      DATABASE_URL: postgresql://postgres:${DB_PASS}@postgresql:5432/miostream
+      DB_PASS_FILE: /run/secrets/db_pass
       POSTGRES_HOST: postgresql:5432
       REDIS_HOST: redis:6379
       RUSTFS_HOST: rustfs:9000
@@ -28,6 +28,8 @@ services:
     networks:
       - shared
       - internal
+    secrets:
+      - db_pass
     healthcheck:
       test: ["CMD-SHELL", "wget -qO - http://127.0.0.1:8080/healthcheck"]
       interval: 10s

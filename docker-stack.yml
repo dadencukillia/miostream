@@ -30,7 +30,7 @@ services:
   backend:
     image: ghcr.io/${GITHUB_REPO}/backend:${IMAGES_TAG:-latest}
     environment:
-      DATABASE_URL: postgresql://postgres:${DB_PASS}@postgresql:5432/miostream
+      DB_PASS_FILE: /run/secrets/db_pass
       POSTGRES_HOST: postgresql:5432
       REDIS_HOST: redis:6379
       RUSTFS_HOST: rustfs:9000
@@ -43,6 +43,8 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+    secrets:
+      - db_pass
     deploy:
       restart_policy:
         condition: any
@@ -114,6 +116,7 @@ services:
       placement:
         constraints:
           - node.role == worker
+          - node.labels.dbstorage == true
       resources:
         limits:
           cpus: '0.75'
@@ -140,6 +143,7 @@ services:
       placement:
         constraints:
           - node.role == worker
+          - node.labels.redisstorage == true
       resources:
         limits:
           cpus: '0.25'
@@ -172,6 +176,7 @@ services:
       placement:
         constraints:
           - node.role == worker
+          - node.labels.rustfsstorage == true
       resources:
         limits:
           cpus: '0.50'

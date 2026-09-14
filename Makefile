@@ -26,7 +26,7 @@ dev_backend:
 	echo Port: 8080
 	cd server && \
 	POSTGRES_HOST=localhost:5432 REDIS_HOST=localhost:6379 RUSTFS_HOST=localhost:9000 \
-	DATABASE_URL=postgresql://postgres:mypass@postgresql:5432/miostream \
+	DB_PASS=mypass \
 	bun serve
 
 test:
@@ -49,7 +49,7 @@ local_test:
 	echo --- BACKEND --- && \
 	cd ../server && \
 	POSTGRES_HOST=localhost:5432 REDIS_HOST=localhost:6379 RUSTFS_HOST=localhost:9000 \
-		DATABASE_URL=postgresql://postgres:mypass@postgresql:5432/miostream bun test && \
+	DB_PASS=mypass bun test && \
 	export SUCCESS_TEST=true; \
 	echo --- SUCCESS: $$SUCCESS_TEST ---; \
 	[ "$$SUCCESS_TEST" = "true" ]

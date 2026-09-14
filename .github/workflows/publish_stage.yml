@@ -10,6 +10,9 @@ env:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - name: Check out repository code
@@ -49,21 +52,24 @@ jobs:
   deploy-staging:
     needs: build-and-push
     if: vars.ENABLE_STAGING == 'true'
-    runs-on: ubuntu-latest
+    runs-on: [stage-runner]
     steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
       - name: Lowercase Repository Name
         run: echo "REPO_LOWER=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
 
-      - name: Deploy to Swarm Cluster via SSH
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
         with:
-          host: ${{ secrets.DEV_SWARM_MANAGER_IP }}
-          username: ${{ vars.DEV_SSH_USERNAME }}
-          key: ${{ secrets.DEV_SSH_PRIVATE_KEY }}
-          script_stop: true
-          script: |
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            set -a && source .env && set +a
-            export REPO_LOWER="${{ env.REPO_LOWER }}"
-            export IMAGES_TAG=dev-${{ github.sha }} # Uses last development version we built before
-            docker stack deploy -c docker-stack.yml miostream-dev --with-registry-auth
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy
+        run: |
+          set -a && source .env && set +a
+          export GITHUB_REPO="${{ env.REPO_LOWER }}"
+          export IMAGES_TAG=dev-${{ github.sha }} # Uses last development version we built before
+          docker stack deploy -c docker-stack.yml miostream-dev --with-registry-auth
