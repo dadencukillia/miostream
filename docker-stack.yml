@@ -1,43 +1,68 @@
 services:
   frontend:
     image: ghcr.io/${GITHUB_REPO}/frontend:${IMAGES_TAG:-latest}
-    build: client
-    restart: always
     networks:
       - shared
     healthcheck:
       test: ["CMD-SHELL", "wget -qO - http://127.0.0.1:8080/healthcheck"]
-      interval: 10s
+      interval: 60s
       timeout: 5s
       retries: 5
       start_period: 10s
+    deploy:
+      restart_policy:
+        condition: always
+      placement:
+        constraints:
+          - node.role == manager
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 128M
+        reservations:
+          cpus: '0.10'
+          memory: 64M
 
   backend:
     image: ghcr.io/${GITHUB_REPO}/backend:${IMAGES_TAG:-latest}
-    build: server
-    restart: always
     environment:
       DATABASE_URL: postgresql://postgres:${DB_PASS}@postgresql:5432/miostream
       POSTGRES_HOST: postgresql:5432
       REDIS_HOST: redis:6379
       RUSTFS_HOST: rustfs:9000
-    depends_on:
-      - postgresql
-      - redis
-      - rustfs
     networks:
       - shared
       - internal
     healthcheck:
       test: ["CMD-SHELL", "wget -qO - http://127.0.0.1:8080/healthcheck"]
-      interval: 10s
+      interval: 60s
       timeout: 5s
       retries: 5
       start_period: 10s
+    deploy:
+      restart_policy:
+        condition: always
+      placement:
+        constraints:
+          - node.role == manager
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+      resources:
+        limits:
+          cpus: '0.75'
+          memory: 256M
+        reservations:
+          cpus: '0.15'
+          memory: 128M
 
   caddy:
     image: "caddy:2.11.4-alpine"
-    restart: always
     cap_add:
       - NET_ADMIN
     ports:
@@ -52,10 +77,22 @@ services:
       SITE_ADDRESS: ${SITE_ADDRESS}
     networks:
       - shared
+    deploy:
+      restart_policy:
+        condition: always
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 128M
+        reservations:
+          cpus: '0.05'
+          memory: 32M
 
   postgresql:
     image: "postgres:18.6-alpine3.24"
-    restart: always
     environment:
       POSTGRES_PASSWORD_FILE: /run/secrets/db_pass
       POSTGRES_DB: miostream
@@ -63,7 +100,7 @@ services:
       - postgres-data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d miostream"]
-      interval: 10s
+      interval: 60s
       timeout: 5s
       retries: 5
       start_period: 5s
@@ -71,29 +108,53 @@ services:
       - internal
     secrets:
       - db_pass
+    deploy:
+      restart_policy:
+        condition: always
+      placement:
+        constraints:
+          - node.role == worker
+      resources:
+        limits:
+          cpus: '0.75'
+          memory: 320M
+        reservations:
+          cpus: '0.10'
+          memory: 160M
 
   redis:
     image: "redis:8.2.2-alpine"
-    restart: always
     volumes:
       - redis-data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
+      interval: 60s
       timeout: 3s
       retries: 5
       start_period: 5s
     networks:
       - internal
+    deploy:
+      restart_policy:
+        condition: always
+      placement:
+        constraints:
+          - node.role == worker
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+        reservations:
+          cpus: '0.05'
+          memory: 32M
 
   rustfs:
     image: "rustfs/rustfs:latest"
-    restart: always
     volumes:
       - rustfs-data:/data
     healthcheck:
       test: ["CMD-SHELL", "curl --fail http://127.0.0.1:9000/health/ready && curl --fail http://127.0.0.1:9001/rustfs/console/health"]
-      interval: 10s
+      interval: 60s
       timeout: 5s
       retries: 5
       start_period: 10s
@@ -105,10 +166,25 @@ services:
     secrets:
       - rustfs_access_key
       - rustfs_secret_key
+    deploy:
+      restart_policy:
+        condition: always
+      placement:
+        constraints:
+          - node.role == worker
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 192M
+        reservations:
+          cpus: '0.05'
+          memory: 64M
     
 networks:
-  shared: {} # To be accessible for a proxy service
-  internal: {} # Isolated
+  shared:
+    driver: overlay
+  internal:
+    driver: overlay
 
 volumes:
   caddy-data: {}
@@ -119,8 +195,8 @@ volumes:
 
 secrets:
   db_pass:
-    environment: DB_PASS
+    external: true
   rustfs_access_key:
-    environment: RUSTFS_ACCESS_KEY
+    external: true
   rustfs_secret_key:
-    environment: RUSTFS_SECRET_KEY
+    external: true

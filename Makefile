@@ -40,7 +40,7 @@ test:
 	docker compose --profile backend -f compose.test.yml up --abort-on-container-exit --exit-code-from backend && \
 	export SUCCESS_TEST=true; \
 	echo --- SUCCESS: $$SUCCESS_TEST ---; \
-	"$$SUCCESS_TEST" == "true"
+	[ "$$SUCCESS_TEST" = "true" ]
 
 local_test:
 	export SUCCESS_TEST=false; \
@@ -52,4 +52,4 @@ local_test:
 		DATABASE_URL=postgresql://postgres:mypass@postgresql:5432/miostream bun test && \
 	export SUCCESS_TEST=true; \
 	echo --- SUCCESS: $$SUCCESS_TEST ---; \
-	"$$SUCCESS_TEST" == "true"
+	[ "$$SUCCESS_TEST" = "true" ]
