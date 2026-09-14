@@ -67,24 +67,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Dotenv generation
-        run: |
-          set +x
-
-          cat << 'EOF' > .env
-          GITHUB_REPO=${{ env.REPO_LOWER }}
-          IMAGES_TAG=dev-${{ github.sha }}
-          DB_PASS=${{ secrets.DB_PASS }}
-          SITE_ADDRESS=${{ secrets.SITE_ADDRESS }}
-          RUSTFS_ACCESS_KEY=${{ secrets.RUSTFS_ACCESS_KEY }}
-          RUSTFS_SECRET_KEY=${{ secrets.RUSTFS_SECRET_KEY }}
-          EOF
-
       - name: Deploy
         run: |
-          sudo env $(cat .env | xargs) \
+          sudo GITHUB_REPO="${{ env.REPO_LOWER }}" \
+            IMAGES_TAG="${{ github.sha }}" \
+            DB_PASS="${{ secrets.DB_PASS }}" \
+            SITE_ADDRESS="${{ secrets.SITE_ADDRESS }}" \
+            RUSTFS_ACCESS_KEY="${{ secrets.RUSTFS_ACCESS_KEY }}" \
+            RUSTFS_SECRET_KEY="${{ secrets.RUSTFS_SECRET_KEY }}" \
             docker stack deploy -c docker-stack.yml miostream --with-registry-auth
-
-      - name: Cleanup sensitive files
-        if: always()
-        run: rm -f .env
