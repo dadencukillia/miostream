@@ -53,6 +53,9 @@ jobs:
     needs: build-and-push
     if: vars.ENABLE_PRODUCTION == 'true'
     runs-on: [production-runner]
+    permissions:
+      contents: read
+
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
