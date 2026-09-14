@@ -2,18 +2,18 @@
 .SILENT: build_images production dev_env dev_frontend dev_backend test local_test
 
 build_images:
-	docker-compose build frontend
-	docker-compose build backend
+	docker compose build frontend
+	docker compose build backend
 
 production:
-	docker-compose up -d
+	docker compose up -d
 
 dev_env:
 	echo PostgreSQL: 5432
 	echo Redis: 6379
 	echo RustFS API: 9000
 	echo RustFS Dashboard: 9001
-	docker-compose -f compose.dev.yml up
+	docker compose -f compose.dev.yml up
 
 dev_frontend:
 	echo Rerunning is not required to see changes
@@ -31,13 +31,13 @@ dev_backend:
 
 test:
 	echo --- PREBUILD ---
-	docker-compose -f compose.test.yml build frontend
-	docker-compose -f compose.test.yml build backend
+	docker compose -f compose.test.yml build frontend
+	docker compose -f compose.test.yml build backend
 	export SUCCESS_TEST=false; \
 	echo --- FRONTEND ---; \
-	docker-compose --profile frontend -f compose.test.yml up --abort-on-container-exit --exit-code-from frontend && \
+	docker compose --profile frontend -f compose.test.yml up --abort-on-container-exit --exit-code-from frontend && \
 	echo --- BACKEND --- && \
-	docker-compose --profile backend -f compose.test.yml up --abort-on-container-exit --exit-code-from backend && \
+	docker compose --profile backend -f compose.test.yml up --abort-on-container-exit --exit-code-from backend && \
 	export SUCCESS_TEST=true; \
 	echo --- SUCCESS: $$SUCCESS_TEST ---; \
 	"$$SUCCESS_TEST" == "true"
