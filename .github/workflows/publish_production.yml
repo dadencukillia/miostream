@@ -55,6 +55,9 @@ jobs:
     runs-on: [production-runner]
     permissions:
       contents: read
+    concurrency:
+      group: global-production-deploy-lock
+      cancel-in-progress: false
 
     steps:
       - name: Check out repository code

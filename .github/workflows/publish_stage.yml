@@ -57,6 +57,9 @@ jobs:
     runs-on: [stage-runner]
     permissions:
       contents: read
+    concurrency:
+      group: global-stage-deploy-lock
+      cancel-in-progress: false
 
     steps:
       - name: Check out repository code
