@@ -11,7 +11,7 @@ services:
       start_period: 10s
     deploy:
       restart_policy:
-        condition: always
+        condition: any
       placement:
         constraints:
           - node.role == manager
@@ -45,7 +45,7 @@ services:
       start_period: 10s
     deploy:
       restart_policy:
-        condition: always
+        condition: any
       placement:
         constraints:
           - node.role == manager
@@ -79,7 +79,7 @@ services:
       - shared
     deploy:
       restart_policy:
-        condition: always
+        condition: any
       placement:
         constraints:
           - node.role == manager
@@ -110,7 +110,7 @@ services:
       - db_pass
     deploy:
       restart_policy:
-        condition: always
+        condition: any
       placement:
         constraints:
           - node.role == worker
@@ -136,7 +136,7 @@ services:
       - internal
     deploy:
       restart_policy:
-        condition: always
+        condition: any
       placement:
         constraints:
           - node.role == worker
@@ -168,7 +168,7 @@ services:
       - rustfs_secret_key
     deploy:
       restart_policy:
-        condition: always
+        condition: any
       placement:
         constraints:
           - node.role == worker

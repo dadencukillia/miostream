@@ -63,6 +63,7 @@ jobs:
           script_stop: true
           script: |
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            set -a && source .env && set +a
             export REPO_LOWER="${{ env.REPO_LOWER }}"
             export IMAGES_TAG=dev-${{ github.sha }} # Uses last development version we built before
             docker stack deploy -c docker-stack.yml miostream-dev --with-registry-auth
