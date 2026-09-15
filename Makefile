@@ -47,7 +47,7 @@ test:
 	docker compose --profile frontend -f compose.test.yml up --abort-on-container-exit --exit-code-from frontend
 	docker compose -f compose.test.yml down
 	echo --- BACKEND ---
-	set -a && source ./.env.sample && set +a && \
+	set -a && . ./.env.sample && set +a && \
 	docker compose --profile backend -f compose.test.yml up --abort-on-container-exit --exit-code-from backend
 	docker compose -f compose.test.yml down
 
@@ -55,6 +55,7 @@ local_test:
 	echo --- FRONTEND ---
 	cd client && bun test
 	echo --- BACKEND ---
-	cd ../server && \
+	set -a && . ./.env.sample && set +a && \
+	cd server && \
 	POSTGRES_HOST=localhost:5432 REDIS_HOST=localhost:6379 RUSTFS_HOST=localhost:9000 \
 	bun test
