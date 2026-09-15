@@ -42,7 +42,7 @@ test:
 	docker compose -f compose.test.yml build frontend
 	docker compose -f compose.test.yml build backend
 	echo --- PREPULL ---
-	docker compose -f compose.test.yml pull
+	docker compose -f compose.test.yml --profile frontend --profile backend pull
 	echo --- FRONTEND ---
 	docker compose --profile frontend -f compose.test.yml up --abort-on-container-exit --exit-code-from frontend
 	docker compose -f compose.test.yml down
