@@ -53,6 +53,13 @@ jobs:
     needs: build-and-push
     if: vars.ENABLE_PRODUCTION == 'true'
     runs-on: [production-runner]
+    permissions:
+      contents: read
+      packages: read
+    concurrency:
+      group: global-production-deploy-lock
+      cancel-in-progress: false
+
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
@@ -69,7 +76,8 @@ jobs:
 
       - name: Deploy
         run: |
-          sudo GITHUB_REPO="${{ env.REPO_LOWER }}" \
+          sudo env \
+            GITHUB_REPO="${{ env.REPO_LOWER }}" \
             IMAGES_TAG="${{ github.sha }}" \
             DB_PASS="${{ secrets.DB_PASS }}" \
             SITE_ADDRESS="${{ secrets.SITE_ADDRESS }}" \

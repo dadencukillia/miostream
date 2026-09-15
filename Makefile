@@ -1,5 +1,9 @@
-.PHONY: build_images production dev_env dev_frontend dev_backend test local_test
-.SILENT: build_images production dev_env dev_frontend dev_backend test local_test
+.PHONY: build_images production down dev_env dev_frontend dev_backend test local_test
+.SILENT: build_images production down dev_env dev_frontend dev_backend test local_test
+
+-include .env.sample
+-include .env
+export
 
 build_images:
 	docker compose build frontend
@@ -7,6 +11,11 @@ build_images:
 
 production:
 	docker compose up -d
+
+down:
+	docker compose -f compose.yml down
+	docker compose -f compose.test.yml down
+	docker compose -f compose.dev.yml down
 
 dev_env:
 	echo PostgreSQL: 5432
@@ -26,30 +35,28 @@ dev_backend:
 	echo Port: 8080
 	cd server && \
 	POSTGRES_HOST=localhost:5432 REDIS_HOST=localhost:6379 RUSTFS_HOST=localhost:9000 \
-	DB_PASS=mypass \
 	bun serve
 
 test:
 	echo --- PREBUILD ---
 	docker compose -f compose.test.yml build frontend
 	docker compose -f compose.test.yml build backend
-	export SUCCESS_TEST=false; \
-	echo --- FRONTEND ---; \
-	docker compose --profile frontend -f compose.test.yml up --abort-on-container-exit --exit-code-from frontend && \
-	echo --- BACKEND --- && \
-	docker compose --profile backend -f compose.test.yml up --abort-on-container-exit --exit-code-from backend && \
-	export SUCCESS_TEST=true; \
-	echo --- SUCCESS: $$SUCCESS_TEST ---; \
-	[ "$$SUCCESS_TEST" = "true" ]
+	echo --- PREPULL ---
+	docker compose -f compose.test.yml --profile frontend --profile backend pull
+	sh -c '\
+		set -e; \
+		trap "echo --- CLEANUP ---; docker compose -f compose.test.yml down -v" EXIT; \
+		echo --- FRONTEND ---; \
+		docker compose --profile frontend -f compose.test.yml up --abort-on-container-exit --exit-code-from frontend; \
+		echo --- BACKEND ---; \
+		docker compose --env-file ./.env.sample --profile backend -f compose.test.yml up --abort-on-container-exit --exit-code-from backend; \
+	'
 
 local_test:
-	export SUCCESS_TEST=false; \
-	echo --- FRONTEND ---; \
-	cd client && bun test && \
-	echo --- BACKEND --- && \
-	cd ../server && \
+	echo --- FRONTEND ---
+	cd client && bun test
+	echo --- BACKEND ---
+	set -a && . ./.env.sample && set +a && \
+	cd server && \
 	POSTGRES_HOST=localhost:5432 REDIS_HOST=localhost:6379 RUSTFS_HOST=localhost:9000 \
-	DB_PASS=mypass bun test && \
-	export SUCCESS_TEST=true; \
-	echo --- SUCCESS: $$SUCCESS_TEST ---; \
-	[ "$$SUCCESS_TEST" = "true" ]
+	bun test
