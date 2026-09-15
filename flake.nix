@@ -22,7 +22,7 @@
         biome
 
         # LSPs
-        dockerfile-language-server-nodejs
+        dockerfile-language-server
         docker-compose-language-service
         typescript-language-server
       ];
