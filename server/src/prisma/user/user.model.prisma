@@ -1,0 +1,28 @@
+// use prisma-8
+
+model User {
+  id                String      @id @default(uuid())
+  nickname          String?     @unique @db.VarChar(30)
+  name              String?     @db.VarChar(100)
+  email             String      @unique
+  bio               String?
+  password_hash     String  
+  avatar_url        String?
+  social_networks   String[]
+  current_streak    Int
+  max_streak        Int
+  timezone          String
+  last_action       DateTime    @db.Date
+  profile_frame         ProfileFrame        @default(DEFAULT)
+  profile_background    ProfileBackground   @default(DEFAULT)
+}
+
+enum ProfileFrame {
+    DEFAULT
+    // styles for frames
+}
+
+enum ProfileBackground {
+    DEFAULT
+    // styles for backgrounds
+}
