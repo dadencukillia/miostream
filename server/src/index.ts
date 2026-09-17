@@ -1,5 +1,6 @@
 import Fastify from "fastify";
 import api from "./api/plugin";
+import cdn from "./cdn/plugin";
 
 const fastify = Fastify({
   logger: true
@@ -10,6 +11,7 @@ fastify.get("/healthcheck", (_request, reply) => {
 });
 
 fastify.register(api, { prefix: "/api" });
+fastify.register(cdn, { prefix: "/cdn" });
 
 fastify.listen({ port: 8080, host: '0.0.0.0' }, function (err, address) {
   if (err) {
