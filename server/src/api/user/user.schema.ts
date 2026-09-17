@@ -78,12 +78,6 @@ const updateUserSchema = {
     },
     body: { 
         type: 'object',
-        required: [
-            'nickname', 
-            'name',
-            'email',
-            'password',
-        ],
         properties: {
             nickname:   { 
                 type: 'string',
