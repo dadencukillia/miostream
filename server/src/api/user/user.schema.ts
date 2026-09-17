@@ -1,3 +1,5 @@
+import { password } from "bun";
+
 // Schema for user objects returned in responses
 const userSchema = {
     type: 'object',
@@ -71,9 +73,10 @@ const getUserSchema = {
 const updateUserSchema = {
     params: {
         type: 'object',
-        required: ['id'],
+        required: ['id', 'password'],
         properties: {
-            id: { type: 'string', format: 'uuid' }
+            id: { type: 'string', format: 'uuid' },
+            password: { type: 'string' }
         }
     },
     body: { 
