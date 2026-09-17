@@ -16,25 +16,6 @@ const userSchema = {
     }
 }
 
-const getUserSchema = {
-    params: {
-        type: 'object',
-        required: ['id'],
-        properties: {
-            id: { type: 'string', format: 'uuid' }
-        }
-    },
-    response: {
-        200: userSchema,
-        404: {
-            type: 'object',
-            properties: {
-                error: { type: 'string' }
-            }
-        }
-    }
-}
-
 const createUserSchema = {
     body: { 
         type: 'object',
@@ -59,9 +40,7 @@ const createUserSchema = {
                 type: 'string',
                 format: 'email' 
             },
-            password:   {
-                type: 'string' 
-            }
+            password:   { type: 'string' }
         },
         additionalProperties: false
     },
@@ -69,3 +48,73 @@ const createUserSchema = {
         201: userSchema
     }
 }
+
+const getUserSchema = {
+    params: {
+        type: 'object',
+        required: ['id'],
+        properties: {
+            id: { type: 'string', format: 'uuid' }
+        }
+    },
+    response: {
+        200: userSchema,
+        404: {
+            type: 'object',
+            properties: {
+                error: { type: 'string' }
+            }
+        }
+    }
+}
+
+const updateUserSchema = {
+    params: {
+        type: 'object',
+        required: ['id'],
+        properties: {
+            id: { type: 'string', format: 'uuid' }
+        }
+    },
+    body: { 
+        type: 'object',
+        required: [
+            'nickname', 
+            'name',
+            'email',
+            'password',
+        ],
+        properties: {
+            nickname:   { 
+                type: 'string',
+                minLength: 3,
+                maxLength: 30
+            },
+            name:       {
+                type: 'string',
+                minLength: 3,
+                maxLength: 100
+            },
+            email:      { 
+                type: 'string',
+                format: 'email' 
+            },
+            password:   { type: 'string' },
+            bio:        { type: 'string' },
+            avatar_url: { type: 'string', format: 'uri'  },
+            social_networks:    { type: 'array', items: { type: 'string', format: 'uri' } },
+            profile_frame:      { type: 'string', format: 'uri' },
+            profile_background: { type: 'string', format: 'uri' }
+        },
+        additionalProperties: false
+    },
+    response: {
+        200: userSchema,
+        404: {
+            type: 'object',
+            properties: {
+                error: { type: 'string' }
+            }
+        }
+    }
+};
