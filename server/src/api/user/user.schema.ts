@@ -16,7 +16,25 @@ const userSchema = {
     }
 }
 
-// Schema for creating a new user
+const getUserSchema = {
+    params: {
+        type: 'object',
+        required: ['id'],
+        properties: {
+            id: { type: 'string', format: 'uuid' }
+        }
+    },
+    response: {
+        200: userSchema,
+        404: {
+            type: 'object',
+            properties: {
+                error: { type: 'string' }
+            }
+        }
+    }
+}
+
 const createUserSchema = {
     body: { 
         type: 'object',
