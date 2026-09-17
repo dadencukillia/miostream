@@ -1,6 +1,3 @@
-import { password } from "bun";
-
-// Schema for user objects returned in responses
 const userSchema = {
     type: 'object',
     properties: {
@@ -115,3 +112,32 @@ const updateUserSchema = {
         }
     }
 };
+
+const deleteUserSchema = {
+    params: {
+        type: 'object',
+        required: ['id', 'password'],
+        properties: {
+            id: { type: 'string', format: 'uuid' },
+            password: { type: 'string' }
+        }
+    },
+    response: {
+        204: {
+            type: 'null'
+        },
+        404: {
+            type: 'object',
+            properties: {
+                error: { type: 'string' }
+            }
+        }
+    }
+}
+
+export {
+    createUserSchema,
+    getUserSchema,
+    updateUserSchema,
+    deleteUserSchema
+}
