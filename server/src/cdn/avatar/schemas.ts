@@ -6,6 +6,14 @@ export const getSchema: FastifySchema = {
     properties: {
       imageSlug: { type: "string" },
     },
+  },
+  response: {
+    404: {
+      ok: { type: "boolean" },
+    },
+    "5xx": {
+      ok: { type: "boolean" },
+    },
   }
 };
 
