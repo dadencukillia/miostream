@@ -6,7 +6,7 @@ const userSchema = {
         name:       { type: 'string' },
         email:      { type: 'string', format: 'email' },
         bio:        { type: 'string' },
-        avatar_url: { type: 'string', format: 'uri'  },
+        avatar_url: { type: 'string' },
         social_networks:    { type: 'array', items: { type: 'string', format: 'uri' } },
         current_streak:     { type: 'integer' },
         max_streak:         { type: 'integer' },
@@ -25,21 +25,21 @@ const createUserSchema = {
             'password',
         ],
         properties: {
-            nickname:   { 
+            nickname: { 
                 type: 'string',
                 minLength: 3,
                 maxLength: 30
             },
-            name:       {
+            name: {
                 type: 'string',
                 minLength: 3,
                 maxLength: 100
             },
-            email:      { 
+            email: { 
                 type: 'string',
                 format: 'email' 
             },
-            password:   { type: 'string' }
+            password_hash: { type: 'string' }
         },
         additionalProperties: false
     },
@@ -95,7 +95,7 @@ const updateUserSchema = {
             },
             password:   { type: 'string' },
             bio:        { type: 'string' },
-            avatar_url: { type: 'string', format: 'uri'  },
+            avatar_url: { type: 'string' },
             social_networks:    { type: 'array', items: { type: 'string', format: 'uri' } },
             profile_frame:      { type: 'string', format: 'uri' },
             profile_background: { type: 'string', format: 'uri' }

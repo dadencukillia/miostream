@@ -1,0 +1,28 @@
+model User {
+  id                 String            @id @default(uuid())
+  nickname           String?           @unique @db.VarChar(30)
+  name               String?           @db.VarChar(100)
+  email              String            @unique
+  bio                String?
+  password_hash      String
+  avatar_url         String?
+  social_networks    String[]
+  current_streak     Int               @default(0)
+  max_streak         Int               @default(0)
+  timezone           String            @default("UTC")
+  last_action        DateTime          @default(now()) @db.Date
+  profile_frame      ProfileFrame      @default(DEFAULT)
+  profile_background ProfileBackground @default(DEFAULT)
+  created_at         DateTime          @default(now())
+  updated_at         DateTime          @updatedAt
+
+  @@map("users")
+}
+
+enum ProfileFrame {
+  DEFAULT
+}
+
+enum ProfileBackground {
+  DEFAULT
+}
