@@ -15,6 +15,22 @@ const userSchema = {
     }
 }
 
+const userParamsSchema = {
+    type: 'object',
+    required: ['id'],
+    properties: {
+        id: { 
+            type: 'string', 
+            format: 'uuid'
+        }
+    },
+    additionalProperties: false
+}
+
+export interface UserParams {
+    id: string;
+}
+
 export interface CreateUserInput {
     email: string;
     password_hash: string;
@@ -24,6 +40,8 @@ export interface CreateUserInput {
     avatar_url?: string;
     social_networks?: string[];
 }
+
+export interface UpdateUserInput extends Partial<CreateUserInput> {}
 
 export const createUserSchema = {
     body: { 
@@ -49,7 +67,12 @@ export const createUserSchema = {
                 type: 'string',
                 format: 'email' 
             },
-            password_hash: { type: 'string' }
+            password_hash: { type: 'string' },
+            bio:                { type: 'string' },
+            avatar_url:         { type: 'string' },
+            social_networks:    { type: 'array', items: { type: 'string', format: 'uri' } },
+            profile_frame:      { type: 'string', format: 'uri' },
+            profile_background: { type: 'string', format: 'uri' }
         },
         additionalProperties: false
     },
@@ -59,13 +82,7 @@ export const createUserSchema = {
 }
 
 export const getUserSchema = {
-    params: {
-        type: 'object',
-        required: ['id'],
-        properties: {
-            id: { type: 'string', format: 'uuid' }
-        }
-    },
+    params: userParamsSchema,
     response: {
         200: userSchema,
         404: {
@@ -78,14 +95,7 @@ export const getUserSchema = {
 }
 
 export const updateUserSchema = {
-    params: {
-        type: 'object',
-        required: ['id', 'password_hash'],
-        properties: {
-            id:             { type: 'string', format: 'uuid' },
-            password_hash:  { type: 'string' }
-        }
-    },
+    params: userParamsSchema,
     body: { 
         type: 'object',
         properties: {
@@ -124,14 +134,7 @@ export const updateUserSchema = {
 };
 
 export const deleteUserSchema = {
-    params: {
-        type: 'object',
-        required: ['id', 'password_hash'],
-        properties: {
-            id:             { type: 'string', format: 'uuid' },
-            password_hash:  { type: 'string' }
-        }
-    },
+    params: userParamsSchema,
     response: {
         204: {
             type: 'null'
