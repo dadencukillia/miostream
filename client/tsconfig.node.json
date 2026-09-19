@@ -1,0 +1,27 @@
+{
+  "include": [
+    "*.config.*",
+    "tests/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "src/**/*"
+  ],
+  "types": [
+    "bun",
+    "node"
+  ],
+  "compilerOptions": {
+    "composite": true,
+    "baseUrl": ".",
+    "moduleResolution": "Bundler",
+    "module": "ESNext",
+    "target": "ESNext",
+    "paths": {
+      "@utils/*": [ "./src/lib/utils/*" ]
+    },
+    "lib": [
+      "ESNext"
+    ]
+  }
+}
