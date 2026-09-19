@@ -1,4 +1,4 @@
-import { CreateBucketCommand, HeadBucketCommand, NoSuchBucket, S3Client } from "@aws-sdk/client-s3";
+import { CreateBucketCommand, HeadBucketCommand, NoSuchBucket, NotFound, S3Client } from "@aws-sdk/client-s3";
 import { Connection } from "../utils/connector";
 import * as config from "../config";
 
@@ -14,7 +14,7 @@ async function initBucket(client: S3Client, name: string): Promise<void> {
       new HeadBucketCommand({ Bucket: name }), 
     );
   } catch(e) {
-    if (e instanceof NoSuchBucket) {
+    if (e instanceof NoSuchBucket || e instanceof NotFound) {
       await client.send(
         new CreateBucketCommand({ Bucket: name }),
       );

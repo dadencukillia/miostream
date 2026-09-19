@@ -42,8 +42,6 @@ describe("S3 Integration Tests", () => {
     const everyAvailable = bucketsRequired.every(bucket => buckets.some(b => b.Name === bucket));
 
     expect(everyAvailable).toBe(true);
-
-    await fastify.close();
   });
 
   test("file create, read, remove", async () => {
