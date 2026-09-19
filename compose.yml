@@ -18,6 +18,8 @@ services:
     restart: always
     environment:
       DB_PASS_FILE: /run/secrets/db_pass
+      RUSTFS_ACCESS_KEY_FILE: /run/secrets/rustfs_access_key
+      RUSTFS_SECRET_KEY_FILE: /run/secrets/rustfs_secret_key
       POSTGRES_HOST: postgresql:5432
       REDIS_HOST: redis:6379
       RUSTFS_HOST: rustfs:9000
@@ -30,6 +32,8 @@ services:
       - internal
     secrets:
       - db_pass
+      - rustfs_access_key
+      - rustfs_secret_key
     healthcheck:
       test: ["CMD-SHELL", "wget -qO - http://127.0.0.1:8080/healthcheck"]
       interval: 10s
