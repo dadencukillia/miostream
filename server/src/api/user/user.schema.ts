@@ -1,4 +1,4 @@
-export const userSchema = {
+const userSchema = {
     type: 'object',
     properties: {
         id:         { type: 'string', format: 'uuid' },
