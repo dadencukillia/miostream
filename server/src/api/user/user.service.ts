@@ -1,29 +1,12 @@
-import prisma from "../../db";
-class UserService {
-    async create( payload: {
-        email: string;
-        password_hash: string;
-        nickname?: string;
-        name?: string;
-        bio?: string;
-        avatar_url?: string;
-        social_networks?: string[];
-    }) {
-        const result = prisma.$queryRaw``; // sql
-        return result;
-    }
-    async getById(){
-        const result = prisma.$queryRaw``; // sql
-        return result;
-    }
-    async update(){
-        const result = prisma.$queryRaw``; // sql
-        return result;
-    }
-    async delete(){
-        const result = prisma.$queryRaw``; // sql
-        return result;
+import type { UserModel } from '@prisma/generated/models/User'
+import type { IUserRepository } from './user.repository';
+import type { CreateUserInput } from './user.schema';
+
+export class UserService {
+    constructor(private readonly userRepo: IUserRepository) {}
+
+    async registerUser( input: CreateUserInput): Promise<UserModel> {
+        // a bunch of validations and repo calls
+        return this.userRepo.create(input);
     }
 }
-
-export const userService = new UserService();

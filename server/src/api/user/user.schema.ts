@@ -1,4 +1,4 @@
-const userSchema = {
+export const userSchema = {
     type: 'object',
     properties: {
         id:         { type: 'string', format: 'uuid' },
@@ -15,14 +15,24 @@ const userSchema = {
     }
 }
 
-const createUserSchema = {
+export interface CreateUserInput {
+    email: string;
+    password_hash: string;
+    nickname?: string;
+    name?: string;
+    bio?: string;
+    avatar_url?: string;
+    social_networks?: string[];
+}
+
+export const createUserSchema = {
     body: { 
         type: 'object',
         required: [
             'nickname', 
             'name',
             'email',
-            'password',
+            'password_hash',
         ],
         properties: {
             nickname: { 
@@ -48,7 +58,7 @@ const createUserSchema = {
     }
 }
 
-const getUserSchema = {
+export const getUserSchema = {
     params: {
         type: 'object',
         required: ['id'],
@@ -67,35 +77,35 @@ const getUserSchema = {
     }
 }
 
-const updateUserSchema = {
+export const updateUserSchema = {
     params: {
         type: 'object',
-        required: ['id', 'password'],
+        required: ['id', 'password_hash'],
         properties: {
-            id: { type: 'string', format: 'uuid' },
-            password: { type: 'string' }
+            id:             { type: 'string', format: 'uuid' },
+            password_hash:  { type: 'string' }
         }
     },
     body: { 
         type: 'object',
         properties: {
-            nickname:   { 
+            nickname: { 
                 type: 'string',
                 minLength: 3,
                 maxLength: 30
             },
-            name:       {
+            name: {
                 type: 'string',
                 minLength: 3,
                 maxLength: 100
             },
-            email:      { 
+            email: { 
                 type: 'string',
                 format: 'email' 
             },
-            password:   { type: 'string' },
-            bio:        { type: 'string' },
-            avatar_url: { type: 'string' },
+            password_hash:      { type: 'string' },
+            bio:                { type: 'string' },
+            avatar_url:         { type: 'string' },
             social_networks:    { type: 'array', items: { type: 'string', format: 'uri' } },
             profile_frame:      { type: 'string', format: 'uri' },
             profile_background: { type: 'string', format: 'uri' }
@@ -113,13 +123,13 @@ const updateUserSchema = {
     }
 };
 
-const deleteUserSchema = {
+export const deleteUserSchema = {
     params: {
         type: 'object',
-        required: ['id', 'password'],
+        required: ['id', 'password_hash'],
         properties: {
-            id: { type: 'string', format: 'uuid' },
-            password: { type: 'string' }
+            id:             { type: 'string', format: 'uuid' },
+            password_hash:  { type: 'string' }
         }
     },
     response: {
@@ -133,11 +143,4 @@ const deleteUserSchema = {
             }
         }
     }
-}
-
-export {
-    createUserSchema,
-    getUserSchema,
-    updateUserSchema,
-    deleteUserSchema
 }

@@ -8,22 +8,27 @@ import {
     createUserSchema,
     getUserSchema,
     updateUserSchema,
-    deleteUserSchema
+    deleteUserSchema,
+    type CreateUserInput
 } from './user.schema';
-import { userService } from './user.service';
+import { UserService } from './user.service';
 
-async function userController(
-    fastify: FastifyInstance,
-    options: FastifyPluginOptions
-) : Promise<void> 
-{
-    fastify.post('/', { schema: createUserSchema }, 
-        async (request: FastifyRequest, reply: FastifyReply) => {
-            const body = request.body as any;
-            const user = await userService.create(body)
-            return reply.status(201).send(user);
-        }
-    );
+export class UserController{
+    constructor(private readonly userService: UserService) {}
+
+    registerRoutes = async (
+        fastify: FastifyInstance,
+        _opts: FastifyPluginOptions
+    ) => {
+        fastify.post('/', { schema: createUserSchema }, this.createUser);
+    };
+
+    createUser = async (
+        request: FastifyRequest<{ Body: CreateUserInput }>,
+        reply: FastifyReply
+    ) => {
+        const body = request.body as any;
+        const user = await this.userService.registerUser(body)
+        return reply.status(201).send(user);
+    }
 }
-
-export default userController;

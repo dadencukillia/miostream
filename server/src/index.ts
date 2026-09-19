@@ -1,16 +1,22 @@
 import Fastify from 'fastify';
-import userController from './api/user/user.controller';
+import { UserController } from './api/user/user.controller';
 import prisma, { pool } from './db';
+import { UserRepository } from './api/user/user.repository';
+import { UserService } from './api/user/user.service';
 
 const fastify = Fastify({
   logger: true,
 });
 
+const userRepo = new UserRepository(prisma);
+const userService = new UserService(userRepo);
+const userController = new UserController(userService);
+
 fastify.get('/healthcheck', async (_request, reply) => {
   return reply.send({ health: true });
 });
 
-fastify.register(userController, { prefix: '/api/user' });
+fastify.register(userController.registerRoutes, { prefix: '/api/user' });
 
 const start = async () => {
   try {
