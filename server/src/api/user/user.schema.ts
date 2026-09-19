@@ -1,3 +1,5 @@
+import { ProfileFrame, ProfileBackground } from "@prisma/generated/client";
+
 const userSchema = {
     type: 'object',
     properties: {
@@ -10,8 +12,8 @@ const userSchema = {
         social_networks:    { type: 'array', items: { type: 'string', format: 'uri' } },
         current_streak:     { type: 'integer' },
         max_streak:         { type: 'integer' },
-        profile_frame:      { type: 'string', format: 'uri' },
-        profile_background: { type: 'string', format: 'uri' }
+        profile_frame:      { type: 'string', enum: Object.values(ProfileFrame) },
+        profile_background: { type: 'string', enum: Object.values(ProfileBackground) }
     }
 }
 
@@ -32,15 +34,15 @@ export interface UserParams {
 }
 
 export interface CreateUserInput {
-    email: string;
-    password_hash: string;
     nickname: string;
     name: string;
+    email: string;
+    password_hash: string;
     bio?: string;
     avatar_url?: string;
     social_networks?: string[];
-    profile_frame?: string;
-    profile_background?: string;
+    profile_frame?: ProfileFrame;
+    profile_background?: ProfileBackground;
 }
 
 export type UpdateUserInput = Partial<Omit<CreateUserInput, 'password_hash'>>;
@@ -73,8 +75,8 @@ export const createUserSchema = {
             bio:                { type: 'string' },
             avatar_url:         { type: 'string' },
             social_networks:    { type: 'array', items: { type: 'string', format: 'uri' } },
-            profile_frame:      { type: 'string', format: 'uri' },
-            profile_background: { type: 'string', format: 'uri' }
+            profile_frame:      { type: 'string', enum: Object.values(ProfileFrame) },
+            profile_background: { type: 'string', enum: Object.values(ProfileBackground) }
         },
         additionalProperties: false
     },
@@ -118,8 +120,8 @@ export const updateUserSchema = {
             bio:                { type: 'string' },
             avatar_url:         { type: 'string' },
             social_networks:    { type: 'array', items: { type: 'string', format: 'uri' } },
-            profile_frame:      { type: 'string', format: 'uri' },
-            profile_background: { type: 'string', format: 'uri' }
+            profile_frame:      { type: 'string', enum: Object.values(ProfileFrame) },
+            profile_background: { type: 'string', enum: Object.values(ProfileBackground) }
         },
         additionalProperties: false
     },

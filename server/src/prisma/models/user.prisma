@@ -1,5 +1,5 @@
 model User {
-  id                 String            @id @default(uuid())
+  id                 String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   nickname           String?           @unique @db.VarChar(30)
   name               String?           @db.VarChar(100)
   email              String            @unique
@@ -14,9 +14,9 @@ model User {
   profile_frame      ProfileFrame      @default(DEFAULT)
   profile_background ProfileBackground @default(DEFAULT)
   created_at         DateTime          @default(now())
-  updated_at         DateTime          @updatedAt
+  updated_at         DateTime          @default(now()) @updatedAt
 
-  @@map("users")
+  @@map("User")
 }
 
 enum ProfileFrame {
