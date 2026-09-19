@@ -34,14 +34,16 @@ export interface UserParams {
 export interface CreateUserInput {
     email: string;
     password_hash: string;
-    nickname?: string;
-    name?: string;
+    nickname: string;
+    name: string;
     bio?: string;
     avatar_url?: string;
     social_networks?: string[];
+    profile_frame?: string;
+    profile_background?: string;
 }
 
-export interface UpdateUserInput extends Partial<CreateUserInput> {}
+export type UpdateUserInput = Partial<Omit<CreateUserInput, 'password_hash'>>;
 
 export const createUserSchema = {
     body: { 
@@ -113,7 +115,6 @@ export const updateUserSchema = {
                 type: 'string',
                 format: 'email' 
             },
-            password_hash:      { type: 'string' },
             bio:                { type: 'string' },
             avatar_url:         { type: 'string' },
             social_networks:    { type: 'array', items: { type: 'string', format: 'uri' } },
@@ -136,9 +137,7 @@ export const updateUserSchema = {
 export const deleteUserSchema = {
     params: userParamsSchema,
     response: {
-        204: {
-            type: 'null'
-        },
+        204: { type: 'null' },
         404: {
             type: 'object',
             properties: {

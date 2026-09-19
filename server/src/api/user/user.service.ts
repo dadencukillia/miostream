@@ -20,8 +20,8 @@ export class UserService {
         return this.userRepo.update(id, input);
     }
 
-    async delete( id: string ) {
+    async delete( id: string ): Promise<void> {
         // TODO: add a bunch of validations and repo calls
-        this.userRepo.delete(id);
+        await this.userRepo.delete(id);
     }
 }
