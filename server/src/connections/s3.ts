@@ -21,7 +21,7 @@ async function configureS3(client: S3Client) {
 }
 
 export const S3Connection: Connection<S3Client> = {
-  name: "rustfs",
+  name: "s3",
 
   async initFunc() {
     const client = new S3Client({
