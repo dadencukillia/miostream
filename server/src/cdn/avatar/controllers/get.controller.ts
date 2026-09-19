@@ -11,7 +11,7 @@ export const getAvatarController = async (request: FastifyRequest, reply: Fastif
     async success(output) {
       reply
         .header("content-type", "image/webp")
-        .header("etag", output!.ETag)
+        .header("cache-control", "public, max-age=31536000, immutable")
         .send(await output!.Body?.transformToByteArray());
     },
 
