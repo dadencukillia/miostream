@@ -1,15 +1,14 @@
-import { test, expect, beforeAll, afterAll } from "bun:test";
+import { test, expect, beforeAll, afterAll, describe } from "bun:test";
 
 import Fastify, { type FastifyInstance } from "fastify";
 import connector from "../../src/utils/connector";
 import { S3Connection } from "../../src/connections/s3";
 import "../../src/context";
 import { DeleteObjectCommand, GetObjectCommand, ListBucketsCommand, NoSuchKey, PutObjectCommand } from "@aws-sdk/client-s3";
-import { describe } from "node:test";
-import { fail } from "node:assert";
 
 describe("S3 Integration Tests", () => {
   let fastify: FastifyInstance;
+  const bucketsRequired = [ "avatars" ];
 
   beforeAll(async () => {
     fastify = Fastify({
@@ -32,12 +31,13 @@ describe("S3 Integration Tests", () => {
     }
   });
 
+  // Tests
+
   test("check buckets availability", async () => {
     const commandOutput = await fastify.s3
       .send(new ListBucketsCommand());
 
     const buckets = commandOutput.Buckets ?? [];
-    const bucketsRequired = [ "avatars" ];
 
     const everyAvailable = bucketsRequired.every(bucket => buckets.some(b => b.Name === bucket));
 
@@ -51,31 +51,32 @@ describe("S3 Integration Tests", () => {
     const fileContent = "hello, world!";
 
     await fastify.s3.send(new PutObjectCommand({
-      Bucket: "avatars",
+      Bucket: bucketsRequired[0],
       Key: fileKey,
       Body: fileContent,
     }));
 
     const object = await fastify.s3.send(new GetObjectCommand({
-      Bucket: "avatars",
+      Bucket: bucketsRequired[0],
       Key: fileKey
     }));
     expect(await object.Body?.transformToString()).toBe(fileContent);
 
     await fastify.s3.send(new DeleteObjectCommand({
-      Bucket: "avatars",
+      Bucket: bucketsRequired[0],
       Key: fileKey
     }));
 
     try {
       await fastify.s3.send(new GetObjectCommand({
-        Bucket: "avatars",
+        Bucket: bucketsRequired[0],
         Key: fileKey
       }));
-
-      fail("must to cause an error");
     } catch(e) {
       expect(e instanceof NoSuchKey).toBe(true);
+      return;
     }
+
+    throw "must cause an error";
   });
 });
