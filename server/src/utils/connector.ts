@@ -4,7 +4,8 @@ import fp from "fastify-plugin";
 
 export interface Connection<T> {
   name: string,
-  initFunc: () => Promise<T>,
+  initFunc: (fastify: FastifyInstance) => Promise<T>,
+  dropFunc: (fastify: FastifyInstance, instance: T) => Promise<void>,
 };
 
 export interface ConnectorPluginOptions {
@@ -26,8 +27,12 @@ async function connectorPlugin(
       while (true) {
         try {
 
-          const client = await conn.initFunc();
+          const client = await conn.initFunc(fastify);
           fastify.decorate(conn.name, client);
+          fastify.addHook("preClose", () => {
+            fastify.log.info(`fastify-connector-plugin: closing ${ conn.name }...`);
+            return conn.dropFunc(fastify, client);
+          });
           fastify.log.info(`fastify-connector-plugin: initialized ${ conn.name }`);
           break;
 
