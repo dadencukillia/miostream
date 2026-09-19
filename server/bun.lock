@@ -11,6 +11,7 @@
         "@prisma/orm-postgres": "^8.0.0-rc.11",
         "fastify": "^5.12.4",
         "fastify-plugin": "^6.0.0",
+        "sharp": "^0.35.4",
       },
       "devDependencies": {
         "@biomejs/biome": "^2.5.13",
@@ -163,7 +164,7 @@
 
     "@emnapi/core": ["@emnapi/core@1.11.1", "", { "dependencies": { "@emnapi/wasi-threads": "1.2.2", "tslib": "^2.4.0" } }, "sha512-RSvbQmHzdKzNsLYa/wHrbc3KN4sYLKAdPZxqiM2HATqv/SBk2/ENSHpvXGaLOMcsAyz0poEGqkmmKYG3OWiJEQ=="],
 
-    "@emnapi/runtime": ["@emnapi/runtime@1.11.1", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-vgj7R3y3Wgx24IQaGPA/R6YFXLHVMOZ0uVEyIQPaWs+rd1AzfEMXlAC22FYwO1XkKR6NPsq7mUandH8oIRdZFw=="],
+    "@emnapi/runtime": ["@emnapi/runtime@1.11.3", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-Xz4Tpyki7XyrpbUK1jR1AhdAdaXyhhY4lZ3neLodmhpuWfy2PAQN5B46sAiU4liOXGLkHypn/qU+jvfWSCYYLA=="],
 
     "@emnapi/wasi-threads": ["@emnapi/wasi-threads@1.2.2", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-c95qOXkHdydNKhscBTebqEC1CVAZpyqOfVfBzQ1qgzyl3gfeldUjIggDbIZgDKsHLgnsM+igH7TJ/eAasaVuMA=="],
 
@@ -1183,8 +1184,6 @@
 
     "zeptomatch": ["zeptomatch@2.1.0", "", { "dependencies": { "grammex": "^3.1.11", "graphmatch": "^1.1.0" } }, "sha512-KiGErG2J0G82LSpniV0CtIzjlJ10E04j02VOudJsPyPwNZgGnRKQy7I1R7GMyg/QswnE4l7ohSGrQbQbjXPPDA=="],
 
-    "@img/sharp-wasm32/@emnapi/runtime": ["@emnapi/runtime@1.11.3", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-Xz4Tpyki7XyrpbUK1jR1AhdAdaXyhhY4lZ3neLodmhpuWfy2PAQN5B46sAiU4liOXGLkHypn/qU+jvfWSCYYLA=="],
-
     "@octokit/plugin-paginate-rest/@octokit/types": ["@octokit/types@16.0.0", "", { "dependencies": { "@octokit/openapi-types": "^27.0.0" } }, "sha512-sKq+9r1Mm4efXW1FCk7hFSeJo4QKreL/tTbR0rz/qx/r1Oa2VV83LTA/H/MuCOX7uCIJmQVRKBcbmWoySjAnSg=="],
 
     "@octokit/plugin-rest-endpoint-methods/@octokit/types": ["@octokit/types@16.0.0", "", { "dependencies": { "@octokit/openapi-types": "^27.0.0" } }, "sha512-sKq+9r1Mm4efXW1FCk7hFSeJo4QKreL/tTbR0rz/qx/r1Oa2VV83LTA/H/MuCOX7uCIJmQVRKBcbmWoySjAnSg=="],
@@ -1210,6 +1209,8 @@
     "@prisma/orm-target-postgres/pg": ["pg@8.22.0", "", { "dependencies": { "pg-connection-string": "^2.14.0", "pg-pool": "^3.14.0", "pg-protocol": "^1.15.0", "pg-types": "2.2.0", "pgpass": "1.0.5" }, "optionalDependencies": { "pg-cloudflare": "^1.4.0" }, "peerDependencies": { "pg-native": ">=3.0.1" }, "optionalPeers": ["pg-native"] }, "sha512-8wih1vVIBMxoUM2oB4soJsD9tDnDpLv4OXBJ+EJzFsvycD+lfyIreC2gGHq78f8jbLLt+bvlPTFdFZfJkOuzAA=="],
 
     "@prisma/orm-toolchain/@prisma/orm-framework": ["@prisma/orm-framework@8.0.0-rc.10", "", { "dependencies": { "@standard-schema/spec": "^1.1.0", "arktype": "^2.2.2", "pathe": "^2.0.3", "uniku": "^0.5.0" }, "peerDependencies": { "typescript": ">=5.9" }, "optionalPeers": ["typescript"] }, "sha512-Kln09rpz1gpMm12dRzyvEBYriK2/nit5E3JcG7l/0f08p5qpbYS+6eBmgXV/lnFEftt9QG9TC04TfhzZpgoElA=="],
+
+    "@rolldown/binding-wasm32-wasi/@emnapi/runtime": ["@emnapi/runtime@1.11.1", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-vgj7R3y3Wgx24IQaGPA/R6YFXLHVMOZ0uVEyIQPaWs+rd1AzfEMXlAC22FYwO1XkKR6NPsq7mUandH8oIRdZFw=="],
 
     "@types/pg/@types/node": ["@types/node@22.20.2", "", { "dependencies": { "undici-types": "~6.21.0" } }, "sha512-xlvWf4Vs9n1PEVYwP1n4vvG07M6y8WgvJ2t0vbrWTmijsIHp1cS+uJ2kMIRdY3nHZK0nCYKrPeD171+SzF4/zw=="],
 

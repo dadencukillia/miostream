@@ -8,11 +8,13 @@ export const getSchema: FastifySchema = {
     },
   },
   response: {
-    404: {
+    "4xx": {
       ok: { type: "boolean" },
+      message: { type: "string" },
     },
     "5xx": {
       ok: { type: "boolean" },
+      message: { type: "string" },
     },
   }
 };
@@ -23,6 +25,13 @@ export const updateSchema: FastifySchema = {
     contentEncoding: "base64"
   },
   response: {
+    default: {
+      type: "object",
+      properties: {
+        ok: { type: "boolean" },
+        message: { type: "string" },
+      },
+    },
     200: {
       type: "object",
       properties: {
@@ -40,6 +49,7 @@ export const resetSchema: FastifySchema = {
   response: {
     default: {
       ok: { type: "boolean" },
+      message: { type: "string" },
     },
   },
 };

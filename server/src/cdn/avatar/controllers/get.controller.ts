@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import "../../../context";
-import { getAvatarBySlug } from "../services/avatar_bucket.service";
+import { getAvatarBySlug } from "../services/avatarBucket.service";
 
 export const getAvatarController = async (request: FastifyRequest, reply: FastifyReply) => {
   const { imageSlug } = request.params as {
@@ -10,21 +10,24 @@ export const getAvatarController = async (request: FastifyRequest, reply: Fastif
   await getAvatarBySlug(request.server.rustfs, imageSlug, {
     async success(output) {
       reply
-        .header("content-type", output!.ContentType)
+        .header("content-type", "image/webp")
         .header("etag", output!.ETag)
         .send(await output!.Body?.transformToByteArray());
     },
 
     async unknownError(e) {
-      request.server.log.error(e);
+      request.log.error(e);
 
-      return reply
+      reply
         .status(500)
-        .send({ ok: false });
+        .send({
+          ok: false,
+          message: "couldn't reach the file storage",
+        });
     },
 
     async notFound() {
-      return reply
+      reply
         .status(404)
         .send({ ok: false });
     },
