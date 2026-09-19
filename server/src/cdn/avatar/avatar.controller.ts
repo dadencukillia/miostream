@@ -3,10 +3,15 @@ import "../../context";
 import { AvatarError, getAvatar, resetUserAvatar, updateUserAvatarImage } from "./avatar.service";
 import { db } from "../../prisma/db";
 
-export const getAvatarController = async (request: FastifyRequest, reply: FastifyReply) => {
-  const { avatarId } = request.params as {
-    avatarId: string
-  };
+interface GetAvatarParams {
+  avatarId: string,
+}
+
+export const getAvatarController = async (
+  request: FastifyRequest<{ Params: GetAvatarParams }>,
+  reply: FastifyReply
+) => {
+  const { avatarId } = request.params;
 
   try {
     const buffer = await getAvatar(request.server.s3, request.log, avatarId);
@@ -34,7 +39,10 @@ export const getAvatarController = async (request: FastifyRequest, reply: Fastif
   }
 };
 
-export const resetAvatarController = async (request: FastifyRequest, reply: FastifyReply) => {
+export const resetAvatarController = async (
+  request: FastifyRequest,
+  reply: FastifyReply
+) => {
   // TODO: replace on working auth middleware context
   const userId = "user";
 
@@ -61,7 +69,10 @@ export const resetAvatarController = async (request: FastifyRequest, reply: Fast
   }
 };
 
-export const updateAvatarController = async (request: FastifyRequest, reply: FastifyReply) => {
+export const updateAvatarController = async (
+  request: FastifyRequest<{ Body: string }>,
+  reply: FastifyReply
+) => {
   // TODO: replace on working auth middleware context
   const userId = "user";
 
@@ -70,7 +81,7 @@ export const updateAvatarController = async (request: FastifyRequest, reply: Fas
       request.server.s3, db, 
       request.log, 
       userId, 
-      Buffer.from(request.body as string, "base64")
+      Buffer.from(request.body, "base64")
     );
 
     return reply.send(result);
