@@ -15,7 +15,7 @@ const userSchema = {
         profile_frame:      { type: 'string', enum: Object.values(ProfileFrame) },
         profile_background: { type: 'string', enum: Object.values(ProfileBackground) }
     }
-}
+};
 
 const userParamsSchema = {
     type: 'object',
@@ -27,28 +27,7 @@ const userParamsSchema = {
         }
     },
     additionalProperties: false
-}
-
-export interface UserParams {
-    id: string;
-}
-
-export interface CreateUserInput {
-    nickname: string;
-    name: string;
-    email: string;
-    password: string;
-    bio?: string;
-    avatar_url?: string;
-    social_networks?: string[];
-    profile_frame?: ProfileFrame;
-    profile_background?: ProfileBackground;
-}
-
-export type CreateUserRepoInput = 
-    Partial<Omit<CreateUserInput, 'password'>> & { password_hash: string; };
-
-export type UpdateUserInput = Partial<Omit<CreateUserInput, 'password'>>;
+};
 
 export const createUserSchema = {
     body: { 
@@ -86,7 +65,7 @@ export const createUserSchema = {
     response: {
         201: userSchema
     }
-}
+};
 
 export const getUserSchema = {
     params: userParamsSchema,
@@ -99,7 +78,7 @@ export const getUserSchema = {
             }
         }
     }
-}
+};
 
 export const updateUserSchema = {
     params: userParamsSchema,
@@ -150,4 +129,4 @@ export const deleteUserSchema = {
             }
         }
     }
-}
+};

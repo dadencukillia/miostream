@@ -3,66 +3,76 @@ import type { UserModel } from '@prisma/generated/models/User'
 import type {
     CreateUserRepoInput,
     UpdateUserInput
-} from "./user.schema";
+} from "./user.dto";
 
 export interface IUserRepository {
-    create  (data: CreateUserRepoInput): Promise<UserModel>;
-    getById (id : string): Promise<UserModel>;
-    update  (id : string, data: UpdateUserInput): Promise<UserModel>;
-    delete  (id : string): Promise<void>;
+    create(data: CreateUserRepoInput): Promise<UserModel>;
+    getById(id : string): Promise<UserModel | null>;
+    getByEmail(email : string): Promise<UserModel | null>;
+    update(id : string, data: UpdateUserInput): Promise<UserModel | null>;
+    delete(id : string): Promise<boolean>;
 }
 
 export class UserRepository implements IUserRepository{
     constructor(private readonly prisma: PrismaClient) {}
 
     async create(data : CreateUserRepoInput) {
-        const [user] = await this.prisma.$queryRaw<UserModel[]>`
-            INSERT INTO "User" (
-                "nickname",
-                "name",
-                "email",
-                "password_hash",
-                "bio",
-                "avatar_url",
-                "social_networks",
-                "profile_frame",
-                "profile_background"
-            ) VALUES (
-                ${data.nickname},
-                ${data.name},
-                ${data.email},
-                ${data.password_hash},
-                ${data.bio ?? null},
-                ${data.avatar_url ?? null},
-                ${data.social_networks ?? []},
-                ${data.profile_frame ?? 'DEFAULT'}::"ProfileFrame",
-                ${data.profile_background ?? 'DEFAULT'}::"ProfileBackground"
-            )
-            RETURNING *;
-        `;
+        try {
+            const [user] = await this.prisma.$queryRaw<UserModel[]>`
+                INSERT INTO "User" (
+                    "nickname",
+                    "name",
+                    "email",
+                    "password_hash",
+                    "bio",
+                    "avatar_url",
+                    "social_networks",
+                    "profile_frame",
+                    "profile_background"
+                ) VALUES (
+                    ${data.nickname},
+                    ${data.name},
+                    ${data.email},
+                    ${data.password_hash},
+                    ${data.bio ?? null},
+                    ${data.avatar_url ?? null},
+                    ${data.social_networks ?? []},
+                    ${data.profile_frame ?? 'DEFAULT'}::"ProfileFrame",
+                    ${data.profile_background ?? 'DEFAULT'}::"ProfileBackground"
+                )
+                RETURNING *;
+            `;
+            
+            if (!user){
+                throw new Error("User was not created")
+            }
 
-        if (!user) {
-            // TODO: add good error throwers with codes
-            throw new Error("Failed to create user");
+            return user;
+        } catch (error: any){
+            throw error;
         }
-
-        return user;
     }
     
     async getById(id : string) {
         const [user] = await this.prisma.$queryRaw<UserModel[]>`
-            SELECT * 
-            FROM "User" 
+            SELECT *
+            FROM "User"
             WHERE "id" = ${id}::uuid
             LIMIT 1;
         `;
 
-        if (!user) {
-            // TODO: add good error throwers with codes
-            throw new Error("Failed to get user");
-        }
+        return user ?? null;
+    }
 
-        return user;
+    async getByEmail(email : string) {
+        const [user] = await this.prisma.$queryRaw<UserModel[]>`
+            SELECT * 
+            FROM "User" 
+            WHERE "email" = ${email}
+            LIMIT 1;
+        `;
+
+        return user ?? null;
     }
 
     async update(id: string, data : UpdateUserInput){
@@ -98,12 +108,7 @@ export class UserRepository implements IUserRepository{
             RETURNING *;
         `;
 
-        if (!user) {
-            // TODO: add good error throwers with codes
-            throw new Error("Failed to update user");
-        }
-
-        return user;
+        return user ?? null;
     }
 
     async delete(id : string){
@@ -112,9 +117,6 @@ export class UserRepository implements IUserRepository{
             WHERE "id" = ${id}::uuid;
         `;
 
-        if (affected === 0) {
-            // TODO: add good error throwers with codes
-            throw new Error("Failed to delete user");
-        }
+        return affected > 0;
     }
 }

@@ -8,12 +8,15 @@ import {
     createUserSchema,
     getUserSchema,
     updateUserSchema,
-    deleteUserSchema,
-    type UserParams,
-    type CreateUserInput,
-    type UpdateUserInput
+    deleteUserSchema
 } from './user.schema';
+import type {
+    UserParams,
+    CreateUserInput,
+    UpdateUserInput
+} from './user.dto';
 import { UserService } from './user.service';
+import { UserError } from './user.errors'
 
 export class UserController{
     constructor(private readonly userService: UserService) {}
@@ -22,6 +25,21 @@ export class UserController{
         fastify: FastifyInstance,
         _opts: FastifyPluginOptions
     ) => {
+        fastify.setErrorHandler((error, request, reply) => {
+            if (error instanceof UserError) {
+                return reply.status(error.status).send({
+                    ok: false,
+                    message: error.message,
+                });
+            }
+
+            request.log.error(error);
+            return reply.status(500).send({
+                ok: false,
+                message: 'Unexpected error',
+            });
+        });
+        
         fastify.post('/', { schema: createUserSchema }, this.createUser);
         fastify.get('/:id', { schema: getUserSchema }, this.getUser);
         fastify.put('/:id', { schema: updateUserSchema }, this.updateUser);
@@ -32,65 +50,31 @@ export class UserController{
         request: FastifyRequest<{ Body: CreateUserInput }>,
         reply: FastifyReply
     ) => {
-        try {
-            const body = request.body;
-            const user = await this.userService.create(body)
-            return reply.status(201).send(user);
-        } catch (error) {
-            // TODO: add good error handlers with codes
-            request.log.error(error, 'Error creating user' );
-            return reply.status(500).send({ error: "Failed to create user" });
-            
-        }
-        
-    }
+        const user = await this.userService.create(request.body);
+        return reply.status(201).send(user);
+    };
 
     getUser = async (
         request: FastifyRequest<{ Params: UserParams }>,
         reply: FastifyReply
     ) => {
-        try {
-            const id = request.params.id;
-            const user = await this.userService.getById(id)
-            return reply.status(200).send(user);
-        } catch (error) {
-            // TODO: add good error handlers with codes
-            request.log.error(error, 'Error getting user' );
-            return reply.status(500).send({ error: "Failed to get user" });
-            
-        }
-    }
+        const user = await this.userService.getById(request.params.id);
+        return reply.status(200).send(user);
+    };
 
     updateUser = async (
         request: FastifyRequest<{ Params: UserParams; Body: UpdateUserInput }>,
         reply: FastifyReply
     ) => {
-        try {
-            const body = request.body;
-            const id = request.params.id;
-            const user = await this.userService.update(id, body)
-            return reply.status(200).send(user);
-        } catch (error) {
-            // TODO: add good error handlers with codes
-            request.log.error(error, 'Error updating user' );
-            return reply.status(500).send({ error: "Failed to update user" });
-            
-        }
-    }
+        const user = await this.userService.update(request.params.id, request.body);
+        return reply.status(200).send(user);
+    };
 
     deleteUser = async (
         request: FastifyRequest<{ Params: UserParams }>,
         reply: FastifyReply
     ) => {
-        try {
-            const id = request.params.id;
-            await this.userService.delete(id)
-            return reply.status(204).send();
-        } catch (error) {
-            // TODO: add good error handlers with codes
-            request.log.error(error, 'Error deleting user' );
-            return reply.status(500).send({ error: "Failed to delete user" });
-        }
-    }
-
+        await this.userService.delete(request.params.id);
+        return reply.status(204).send();
+    };
 }
