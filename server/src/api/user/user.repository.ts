@@ -64,7 +64,7 @@ export class UserRepository implements IUserRepository{
     }
 
     async update(id: string, data : UpdateUserInput){
-         const [user] = await this.prisma.$queryRaw<UserModel[]>`
+        const [user] = await this.prisma.$queryRaw<UserModel[]>`
             UPDATE "User"
             SET 
                 "nickname"           = COALESCE(${data.nickname ?? null}, "nickname"),
@@ -72,7 +72,7 @@ export class UserRepository implements IUserRepository{
                 "email"              = COALESCE(${data.email ?? null}, "email"),
                 "bio"                = COALESCE(${data.bio ?? null}, "bio"),
                 "avatar_url"         = COALESCE(${data.avatar_url ?? null}, "avatar_url"),
-                "social_networks"    = COALESCE(${data.social_networks ?? null}, "social_networks")
+                "social_networks"    = COALESCE(${data.social_networks ?? null}, "social_networks"),
                 "profile_frame"      = COALESCE(${data.profile_frame ?? null}::"ProfileFrame", "profile_frame"),
                 "profile_background" = COALESCE(${data.profile_background ?? null}::"ProfileBackground", "profile_background")
             WHERE "id" = ${id}::uuid
