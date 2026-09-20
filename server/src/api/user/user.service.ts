@@ -20,9 +20,6 @@ export class UserService {
             throw new UserInvalidError('Password must be at least 8 characters long');
         }
 
-        const user = await this.userRepo.getByEmail(input.email);
-        if (user) throw new UserAlreadyExistsError(`User with email '${input.email}' already exists`)
-
         const { password, ...inputWithoutPassword } = input;
         const password_hash = 'hashedPassword'; // TODO: replace mockup onto the real hashing operation
         const data: CreateUserRepoInput = { ...inputWithoutPassword, password_hash}
@@ -31,6 +28,7 @@ export class UserService {
             const newUser = await this.userRepo.create(data);
             return newUser;
         } catch (error) {
+            if (error instanceof UserError) throw error;
             throw new UserError(`Failed to create user: ${(error as Error).message}`);
         }
     }
@@ -53,18 +51,12 @@ export class UserService {
         const user = await this.userRepo.getById(id);
         if (!user) throw new UserNotFoundError(`User with id '${id}' not found`);
 
-        if (input.email && input.email !== user.email) {
-            const emailTaken = await this.userRepo.getByEmail(input.email);
-            if (emailTaken) {
-                throw new UserAlreadyExistsError(`Email '${input.email}' is already in use`);
-            }
-        }
-
         try {
             const updatedUser = await this.userRepo.update(id, input);
             if (!updatedUser) throw new UserNotFoundError(`User with id '${id}' not found`);
             return updatedUser;
         } catch (error) {
+            if (error instanceof UserError) throw error;
             throw new UserError(`Failed to update user: ${(error as Error).message}`);
         }
     }
@@ -79,6 +71,7 @@ export class UserService {
             const deleted = await this.userRepo.delete(id);
             if (!deleted) throw new UserNotFoundError(`User with id '${id}' not found`);
         } catch (error) {
+            if (error instanceof UserError) throw error;
             throw new UserError(`Failed to delete user: ${(error as Error).message}`);
         }
     }
