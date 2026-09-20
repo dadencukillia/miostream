@@ -50,7 +50,7 @@ export class UserController{
         
         fastify.post('/', { schema: createUserSchema }, this.createUser);
         fastify.get('/:id', { schema: getUserSchema }, this.getUser);
-        fastify.put('/:id', { schema: updateUserSchema }, this.updateUser);
+        fastify.patch('/:id', { schema: updateUserSchema }, this.updateUser);
         fastify.delete('/:id', { schema: deleteUserSchema }, this.deleteUser);
     };
 

@@ -13,7 +13,9 @@ const userSchema = {
         current_streak:     { type: 'integer' },
         max_streak:         { type: 'integer' },
         profile_frame:      { type: 'string', enum: Object.values(ProfileFrame) },
-        profile_background: { type: 'string', enum: Object.values(ProfileBackground) }
+        profile_background: { type: 'string', enum: Object.values(ProfileBackground) },
+        created_at:         { type: 'integer', format: 'date-time'},
+        updated_at:         { type: 'integer', format: 'date-time'},
     }
 };
 
