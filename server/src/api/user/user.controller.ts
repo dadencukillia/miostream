@@ -37,7 +37,7 @@ export class UserController{
             const user = await this.userService.create(body)
             return reply.status(201).send(user);
         } catch (error) {
-            // TODO: add good error handlers
+            // TODO: add good error handlers with codes
             request.log.error(error, 'Error creating user' );
             return reply.status(500).send({ error: "Failed to create user" });
             
@@ -54,7 +54,7 @@ export class UserController{
             const user = await this.userService.getById(id)
             return reply.status(200).send(user);
         } catch (error) {
-            // TODO: add good error handlers
+            // TODO: add good error handlers with codes
             request.log.error(error, 'Error getting user' );
             return reply.status(500).send({ error: "Failed to get user" });
             
@@ -71,7 +71,7 @@ export class UserController{
             const user = await this.userService.update(id, body)
             return reply.status(200).send(user);
         } catch (error) {
-            // TODO: add good error handlers
+            // TODO: add good error handlers with codes
             request.log.error(error, 'Error updating user' );
             return reply.status(500).send({ error: "Failed to update user" });
             
@@ -87,7 +87,7 @@ export class UserController{
             await this.userService.delete(id)
             return reply.status(204).send();
         } catch (error) {
-            // TODO: add good error handlers
+            // TODO: add good error handlers with codes
             request.log.error(error, 'Error deleting user' );
             return reply.status(500).send({ error: "Failed to delete user" });
         }

@@ -37,7 +37,7 @@ export interface CreateUserInput {
     nickname: string;
     name: string;
     email: string;
-    password_hash: string;
+    password: string;
     bio?: string;
     avatar_url?: string;
     social_networks?: string[];
@@ -45,7 +45,10 @@ export interface CreateUserInput {
     profile_background?: ProfileBackground;
 }
 
-export type UpdateUserInput = Partial<Omit<CreateUserInput, 'password_hash'>>;
+export type CreateUserRepoInput = 
+    Partial<Omit<CreateUserInput, 'password'>> & { password_hash: string; };
+
+export type UpdateUserInput = Partial<Omit<CreateUserInput, 'password'>>;
 
 export const createUserSchema = {
     body: { 
@@ -71,7 +74,7 @@ export const createUserSchema = {
                 type: 'string',
                 format: 'email' 
             },
-            password_hash: { type: 'string' },
+            password:           { type: 'string' },
             bio:                { type: 'string' },
             avatar_url:         { type: 'string' },
             social_networks:    { type: 'array', items: { type: 'string', format: 'uri' } },

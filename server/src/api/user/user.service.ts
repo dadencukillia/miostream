@@ -1,13 +1,19 @@
 import type { UserModel } from '@prisma/generated/models/User'
 import type { IUserRepository } from './user.repository';
-import type { CreateUserInput, UpdateUserInput } from './user.schema';
+import type { CreateUserInput, CreateUserRepoInput, UpdateUserInput } from './user.schema';
 
 export class UserService {
     constructor(private readonly userRepo: IUserRepository) {}
 
     async create( input: CreateUserInput ): Promise<UserModel> {
         // TODO: add a bunch of validations and repo calls
-        return this.userRepo.create(input);
+        const { password, ...input_without_password } = input;
+
+        const password_hash = 'password'; // TODO: add password hashing logic
+
+        const data: CreateUserRepoInput = { ...input_without_password, password_hash}
+
+        return this.userRepo.create(data);
     }
 
     async getById( id: string ): Promise<UserModel> {
