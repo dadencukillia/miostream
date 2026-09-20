@@ -24,7 +24,7 @@ const isActive = activeRegex.test(Astro.url.pathname.replace(/\/$/, "") || "/");
   href={ link } 
   aria-current={ isActive ? "page" : undefined } 
   class={cn(
-    buttonVariants({ variant: isActive ? "default" : "ghost", size: isActive ? "lg" : "icon-lg" }),
+    buttonVariants({ variant: isActive ? "outline" : "ghost", size: isActive ? "lg" : "icon-lg" }),
     isActive ? "font-bold" : "", className
   )}
   { ...anchorProps }

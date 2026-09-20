@@ -1,10 +1,37 @@
 ---
 import HtmlLayout from "@layouts/htmlLayout.astro";
 import AppShell from "@layouts/appShell.astro";
+import ProfileCard from "@components/features/profile/profileCard.astro";
+import SocialNetworksCard from "@components/features/profile/socialNetworksCard.astro";
+import { Button } from "@ui/button";
+
+const profileBackground = "https://shared.akamai.steamstatic.com/community_assets/images/items/774171/47a38a74452538991f6553c06dbe5f71489d68e9.jpg";
 ---
 
-<HtmlLayout title="Main Page">
+<HtmlLayout title="Профіль">
   <AppShell>
-    <h1>Page is under construction</h1>
+    <div class="flex flex-col items-center gap-5 h-full pt-7 bg-cover bg-center" style={{
+      backgroundImage: `url(${profileBackground})`,
+    }}>
+      <ProfileCard
+        nickname="crocoby"
+        name="Ілля Дяденчук"
+        avatarUrl="https://avatars.akamai.steamstatic.com/fd0b33783d195ee9b335bb984d89f55be432b240_full.jpg"
+        frameUrl="https://shared.akamai.steamstatic.com/community_assets/images/items/1594460/3c64a25739fd5669308c2027feefc3a5c2badaf9.png"
+        bio="Люди не можуть нічого виграти, не пожертвувавши чимось. Щоб отримати щось рівноцінне, потрібно віддати дещо не менше"
+        class="w-full"
+        style={{ "maxWidth": "min(90%, 600px)" }}
+      />
+      <SocialNetworksCard
+        socialNetworks={{
+          "Telegram": "https://t.me/Im_Illia",
+          "GitHub": "https://github.com/dadencukillia",
+          "LinkedIn": "https://linkedin.com/in/dadencukillia"
+        }}
+        class="w-full"
+        style={{ "maxWidth": "min(90%, 600px)" }}
+      />
+      <Button variant="secondary">Налаштувати профіль</Button>
+    </div>
   </AppShell>
 </HtmlLayout>

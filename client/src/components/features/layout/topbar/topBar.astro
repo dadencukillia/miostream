@@ -11,10 +11,10 @@ type Props = HTMLAttributes<"div">;
 const { class: className } = Astro.props;
 ---
 
-<header class={cn("flex gap-3 h-20 items-center justify-between border-b border-border bg-background text-popover-foreground px-5 backdrop-blur-xl lg:px-10", className)}>
+<header class={cn("flex gap-3 h-20 items-center justify-between border-b border-border bg-background text-popover-foreground px-container backdrop-blur-xl", className)}>
   <div class="flex flex-1 max-w-md items-center gap-2 rounded-xl border border-border bg-secondary pl-3">
     <HugeiconsIcon icon={ Search02Icon } size={ 18 } />
-    <input class="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground pl-1 pr-3 py-2.5" placeholder="Search anime, genres, studios..." />
+    <input class="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground pl-1 pr-3 py-2.5" placeholder="Пошук аніме..." />
   </div>
   <div class="ml-auto flex items-center gap-1">
     <Button variant="ghost" size="icon-lg">

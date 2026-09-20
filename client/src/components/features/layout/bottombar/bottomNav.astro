@@ -31,7 +31,7 @@ const links: Link[] = [
   },
   {
     icon: ListVideoIcon,
-    title: "Мій список",
+    title: "Список",
     link: "/list",
     activeRegex: /^\/list/g
   },
@@ -44,7 +44,7 @@ const links: Link[] = [
 ];
 ---
 
-<nav class={cn("flex gap-6 h-15 items-center justify-center border-b border-border bg-popover text-popover-foreground px-5 backdrop-blur-xl lg:px-10", className)}>
+<nav class={cn("flex gap-6 h-15 items-center justify-center border-b border-border bg-popover text-popover-foreground px-container backdrop-blur-xl", className)}>
   { links.map(el => (<BottombarLink 
       icon={ el.icon }
       title={ el.title }

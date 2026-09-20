@@ -1,0 +1,24 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+import { cn } from 'cn';
+
+
+interface Props extends HTMLAttributes<"div"> {
+  socialNetworks: Record<string, string>
+}
+
+const {
+  socialNetworks,
+  class: className,
+  ...divAttributes
+} = Astro.props;
+---
+
+<div class={cn("flex flex-col gap-2 bg-background border border-border rounded-xl py-3 px-5", className)} {...divAttributes}>
+  <h1 class="text-lg font-bold">Соціальні мережі</h1>
+  <div class="flex flex-wrap gap-3">
+    { Object.entries(socialNetworks).map(([title, link]) => (
+      <a href={ link } class="hover:underline" target="_blank">{ title }</a>
+    )) }
+  </div>
+</div>
