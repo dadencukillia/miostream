@@ -4,16 +4,18 @@ type MockUser = {
   name: string | null;
 };
 
-type MockAuthSession = {
-  id: string;
+type MockGoogleRefreshToken = {
+  id: number;
   userId: number;
-  refreshToken: string;
-  expiresAt: string;
+  encryptedToken: string;
+  createdAt: string;
+  updatedAt: string;
 };
 
 const users: MockUser[] = [];
-const authSessions: MockAuthSession[] = [];
+const googleRefreshTokens: MockGoogleRefreshToken[] = [];
 let nextUserId = 1;
+let nextGoogleRefreshTokenId = 1;
 
 export const mockPrisma = {
   user: {
@@ -37,21 +39,33 @@ export const mockPrisma = {
       return Promise.resolve({ ...user });
     },
   },
-  authSession: {
-    create(input: MockAuthSession) {
-      authSessions.push({ ...input });
-      return Promise.resolve({ ...input });
-    },
-    where(input: { id: string }) {
-      return {
-        first: () => Promise.resolve(authSessions.find((session) => session.id === input.id) ?? null),
+  googleRefreshToken: {
+    upsert(input: { userId: number; encryptedToken: string }) {
+      const existing = googleRefreshTokens.find((token) => token.userId === input.userId);
+      const now = new Date().toISOString();
+
+      if (existing) {
+        existing.encryptedToken = input.encryptedToken;
+        existing.updatedAt = now;
+        return Promise.resolve({ ...existing });
+      }
+
+      const token = {
+        id: nextGoogleRefreshTokenId++,
+        userId: input.userId,
+        encryptedToken: input.encryptedToken,
+        createdAt: now,
+        updatedAt: now,
       };
+      googleRefreshTokens.push(token);
+      return Promise.resolve({ ...token });
     },
   },
 };
 
 export function resetMockPrisma() {
   users.length = 0;
-  authSessions.length = 0;
+  googleRefreshTokens.length = 0;
   nextUserId = 1;
+  nextGoogleRefreshTokenId = 1;
 }
