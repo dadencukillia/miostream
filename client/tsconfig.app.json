@@ -15,6 +15,7 @@
     "composite": true,
     "baseUrl": ".",
     "paths": {
+      "@layouts/*": [ "./src/layouts/*" ],
       "@styles/*": [ "./src/styles/*" ],
       "@components/*": [ "./src/components/*" ],
       "@ui/*": [ "./src/components/ui/*" ],

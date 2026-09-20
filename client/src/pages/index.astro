@@ -1,19 +1,8 @@
 ---
-import "../styles/global.css";
+import HtmlLayout from "@layouts/htmlLayout.astro";
 import { Button } from "@ui/button";
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-    <Button variant="default" size="lg">Hello</Button>
-	</body>
-</html>
+<HtmlLayout title="Main Page">
+  <Button>Hello</Button>
+</HtmlLayout>

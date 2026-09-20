@@ -1,0 +1,26 @@
+---
+import "@styles/global.css";
+import ThemeProvider from "@components/providers/theme.astro";
+
+interface Props {
+  lang?: string,
+  title: string
+}
+
+const props = Astro.props;
+---
+
+<html lang={ props.lang ?? "uk" }>
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="icon" href="/favicon.ico" />
+		<meta name="viewport" content="width=device-width" />
+    <title>{ props.title }</title>
+    <slot name="head" />
+    <ThemeProvider />
+	</head>
+	<body>
+    <slot />
+  </body>
+</html>

@@ -19,6 +19,7 @@ export default defineConfig({
     plugins: [tailwindcss()],
     resolve: {
       alias: {
+        "@layouts": resolveBase("./src/layouts"),
         "@styles": resolveBase("./src/styles"),
         "@components": resolveBase("./src/components"),
         "@ui": resolveBase("./src/components/ui"),
