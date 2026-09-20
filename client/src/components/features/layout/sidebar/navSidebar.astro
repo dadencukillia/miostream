@@ -1,0 +1,67 @@
+---
+import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
+import { Tv01Icon, Home05Icon, MagicWand02Icon, ListVideoIcon, User02Icon } from "@hugeicons/core-free-icons";
+import SidebarLink from "./link.astro";
+import * as config from "@lib/config";
+import type { HTMLAttributes } from "astro/types";
+import { cn } from "cn";
+
+type Props = HTMLAttributes<"div">;
+
+const { class: className } = Astro.props;
+
+interface Link {
+  icon: IconSvgElement,
+  title: string,
+  link: string,
+  activeRegex: RegExp
+}
+
+const links: Link[] = [
+  {
+    icon: Home05Icon,
+    title: "Головна",
+    link: "/",
+    activeRegex: /^\/$/g
+  },
+  {
+    icon: MagicWand02Icon,
+    title: "Досліджуй",
+    link: "/discover",
+    activeRegex: /^\/discover/g
+  },
+  {
+    icon: ListVideoIcon,
+    title: "Мій список",
+    link: "/list",
+    activeRegex: /^\/list/g
+  },
+  {
+    icon: User02Icon,
+    title: "Профіль",
+    link: "/profile",
+    activeRegex: /^\/profile/g
+  },
+];
+---
+
+<aside class={cn("flex w-64 flex-col border-r border-sidebar-border bg-sidebar px-4 py-7 transition-transform lg:translate-x-0", className)}>
+  <a href="/">
+    <div class="flex items-center gap-3 px-2">
+      <div class="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+        <HugeiconsIcon icon={ Tv01Icon } strokeWidth={ 2 } />
+      </div>
+      <span class="text-xl text-foreground font-bold tracking-tight">{ config.APP_NAME }</span>
+    </div>
+  </a>
+
+  <nav class="mt-12 flex flex-col gap-2">
+    { links.map(el => (<SidebarLink 
+        icon={ el.icon }
+        title={ el.title }
+        link={ el.link }
+        activeRegex={ el.activeRegex }
+      />)
+    ) }
+  </nav>
+</aside>

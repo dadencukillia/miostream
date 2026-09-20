@@ -1,0 +1,35 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+import { buttonVariants } from "@ui/button";
+import { HugeiconsIcon, type IconSvgElement } from '@hugeicons/react';
+import { cn } from 'cn';
+
+interface Props extends HTMLAttributes<"a"> {
+  icon: IconSvgElement,
+  title: string,
+  link: string,
+  activeRegex: RegExp
+}
+
+const { 
+  class: className, 
+  icon, title, link, activeRegex, 
+  ...anchorProps 
+} = Astro.props;
+
+const isActive = activeRegex.test(Astro.url.pathname.replace(/\/$/, "") || "/");
+---
+
+<a
+  href={ link } 
+  aria-current={ isActive ? "page" : undefined } 
+  class={cn(
+    buttonVariants({ variant: isActive ? "default" : "ghost", size: "lg" }),
+    "justify-start",
+    isActive ? "font-bold" : "", className
+  )}
+  { ...anchorProps }
+>
+  <HugeiconsIcon size={ 20 } icon={ icon } strokeWidth={ isActive ? 3 : 2 } />
+  <span>{ title }</span>
+</a>
