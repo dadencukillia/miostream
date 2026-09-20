@@ -89,7 +89,9 @@ describe("auth routes", () => {
 		const response = await app.inject({ method: "POST", url: "/auth/logout" });
 
 		expect(response.statusCode).toBe(204);
-		expect(response.headers["set-cookie"]).toContain("auth_token=;");
+		const setCookie = response.headers["set-cookie"];
+		const cookies = Array.isArray(setCookie) ? setCookie : [setCookie];
+		expect(cookies).toContain("auth_token=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0");
 		await app.close();
 	});
 });

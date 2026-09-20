@@ -1,4 +1,4 @@
-import type { FastifyPluginCallback, FastifyRequest } from "fastify";
+import type { FastifyPluginCallback, FastifyReply, FastifyRequest } from "fastify";
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import { AUTH_COOKIE_NAME, GOOGLE_CLIENT_ID } from "../config/config";
 import { exchangeGoogleCode, googleLoginUrl, handleGoogleUser, verifyAuthToken } from "../services/auth.service";
@@ -14,12 +14,19 @@ function cookieValue(request: FastifyRequest, name: string) {
 	return request.headers.cookie?.split(";").map((item) => item.trim()).find((item) => item.startsWith(`${name}=`))?.slice(name.length + 1);
 }
 
-export async function authMiddleware(request: FastifyRequest, reply: { code: (status: number) => { send: (body: unknown) => void } }) {
+export function authMiddleware(request: FastifyRequest, reply: FastifyReply, done: () => void) {
 	const token = cookieValue(request, AUTH_COOKIE_NAME);
-	if (!token) return reply.code(401).send({ error: "unauthorized" });
+	if (!token) {
+		reply.code(401).send({ error: "unauthorized" });
+		return;
+	}
 	const claims = verifyAuthToken(token);
-	if (!claims) return reply.code(401).send({ error: "unauthorized" });
+	if (!claims) {
+		reply.code(401).send({ error: "unauthorized" });
+		return;
+	}
 	request.user = { id: claims.userId };
+	done();
 }
 
 const plugin: FastifyPluginCallback = (fastify, _opts, done) => {
