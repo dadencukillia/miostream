@@ -6,6 +6,11 @@ import { UserService } from './api/user/user.service';
 
 const fastify = Fastify({
   logger: true,
+  ajv: {
+    customOptions: {
+      unicodeRegExp: true,
+    }
+  },
 });
 
 const userRepo = new UserRepository(prisma);

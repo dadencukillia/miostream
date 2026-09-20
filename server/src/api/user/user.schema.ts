@@ -47,13 +47,41 @@ export const createUserSchema = {
             'password',
         ],
         properties: {
-            nickname: { type: 'string', minLength: 3, maxLength: 30 },
-            name: { type: 'string', minLength: 3, maxLength: 100 },
-            email: { type: 'string', format: 'email' },
-            password: { type: 'string', minLength: 8 },
-            bio: { type: 'string' },
-            avatar_url: { type: 'string' },
-            social_networks: { type: 'array', items: { type: 'string', format: 'uri' } },
+            nickname: { 
+                type: 'string',
+                minLength: 3,
+                maxLength: 30,
+                pattern: '^[a-zA-Z0-9_]+$'
+            },
+            name: { 
+                type: 'string',
+                minLength: 3,
+                maxLength: 100,
+                pattern: '^[\\p{L}]([\\p{L} \'\\u2019\\u02BC.-]*[\\p{L}.])?$'
+            },
+            email: { 
+                type: 'string', 
+                format: 'email'
+            },
+            password: { 
+                type: 'string', 
+                minLength: 8
+            },
+            bio: { 
+                type: 'string',
+                pattern: '^[^<>]*$'
+            },
+            avatar_url: { 
+                type: 'string',
+                pattern: '^[^<>]*$'
+            },
+            social_networks: { 
+                type: 'array', 
+                items: { 
+                    type: 'string', 
+                    format: 'uri'
+                } 
+            },
             profile_frame: { type: 'string', enum: Object.values(ProfileFrame) },
             profile_background: { type: 'string', enum: Object.values(ProfileBackground) }
         },
@@ -81,21 +109,35 @@ export const updateUserSchema = {
             nickname: { 
                 type: 'string',
                 minLength: 3,
-                maxLength: 30
+                maxLength: 30,
+                pattern: '^[a-zA-Z0-9_]+$'
             },
             name: {
                 type: 'string',
                 minLength: 3,
-                maxLength: 100
+                maxLength: 100,
+                pattern: '^[\\p{L}]([\\p{L} \'\\u2019\\u02BC.-]*[\\p{L}.])?$'
             },
             email: { 
                 type: 'string',
-                format: 'email' 
+                format: 'email'
             },
-            bio:                { type: 'string' },
-            avatar_url:         { type: 'string' },
-            social_networks:    { type: 'array', items: { type: 'string', format: 'uri' } },
-            profile_frame:      { type: 'string', enum: Object.values(ProfileFrame) },
+            bio: { 
+                type: 'string',
+                pattern: '^[^<>]*$' 
+            },
+            avatar_url: { 
+                type: 'string',
+                pattern: '^[^<>]*$'
+            },
+            social_networks: { 
+                type: 'array', 
+                items: { 
+                    type: 'string', 
+                    format: 'uri'
+                } 
+            },
+            profile_frame: { type: 'string', enum: Object.values(ProfileFrame) },
             profile_background: { type: 'string', enum: Object.values(ProfileBackground) }
         },
         additionalProperties: false

@@ -2,7 +2,8 @@ import type {
     FastifyInstance, 
     FastifyPluginOptions, 
     FastifyRequest, 
-    FastifyReply 
+    FastifyReply,
+    FastifyError
 } from 'fastify';
 import {
     createUserSchema,
@@ -25,7 +26,14 @@ export class UserController{
         fastify: FastifyInstance,
         _opts: FastifyPluginOptions
     ) => {
-        fastify.setErrorHandler((error, request, reply) => {
+        fastify.setErrorHandler<FastifyError>((error, request, reply) => {
+            if (error.validation) {
+                return reply.status(400).send({
+                    ok: false,
+                    message: error.message,
+                })
+            }
+
             if (error instanceof UserError) {
                 return reply.status(error.status).send({
                     ok: false,
