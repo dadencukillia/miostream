@@ -31,6 +31,8 @@ services:
     image: ghcr.io/${GITHUB_REPO}/backend:${IMAGES_TAG:-latest}
     environment:
       DB_PASS_FILE: /run/secrets/db_pass
+      GOOGLE_CLIENT_SECRET_FILE: /run/secrets/google_client_secret
+      AUTH_JWT_SECRET_FILE: /run/secrets/auth_jwt_secret
       POSTGRES_HOST: postgresql:5432
       REDIS_HOST: redis:6379
       RUSTFS_HOST: rustfs:9000
@@ -45,6 +47,8 @@ services:
       start_period: 10s
     secrets:
       - db_pass
+      - google_client_secret
+      - auth_jwt_secret
     deploy:
       restart_policy:
         condition: any
@@ -204,4 +208,8 @@ secrets:
   rustfs_access_key:
     external: true
   rustfs_secret_key:
+    external: true
+  google_client_secret:
+    external: true
+  auth_jwt_secret:
     external: true
