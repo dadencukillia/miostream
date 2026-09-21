@@ -1,0 +1,46 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+import { cn } from 'cn';
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Fire03Icon, ListIcon, ClapperboardIcon, TimeQuarterPassIcon, HeartIcon } from "@hugeicons/core-free-icons";
+
+
+interface Props extends HTMLAttributes<"div"> {
+  socialNetworks: Record<string, string>
+}
+
+const {
+  socialNetworks,
+  class: className,
+  ...divAttributes
+} = Astro.props;
+---
+
+<div class={cn("flex flex-col gap-2 bg-background border border-border rounded-xl p-2", className)} {...divAttributes}>
+  <div class="flex flex-wrap gap-3 items-between">
+    <div class="flex flex-1 flex-col gap-2 items-center justify-center aspect-square border-border rounded-sm p-3 pt-5 cursor-pointer text-muted-foreground hover:text-foreground hover:bg-accent">
+      <HugeiconsIcon icon={ ListIcon } strokeWidth={ 0.75 } size={ 48 } />
+      <span class="text-sm text-center leading-none">366</span>
+    </div>
+
+    <div class="flex flex-1 flex-col gap-2 items-center justify-center aspect-square border-border rounded-sm p-3 pt-5 cursor-pointer text-muted-foreground hover:text-foreground hover:bg-accent">
+      <HugeiconsIcon icon={ ClapperboardIcon } strokeWidth={ 0.75 } size={ 48 } />
+      <span class="text-sm text-center leading-none">3,660</span>
+    </div>
+
+    <div class="flex flex-1 flex-col gap-2 items-center justify-center aspect-square border-border rounded-sm p-3 pt-5 cursor-pointer text-muted-foreground hover:text-foreground hover:bg-accent">
+      <HugeiconsIcon className="text-red-600" icon={ Fire03Icon } strokeWidth={ 0.75 } size={ 48 } />
+      <span class="text-sm text-center leading-none">1,000</span>
+    </div>
+
+    <div class="flex flex-1 flex-col gap-2 items-center justify-center aspect-square border-border rounded-sm p-3 pt-5 cursor-pointer text-muted-foreground hover:text-foreground hover:bg-accent">
+      <HugeiconsIcon icon={ TimeQuarterPassIcon } strokeWidth={ 0.75 } size={ 48 } />
+      <span class="text-sm text-center leading-none">63 дні</span>
+    </div>
+
+    <div class="flex flex-1 flex-col gap-2 items-center justify-center aspect-square border-border rounded-sm p-3 pt-5 cursor-pointer text-muted-foreground hover:text-foreground hover:bg-accent">
+      <HugeiconsIcon icon={ HeartIcon } strokeWidth={ 0.75 } size={ 48 } />
+      <span class="text-sm text-center leading-none">5</span>
+    </div>
+  </div>
+</div>

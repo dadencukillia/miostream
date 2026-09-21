@@ -14,7 +14,7 @@ const {
 } = Astro.props;
 ---
 
-<div class={cn("flex flex-col gap-2 bg-background border border-border rounded-xl py-3 px-5", className)} {...divAttributes}>
+<div class={cn("flex flex-col gap-2 bg-background border border-border rounded-xl p-5 pt-3", className)} {...divAttributes}>
   <h1 class="text-lg font-bold">Соціальні мережі</h1>
   <div class="flex flex-wrap gap-3">
     { Object.entries(socialNetworks).map(([title, link]) => (

@@ -3,6 +3,7 @@ import HtmlLayout from "@layouts/htmlLayout.astro";
 import AppShell from "@layouts/appShell.astro";
 import ProfileCard from "@components/features/profile/profileCard.astro";
 import SocialNetworksCard from "@components/features/profile/socialNetworksCard.astro";
+import StatsCard from "@components/features/profile/statsCard.astro";
 import { Button } from "@ui/button";
 
 const profileBackground = "https://shared.akamai.steamstatic.com/community_assets/images/items/774171/47a38a74452538991f6553c06dbe5f71489d68e9.jpg";
@@ -19,6 +20,10 @@ const profileBackground = "https://shared.akamai.steamstatic.com/community_asset
         avatarUrl="https://avatars.akamai.steamstatic.com/fd0b33783d195ee9b335bb984d89f55be432b240_full.jpg"
         frameUrl="https://shared.akamai.steamstatic.com/community_assets/images/items/1594460/3c64a25739fd5669308c2027feefc3a5c2badaf9.png"
         bio="Люди не можуть нічого виграти, не пожертвувавши чимось. Щоб отримати щось рівноцінне, потрібно віддати дещо не менше"
+        class="w-full"
+        style={{ "maxWidth": "min(90%, 600px)" }}
+      />
+      <StatsCard
         class="w-full"
         style={{ "maxWidth": "min(90%, 600px)" }}
       />
