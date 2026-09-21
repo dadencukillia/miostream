@@ -1,11 +1,10 @@
-import { describe, it, expect, mock, beforeEach } from "bun:test";
-import type { IUserRepository } from "../../src/api/user/user.repository";
-import { UserService } from "../../src/api/user/user.service";
+import { describe, it, expect, spyOn, beforeEach, afterEach } from "bun:test";
+import * as userRepo from "../../src/api/user/user.repository";
+import * as userService from "../../src/api/user/user.service";
 import {
   UserError,
   UserInvalidError,
   UserNotFoundError,
-  UserAlreadyExistsError,
 } from "../../src/api/user/user.errors";
 
 const FAKE_ID = "00000000-0000-0000-0000-000000000000";
@@ -29,22 +28,30 @@ const FAKE_USER = {
   updated_at: new Date(),
 } as any;
 
-describe("UserService", () => {
-  let mockRepo: IUserRepository;
-  let service: UserService;
+describe("user.service", () => {
+  let mockCreateUser: ReturnType<typeof spyOn<typeof userRepo, "createUser">>;
+  let mockGetUserById: ReturnType<typeof spyOn<typeof userRepo, "getUserById">>;
+  let mockGetUserByEmail: ReturnType<typeof spyOn<typeof userRepo, "getUserByEmail">>;
+  let mockUpdateUser: ReturnType<typeof spyOn<typeof userRepo, "updateUser">>;
+  let mockDeleteUser: ReturnType<typeof spyOn<typeof userRepo, "deleteUser">>;
 
   beforeEach(() => {
-    mockRepo = {
-      create: mock(),
-      getById: mock(),
-      getByEmail: mock(),
-      update: mock(),
-      delete: mock(),
-    };
-    service = new UserService(mockRepo);
+    mockCreateUser = spyOn(userRepo, "createUser");
+    mockGetUserById = spyOn(userRepo, "getUserById");
+    mockGetUserByEmail = spyOn(userRepo, "getUserByEmail");
+    mockUpdateUser = spyOn(userRepo, "updateUser");
+    mockDeleteUser = spyOn(userRepo, "deleteUser");
   });
 
-  describe("create", () => {
+  afterEach(() => {
+    mockCreateUser.mockRestore();
+    mockGetUserById.mockRestore();
+    mockGetUserByEmail.mockRestore();
+    mockUpdateUser.mockRestore();
+    mockDeleteUser.mockRestore();
+  });
+
+  describe("createUser", () => {
     const validInput = {
       nickname: "tester",
       name: "Test User",
@@ -54,25 +61,25 @@ describe("UserService", () => {
 
     it("throws UserInvalidError if password is missing", async () => {
       await expect(
-        service.create({ ...validInput, password: undefined as any })
+        userService.createUser({ ...validInput, password: undefined as any })
       ).rejects.toThrow(UserInvalidError);
-      expect(mockRepo.create).not.toHaveBeenCalled();
+      expect(mockCreateUser).not.toHaveBeenCalled();
     });
 
     it("throws UserInvalidError if password is shorter than 8 characters", async () => {
       await expect(
-        service.create({ ...validInput, password: "short" })
+        userService.createUser({ ...validInput, password: "short" })
       ).rejects.toThrow(UserInvalidError);
-      expect(mockRepo.create).not.toHaveBeenCalled();
+      expect(mockCreateUser).not.toHaveBeenCalled();
     });
 
     it("calls the repository without the plaintext password", async () => {
-      (mockRepo.create as any).mockResolvedValue(FAKE_USER);
+      mockCreateUser.mockResolvedValue([FAKE_USER]);
 
-      await service.create(validInput);
+      await userService.createUser(validInput);
 
-      expect(mockRepo.create).toHaveBeenCalledTimes(1);
-      const repoArg = (mockRepo.create as any).mock.calls[0][0];
+      expect(mockCreateUser).toHaveBeenCalledTimes(1);
+      const repoArg = mockCreateUser.mock.calls[0]?.[0] as any;
       expect(repoArg.password).toBeUndefined();
       expect(repoArg.password_hash).toBeTruthy();
       expect(repoArg.nickname).toBe(validInput.nickname);
@@ -80,157 +87,108 @@ describe("UserService", () => {
     });
 
     it("returns the created user on success", async () => {
-      (mockRepo.create as any).mockResolvedValue(FAKE_USER);
+      mockCreateUser.mockResolvedValue([FAKE_USER]);
 
-      const result = await service.create(validInput);
+      const result = await userService.createUser(validInput);
 
       expect(result).toEqual(FAKE_USER);
     });
 
-    it("re-throws UserError subclasses from the repo unchanged", async () => {
-      const original = new UserAlreadyExistsError("duplicate nickname/email");
-      (mockRepo.create as any).mockRejectedValue(original);
+    it("throws a generic UserError when the repository returns no row", async () => {
+      mockCreateUser.mockResolvedValue([]);
 
-      await expect(service.create(validInput)).rejects.toThrow(
-        UserAlreadyExistsError
-      );
+      await expect(userService.createUser(validInput)).rejects.toThrow(UserError);
     });
 
-    it("wraps unexpected repo errors in a generic UserError", async () => {
-      (mockRepo.create as any).mockRejectedValue(new Error("connection reset"));
+    it("propagates repository errors unchanged", async () => {
+      mockCreateUser.mockRejectedValue(new Error("connection reset"));
 
-      const promise = service.create(validInput);
-      await expect(promise).rejects.toThrow(UserError);
-      await expect(promise).rejects.not.toThrow(UserAlreadyExistsError);
+      const promise = userService.createUser(validInput);
+      await expect(promise).rejects.toThrow("connection reset");
+      await expect(promise).rejects.not.toBeInstanceOf(UserError);
     });
   });
 
-  describe("getById", () => {
+  describe("getUserById", () => {
     it("throws UserInvalidError for an empty id", async () => {
-      await expect(service.getById("")).rejects.toThrow(UserInvalidError);
+      await expect(userService.getUserById("")).rejects.toThrow(UserInvalidError);
     });
 
     it("throws UserInvalidError for a whitespace-only id", async () => {
-      await expect(service.getById("   ")).rejects.toThrow(UserInvalidError);
+      await expect(userService.getUserById("   ")).rejects.toThrow(UserInvalidError);
     });
 
-    it("throws UserNotFoundError if the repo returns null", async () => {
-      (mockRepo.getById as any).mockResolvedValue(null);
+    it("throws UserNotFoundError when the repository returns no row", async () => {
+      mockGetUserById.mockResolvedValue([]);
 
-      await expect(service.getById(FAKE_ID)).rejects.toThrow(
-        UserNotFoundError
-      );
+      await expect(userService.getUserById(FAKE_ID)).rejects.toThrow(UserNotFoundError);
     });
 
     it("returns the user when found", async () => {
-      (mockRepo.getById as any).mockResolvedValue(FAKE_USER);
+      mockGetUserById.mockResolvedValue([FAKE_USER]);
 
-      const result = await service.getById(FAKE_ID);
+      const result = await userService.getUserById(FAKE_ID);
 
       expect(result).toEqual(FAKE_USER);
     });
   });
 
-  describe("update", () => {
+  describe("updateUser", () => {
     const patch = { name: "New Name" };
 
     it("throws UserInvalidError for an empty id", async () => {
-      await expect(service.update("", patch)).rejects.toThrow(
-        UserInvalidError
-      );
+      await expect(userService.updateUser("", patch)).rejects.toThrow(UserInvalidError);
     });
 
     it("throws UserInvalidError for an empty update payload", async () => {
-      await expect(service.update(FAKE_ID, {})).rejects.toThrow(
-        UserInvalidError
-      );
-      expect(mockRepo.getById).not.toHaveBeenCalled();
+      await expect(userService.updateUser(FAKE_ID, {})).rejects.toThrow(UserInvalidError);
+      expect(mockUpdateUser).not.toHaveBeenCalled();
     });
 
-    it("throws UserNotFoundError if the user does not exist", async () => {
-      (mockRepo.getById as any).mockResolvedValue(null);
+    it("throws a generic UserError, not UserNotFoundError, when the repository returns no row", async () => {
+      mockUpdateUser.mockResolvedValue([]);
 
-      await expect(service.update(FAKE_ID, patch)).rejects.toThrow(
-        UserNotFoundError
-      );
-      expect(mockRepo.update).not.toHaveBeenCalled();
-    });
-
-    it("throws UserNotFoundError if the row is deleted between the existence check and the update", async () => {
-      (mockRepo.getById as any).mockResolvedValue(FAKE_USER);
-      (mockRepo.update as any).mockResolvedValue(null);
-
-      await expect(service.update(FAKE_ID, patch)).rejects.toThrow(
-        UserNotFoundError
-      );
-    });
-
-    it("re-throws UserError subclasses from repo.update unchanged", async () => {
-      (mockRepo.getById as any).mockResolvedValue(FAKE_USER);
-      (mockRepo.update as any).mockRejectedValue(
-        new UserAlreadyExistsError("email taken")
-      );
-
-      await expect(service.update(FAKE_ID, patch)).rejects.toThrow(
-        UserAlreadyExistsError
-      );
-    });
-
-    it("wraps unexpected repo.update errors in a generic UserError", async () => {
-      (mockRepo.getById as any).mockResolvedValue(FAKE_USER);
-      (mockRepo.update as any).mockRejectedValue(new Error("timeout"));
-
-      const promise = service.update(FAKE_ID, patch);
+      const promise = userService.updateUser(FAKE_ID, patch);
       await expect(promise).rejects.toThrow(UserError);
-      await expect(promise).rejects.not.toThrow(UserNotFoundError);
+      await expect(promise).rejects.not.toBeInstanceOf(UserNotFoundError);
+    });
+
+    it("propagates repository errors unchanged", async () => {
+      mockUpdateUser.mockRejectedValue(new Error("timeout"));
+
+      await expect(userService.updateUser(FAKE_ID, patch)).rejects.toThrow("timeout");
     });
 
     it("returns the updated user on success", async () => {
-      (mockRepo.getById as any).mockResolvedValue(FAKE_USER);
-      const updated = { ...FAKE_USER, name: "New Name" };
-      (mockRepo.update as any).mockResolvedValue(updated);
+      mockUpdateUser.mockResolvedValue([{ ...FAKE_USER, name: "New Name" }]);
 
-      const result = await service.update(FAKE_ID, patch);
+      const result = await userService.updateUser(FAKE_ID, patch);
 
       expect(result.name).toBe("New Name");
     });
   });
 
-  describe("delete", () => {
+  describe("deleteUser", () => {
     it("throws UserInvalidError for an empty id", async () => {
-      await expect(service.delete("")).rejects.toThrow(UserInvalidError);
+      await expect(userService.deleteUser("")).rejects.toThrow(UserInvalidError);
     });
 
-    it("throws UserNotFoundError if the user does not exist", async () => {
-      (mockRepo.getById as any).mockResolvedValue(null);
+    it("throws a generic UserError when the repository reports zero affected rows", async () => {
+      mockDeleteUser.mockResolvedValue(0);
 
-      await expect(service.delete(FAKE_ID)).rejects.toThrow(
-        UserNotFoundError
-      );
-      expect(mockRepo.delete).not.toHaveBeenCalled();
+      await expect(userService.deleteUser(FAKE_ID)).rejects.toThrow(UserError);
     });
 
-    it("throws UserNotFoundError if repo.delete reports nothing was deleted", async () => {
-      (mockRepo.getById as any).mockResolvedValue(FAKE_USER);
-      (mockRepo.delete as any).mockResolvedValue(false);
+    it("propagates repository errors unchanged", async () => {
+      mockDeleteUser.mockRejectedValue(new Error("fk violation"));
 
-      await expect(service.delete(FAKE_ID)).rejects.toThrow(
-        UserNotFoundError
-      );
+      await expect(userService.deleteUser(FAKE_ID)).rejects.toThrow("fk violation");
     });
 
-    it("wraps unexpected repo.delete errors in a generic UserError", async () => {
-      (mockRepo.getById as any).mockResolvedValue(FAKE_USER);
-      (mockRepo.delete as any).mockRejectedValue(new Error("fk violation"));
+    it("resolves without error when a row is deleted", async () => {
+      mockDeleteUser.mockResolvedValue(1);
 
-      await expect(service.delete(FAKE_ID)).rejects.toThrow(UserError);
-    });
-
-    it("resolves without error on success", async () => {
-      (mockRepo.getById as any).mockResolvedValue(FAKE_USER);
-      (mockRepo.delete as any).mockResolvedValue(true);
-
-      await expect(service.delete(FAKE_ID)).resolves.toBeUndefined();
+      await expect(userService.deleteUser(FAKE_ID)).resolves.toBeUndefined();
     });
   });
 });

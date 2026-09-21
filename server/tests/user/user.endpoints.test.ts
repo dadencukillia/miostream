@@ -1,7 +1,7 @@
-import { describe, it, expect, mock, beforeEach } from "bun:test";
+import { describe, it, expect, spyOn, beforeEach, afterEach } from "bun:test";
 import Fastify, { type FastifyInstance } from "fastify";
-import { UserController } from "../../src/api/user/user.controller";
-import { UserService } from "../../src/api/user/user.service";
+import * as userService from "../../src/api/user/user.service";
+import userPlugin from "../../src/api/user/user.plugin";
 import {
   UserNotFoundError,
   UserAlreadyExistsError,
@@ -25,16 +25,17 @@ const validCreatePayload = {
 };
 
 describe("User Routes (HTTP)", () => {
-  let mockService: UserService;
   let app: FastifyInstance;
+  let createUserSpy: ReturnType<typeof spyOn<typeof userService, "createUser">>;
+  let getUserByIdSpy: ReturnType<typeof spyOn<typeof userService, "getUserById">>;
+  let updateUserSpy: ReturnType<typeof spyOn<typeof userService, "updateUser">>;
+  let deleteUserSpy: ReturnType<typeof spyOn<typeof userService, "deleteUser">>;
 
-  beforeEach(() => {
-    mockService = {
-      create: mock(),
-      getById: mock(),
-      update: mock(),
-      delete: mock(),
-    } as unknown as UserService;
+  beforeEach(async () => {
+    createUserSpy = spyOn(userService, "createUser");
+    getUserByIdSpy = spyOn(userService, "getUserById");
+    updateUserSpy = spyOn(userService, "updateUser");
+    deleteUserSpy = spyOn(userService, "deleteUser");
 
     app = Fastify({
       ajv: {
@@ -44,13 +45,21 @@ describe("User Routes (HTTP)", () => {
         },
       },
     });
-    const controller = new UserController(mockService);
-    app.register(controller.registerRoutes, { prefix: "/api/user" });
+
+    await app.register(userPlugin, { prefix: "/api/user" });
+    await app.ready();
+  });
+
+  afterEach(() => {
+    createUserSpy.mockRestore();
+    getUserByIdSpy.mockRestore();
+    updateUserSpy.mockRestore();
+    deleteUserSpy.mockRestore();
   });
 
   describe("POST /api/user", () => {
     it("returns 201 and the created user on success", async () => {
-      (mockService.create as any).mockResolvedValue(FAKE_USER);
+      createUserSpy.mockResolvedValue(FAKE_USER as any);
 
       const response = await app.inject({
         method: "POST",
@@ -71,7 +80,7 @@ describe("User Routes (HTTP)", () => {
 
       expect(response.statusCode).toBe(400);
       expect(JSON.parse(response.body).ok).toBe(false);
-      expect(mockService.create).not.toHaveBeenCalled();
+      expect(createUserSpy).not.toHaveBeenCalled();
     });
 
     it("returns 400 on invalid email format", async () => {
@@ -82,6 +91,7 @@ describe("User Routes (HTTP)", () => {
       });
 
       expect(response.statusCode).toBe(400);
+      expect(createUserSpy).not.toHaveBeenCalled();
     });
 
     it("returns 400 when a required field is missing", async () => {
@@ -94,6 +104,7 @@ describe("User Routes (HTTP)", () => {
       });
 
       expect(response.statusCode).toBe(400);
+      expect(createUserSpy).not.toHaveBeenCalled();
     });
 
     it("returns 400 when the body contains an unknown property", async () => {
@@ -104,10 +115,11 @@ describe("User Routes (HTTP)", () => {
       });
 
       expect(response.statusCode).toBe(400);
+      expect(createUserSpy).not.toHaveBeenCalled();
     });
 
     it("returns 409 when the service reports a duplicate user", async () => {
-      (mockService.create as any).mockRejectedValue(
+      createUserSpy.mockRejectedValue(
         new UserAlreadyExistsError("User already exists")
       );
 
@@ -122,7 +134,7 @@ describe("User Routes (HTTP)", () => {
     });
 
     it("returns 500 with a generic message on an unexpected error", async () => {
-      (mockService.create as any).mockRejectedValue(new Error("boom"));
+      createUserSpy.mockRejectedValue(new Error("boom"));
 
       const response = await app.inject({
         method: "POST",
@@ -131,13 +143,16 @@ describe("User Routes (HTTP)", () => {
       });
 
       expect(response.statusCode).toBe(500);
-      expect(JSON.parse(response.body)).toEqual({ ok: false, message: "Unexpected error" });
+      expect(JSON.parse(response.body)).toEqual({
+        ok: false,
+        message: "Unexpected error",
+      });
     });
   });
 
   describe("GET /api/user/:id", () => {
     it("returns 200 and the user on success", async () => {
-      (mockService.getById as any).mockResolvedValue(FAKE_USER);
+      getUserByIdSpy.mockResolvedValue(FAKE_USER as any);
 
       const response = await app.inject({
         method: "GET",
@@ -155,13 +170,11 @@ describe("User Routes (HTTP)", () => {
       });
 
       expect(response.statusCode).toBe(400);
-      expect(mockService.getById).not.toHaveBeenCalled();
+      expect(getUserByIdSpy).not.toHaveBeenCalled();
     });
 
     it("returns 404 when the service reports the user was not found", async () => {
-      (mockService.getById as any).mockRejectedValue(
-        new UserNotFoundError("not found")
-      );
+      getUserByIdSpy.mockRejectedValue(new UserNotFoundError("not found"));
 
       const response = await app.inject({
         method: "GET",
@@ -174,10 +187,10 @@ describe("User Routes (HTTP)", () => {
 
   describe("PATCH /api/user/:id", () => {
     it("returns 200 and the updated user on success", async () => {
-      (mockService.update as any).mockResolvedValue({
+      updateUserSpy.mockResolvedValue({
         ...FAKE_USER,
         name: "New Name",
-      });
+      } as any);
 
       const response = await app.inject({
         method: "PATCH",
@@ -197,7 +210,7 @@ describe("User Routes (HTTP)", () => {
       });
 
       expect(response.statusCode).toBe(400);
-      expect(mockService.update).not.toHaveBeenCalled();
+      expect(updateUserSpy).not.toHaveBeenCalled();
     });
 
     it("returns 400 when the body contains an unknown property", async () => {
@@ -208,12 +221,11 @@ describe("User Routes (HTTP)", () => {
       });
 
       expect(response.statusCode).toBe(400);
+      expect(updateUserSpy).not.toHaveBeenCalled();
     });
 
     it("returns 404 when the service reports the user was not found", async () => {
-      (mockService.update as any).mockRejectedValue(
-        new UserNotFoundError("not found")
-      );
+      updateUserSpy.mockRejectedValue(new UserNotFoundError("not found"));
 
       const response = await app.inject({
         method: "PATCH",
@@ -225,7 +237,7 @@ describe("User Routes (HTTP)", () => {
     });
 
     it("returns 400 when the service reports an invalid update", async () => {
-      (mockService.update as any).mockRejectedValue(
+      updateUserSpy.mockRejectedValue(
         new UserInvalidError("Update payload cannot be empty")
       );
 
@@ -241,7 +253,7 @@ describe("User Routes (HTTP)", () => {
 
   describe("DELETE /api/user/:id", () => {
     it("returns 204 with no body on success", async () => {
-      (mockService.delete as any).mockResolvedValue(undefined);
+      deleteUserSpy.mockResolvedValue(undefined);
 
       const response = await app.inject({
         method: "DELETE",
@@ -259,13 +271,11 @@ describe("User Routes (HTTP)", () => {
       });
 
       expect(response.statusCode).toBe(400);
-      expect(mockService.delete).not.toHaveBeenCalled();
+      expect(deleteUserSpy).not.toHaveBeenCalled();
     });
 
     it("returns 404 when the service reports the user was not found", async () => {
-      (mockService.delete as any).mockRejectedValue(
-        new UserNotFoundError("not found")
-      );
+      deleteUserSpy.mockRejectedValue(new UserNotFoundError("not found"));
 
       const response = await app.inject({
         method: "DELETE",

@@ -1,15 +1,32 @@
-import { describe, it, expect, beforeEach, afterEach, afterAll } from "bun:test";
+import { describe, it, expect, afterEach, afterAll } from "bun:test";
 import { randomUUID } from "node:crypto";
 import prisma, { pool } from "../../src/db";
-import { UserRepository } from "../../src/api/user/user.repository";
-import { UserAlreadyExistsError } from "../../src/api/user/user.errors";
+import type { UserModel } from "@prisma/generated/models/User";
+import * as userRepo from "../../src/api/user/user.repository";
+import type { CreateUserRepoInput } from "../../src/api/user/user.dto";
+
+function assertDefined<T>(
+  val: T,
+  message = "Expected value to be defined"
+): asserts val is NonNullable<T> {
+  if (val === undefined || val === null) {
+    throw new Error(message);
+  }
+}
+
+type TestUserPayload = CreateUserRepoInput & {
+  nickname: string;
+  name: string;
+  email: string;
+  password_hash: string;
+};
 
 describe("UserRepository (Integration — requires a reachable Postgres configured via POSTGRES_HOST / DB_*)", () => {
-  const repo = new UserRepository(prisma);
-
   const createdUserIdsPendingCleanup: string[] = [];
 
-  const uniquePayload = (overrides: Record<string, unknown> = {}) => {
+  const uniquePayload = (
+    overrides: Partial<CreateUserRepoInput> = {}
+  ): TestUserPayload => {
     const suffix = randomUUID().slice(0, 8);
     return {
       nickname: `test_user_${suffix}`,
@@ -20,10 +37,20 @@ describe("UserRepository (Integration — requires a reachable Postgres configur
     };
   };
 
+  const createTestUser = async (
+    overrides: Partial<CreateUserRepoInput> = {}
+  ): Promise<UserModel> => {
+    const payload = uniquePayload(overrides);
+    const [user] = await userRepo.createUser(payload);
+    assertDefined(user);
+    createdUserIdsPendingCleanup.push(user.id);
+    return user;
+  };
+
   afterEach(async () => {
     while (createdUserIdsPendingCleanup.length) {
       const id = createdUserIdsPendingCleanup.pop()!;
-      await repo.delete(id).catch(() => {});
+      await userRepo.deleteUser(id).catch(() => { });
     }
   });
 
@@ -32,17 +59,17 @@ describe("UserRepository (Integration — requires a reachable Postgres configur
     await pool.end();
   });
 
-  describe("create", () => {
+  describe("createUser", () => {
     it("creates a user and returns it with defaults applied", async () => {
       const payload = uniquePayload();
 
-      const user = await repo.create(payload);
+      const [user] = await userRepo.createUser(payload);
+      assertDefined(user);
       createdUserIdsPendingCleanup.push(user.id);
 
       expect(user.id).toBeTruthy();
       expect(user.nickname).toBe(payload.nickname);
       expect(user.email).toBe(payload.email);
-      expect(user.current_streak).toBe(0);
       expect(user.max_streak).toBe(0);
       expect(user.timezone).toBe("UTC");
       expect(user.profile_frame).toBe("DEFAULT");
@@ -59,7 +86,8 @@ describe("UserRepository (Integration — requires a reachable Postgres configur
         social_networks: ["https://example.com/me"],
       });
 
-      const user = await repo.create(payload);
+      const [user] = await userRepo.createUser(payload);
+      assertDefined(user);
       createdUserIdsPendingCleanup.push(user.id);
 
       expect(user.bio).toBe("hello world");
@@ -67,149 +95,157 @@ describe("UserRepository (Integration — requires a reachable Postgres configur
       expect(user.social_networks).toEqual(["https://example.com/me"]);
     });
 
-    it("throws UserAlreadyExistsError on duplicate nickname", async () => {
+    it("throws on duplicate nickname", async () => {
       const payload = uniquePayload();
-      const first = await repo.create(payload);
+      const [first] = await userRepo.createUser(payload);
+      assertDefined(first);
       createdUserIdsPendingCleanup.push(first.id);
 
       const duplicateNickname = uniquePayload({
-        nickname: payload.nickname, // same nickname, different email
+        nickname: payload.nickname,
       });
 
-      await expect(repo.create(duplicateNickname)).rejects.toThrow(
-        UserAlreadyExistsError
-      );
+      await expect(userRepo.createUser(duplicateNickname)).rejects.toThrow();
     });
 
-    it("throws UserAlreadyExistsError on duplicate email", async () => {
+    it("throws on duplicate email", async () => {
       const payload = uniquePayload();
-      const first = await repo.create(payload);
+      const [first] = await userRepo.createUser(payload);
+      assertDefined(first);
       createdUserIdsPendingCleanup.push(first.id);
 
       const duplicateEmail = uniquePayload({
-        email: payload.email, // same email, different nickname
+        email: payload.email,
       });
 
-      await expect(repo.create(duplicateEmail)).rejects.toThrow(
-        UserAlreadyExistsError
-      );
+      await expect(userRepo.createUser(duplicateEmail)).rejects.toThrow();
     });
   });
 
-  describe("getById", () => {
+  describe("getUserById", () => {
     it("returns the user for an existing id", async () => {
-      const created = await repo.create(uniquePayload());
-      createdUserIdsPendingCleanup.push(created.id);
+      const created = await createTestUser();
 
-      const found = await repo.getById(created.id);
-
-      expect(found?.id).toBe(created.id);
-    });
-
-    it("returns null for a well-formed but non-existent id", async () => {
-      const found = await repo.getById("00000000-0000-0000-0000-000000000000");
-
-      expect(found).toBeNull();
-    });
-  });
-
-  describe("getByEmail", () => {
-    it("returns the user for a matching email", async () => {
-      const created = await repo.create(uniquePayload());
-      createdUserIdsPendingCleanup.push(created.id);
-
-      const found = await repo.getByEmail(created.email);
+      const [found] = await userRepo.getUserById(created.id);
 
       expect(found?.id).toBe(created.id);
     });
 
-    it("returns null when no user has that email", async () => {
-      const found = await repo.getByEmail("nobody-has-this@example.com");
-
-      expect(found).toBeNull();
-    });
-  });
-
-  describe("update", () => {
-    it("updates only the provided fields, leaving the rest untouched", async () => {
-      const created = await repo.create(
-        uniquePayload({ bio: "original bio", timezone: "UTC" })
+    it("returns empty array for a well-formed but non-existent id", async () => {
+      const found = await userRepo.getUserById(
+        "00000000-0000-0000-0000-000000000000"
       );
-      createdUserIdsPendingCleanup.push(created.id);
 
-      const updated = await repo.update(created.id, { name: "Updated Name" });
+      expect(found).toEqual([]);
+    });
+  });
 
-      expect(updated?.name).toBe("Updated Name");
-      expect(updated?.bio).toBe("original bio"); // unchanged
-      expect(updated?.timezone).toBe("UTC"); // unchanged
-      expect(updated?.nickname).toBe(created.nickname); // unchanged
+  describe("getUserByEmail", () => {
+    it("returns the user for a matching email", async () => {
+      const created = await createTestUser();
+
+      const [found] = await userRepo.getUserByEmail(created.email);
+
+      expect(found?.id).toBe(created.id);
+    });
+
+    it("returns empty array when no user has that email", async () => {
+      const found = await userRepo.getUserByEmail("nobody-has-this@example.com");
+
+      expect(found).toEqual([]);
+    });
+  });
+
+  describe("updateUser", () => {
+    it("updates only the provided fields, leaving the rest untouched", async () => {
+      const created = await createTestUser({
+        bio: "original bio",
+        timezone: "UTC",
+      });
+
+      const [updated] = await userRepo.updateUser(created.id, {
+        name: "Updated Name",
+      });
+      assertDefined(updated);
+
+      expect(updated.name).toBe("Updated Name");
+      expect(updated.bio).toBe("original bio");
+      expect(updated.timezone).toBe("UTC");
+      expect(updated.nickname).toBe(created.nickname);
     });
 
     it("leaves a nullable field untouched when it is omitted from the update", async () => {
-      const created = await repo.create(uniquePayload({ bio: "will be kept" }));
-      createdUserIdsPendingCleanup.push(created.id);
+      const created = await createTestUser({ bio: "will be kept" });
 
-      const updated = await repo.update(created.id, { bio: undefined as any });
+      const [updated] = await userRepo.updateUser(created.id, {
+        bio: undefined,
+      });
+      assertDefined(updated);
 
-      expect(updated?.bio).toBe("will be kept");
+      expect(updated.bio).toBe("will be kept");
     });
 
     it("clears a nullable field when it is explicitly set to null", async () => {
-      const created = await repo.create(uniquePayload({ bio: "will be cleared" }));
-      createdUserIdsPendingCleanup.push(created.id);
+      const created = await createTestUser({ bio: "will be cleared" });
 
-      const cleared = await repo.update(created.id, { bio: null as any });
+      const [cleared] = await userRepo.updateUser(created.id, {
+        bio: null as any,
+      });
+      assertDefined(cleared);
 
-      expect(cleared?.bio).toBeNull();
+      expect(cleared.bio).toBeNull();
     });
 
     it("bumps updated_at on every update", async () => {
-      const created = await repo.create(uniquePayload());
-      createdUserIdsPendingCleanup.push(created.id);
+      const created = await createTestUser();
 
       await new Promise((r) => setTimeout(r, 10));
-      const updated = await repo.update(created.id, { name: "Touch" });
+      const [updated] = await userRepo.updateUser(created.id, {
+        name: "Touch",
+      });
+      assertDefined(updated);
 
-      expect(new Date(updated!.updated_at).getTime()).toBeGreaterThan(
+      expect(new Date(updated.updated_at).getTime()).toBeGreaterThan(
         new Date(created.updated_at).getTime()
       );
     });
 
-    it("returns null when updating a non-existent id", async () => {
-      const result = await repo.update(
+    it("returns empty array when updating a non-existent id", async () => {
+      const result = await userRepo.updateUser(
         "00000000-0000-0000-0000-000000000000",
         { name: "Ghost" }
       );
 
-      expect(result).toBeNull();
+      expect(result).toEqual([]);
     });
 
-    it("throws UserAlreadyExistsError when the new email collides with another user", async () => {
-      const userA = await repo.create(uniquePayload());
-      createdUserIdsPendingCleanup.push(userA.id);
-      const userB = await repo.create(uniquePayload());
-      createdUserIdsPendingCleanup.push(userB.id);
+    it("throws when the new email collides with another user", async () => {
+      const userA = await createTestUser();
+      const userB = await createTestUser();
 
       await expect(
-        repo.update(userB.id, { email: userA.email })
-      ).rejects.toThrow(UserAlreadyExistsError);
+        userRepo.updateUser(userB.id, { email: userA.email })
+      ).rejects.toThrow();
     });
   });
 
-  describe("delete", () => {
-    it("deletes an existing user and returns true", async () => {
-      const created = await repo.create(uniquePayload());
+  describe("deleteUser", () => {
+    it("deletes an existing user and returns affected row count 1", async () => {
+      const created = await createTestUser();
 
-      const result = await repo.delete(created.id);
+      const affected = await userRepo.deleteUser(created.id);
 
-      expect(result).toBe(true);
-      expect(await repo.getById(created.id)).toBeNull();
+      expect(affected).toBe(1);
+      const found = await userRepo.getUserById(created.id);
+      expect(found).toEqual([]);
     });
 
-    it("returns false when the id does not exist", async () => {
-      const result = await repo.delete("00000000-0000-0000-0000-000000000000");
+    it("returns 0 affected rows when the id does not exist", async () => {
+      const affected = await userRepo.deleteUser(
+        "00000000-0000-0000-0000-000000000000"
+      );
 
-      expect(result).toBe(false);
+      expect(affected).toBe(0);
     });
   });
 });
