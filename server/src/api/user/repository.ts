@@ -1,5 +1,4 @@
 import prisma from '../../db';
-import type { UserModel } from '@prisma/generated/models/User'
 import type {
     CreateUserRepoInput,
     UpdateUserInput
