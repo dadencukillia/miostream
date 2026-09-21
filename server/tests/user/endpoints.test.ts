@@ -1,12 +1,12 @@
 import { describe, it, expect, spyOn, beforeEach, afterEach } from "bun:test";
 import Fastify, { type FastifyInstance } from "fastify";
-import * as userService from "../../src/api/user/user.service";
-import userPlugin from "../../src/api/user/user.plugin";
+import * as userService from "../../src/api/user/service";
+import userPlugin from "../../src/api/user/plugin";
 import {
   UserNotFoundError,
   UserAlreadyExistsError,
   UserInvalidError,
-} from "../../src/api/user/user.errors";
+} from "../../src/api/user/errors";
 
 const FAKE_ID = "123e4567-e89b-12d3-a456-426614174000";
 

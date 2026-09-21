@@ -2,8 +2,8 @@ import { describe, it, expect, afterEach, afterAll } from "bun:test";
 import { randomUUID } from "node:crypto";
 import prisma, { pool } from "../../src/db";
 import type { UserModel } from "@prisma/generated/models/User";
-import * as userRepo from "../../src/api/user/user.repository";
-import type { CreateUserRepoInput } from "../../src/api/user/user.dto";
+import * as userRepo from "../../src/api/user/repository";
+import type { CreateUserRepoInput } from "../../src/api/user/dto";
 
 function assertDefined<T>(
   val: T,

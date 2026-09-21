@@ -1,25 +1,25 @@
 import type { UserModel } from '@prisma/generated/models/User'
-import * as userRepo from './user.repository';
+import * as userRepo from './repository';
 import type {
     CreateUserInput,
     CreateUserRepoInput,
     UpdateUserInput
-} from './user.dto';
+} from './dto';
 import {
     UserError,
     UserNotFoundError,
     UserInvalidError,
     UserAlreadyExistsError
-} from './user.errors'
+} from './errors'
 
-export const createUser = async ( input: CreateUserInput ): Promise<UserModel> => {
+export const createUser = async (input: CreateUserInput): Promise<UserModel> => {
     if (!input.password || input.password.length < 8) {
         throw new UserInvalidError('Password must be at least 8 characters long');
     }
 
     const { password, ...inputWithoutPassword } = input;
     const password_hash = 'hashedPassword'; // TODO: replace mockup onto the real hashing operation
-    const data: CreateUserRepoInput = { ...inputWithoutPassword, password_hash}
+    const data: CreateUserRepoInput = { ...inputWithoutPassword, password_hash }
 
     const [user] = await userRepo.createUser(data);
 
@@ -28,7 +28,7 @@ export const createUser = async ( input: CreateUserInput ): Promise<UserModel> =
     return user;
 }
 
-export const getUserById = async ( id: string ): Promise<UserModel> => {
+export const getUserById = async (id: string): Promise<UserModel> => {
     if (!id?.trim()) throw new UserInvalidError('User ID must be a non-empty string');
 
     const [user] = await userRepo.getUserById(id);
@@ -37,7 +37,7 @@ export const getUserById = async ( id: string ): Promise<UserModel> => {
     return user;
 }
 
-export const updateUser = async ( id: string, input: UpdateUserInput ): Promise<UserModel> => {
+export const updateUser = async (id: string, input: UpdateUserInput): Promise<UserModel> => {
     if (!id?.trim()) throw new UserInvalidError('User ID must be a non-empty string');
     if (Object.keys(input).length === 0) {
         throw new UserInvalidError('Update payload cannot be empty')
@@ -48,7 +48,7 @@ export const updateUser = async ( id: string, input: UpdateUserInput ): Promise<
     return user;
 }
 
-export const deleteUser = async ( id: string ): Promise<void> => {
+export const deleteUser = async (id: string): Promise<void> => {
     if (!id?.trim()) throw new UserInvalidError('User ID must be a non-empty string');
 
     const deleted = await userRepo.deleteUser(id);

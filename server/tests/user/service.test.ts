@@ -1,11 +1,11 @@
 import { describe, it, expect, spyOn, beforeEach, afterEach } from "bun:test";
-import * as userRepo from "../../src/api/user/user.repository";
-import * as userService from "../../src/api/user/user.service";
+import * as userRepo from "../../src/api/user/repository";
+import * as userService from "../../src/api/user/service";
 import {
   UserError,
   UserInvalidError,
   UserNotFoundError,
-} from "../../src/api/user/user.errors";
+} from "../../src/api/user/errors";
 
 const FAKE_ID = "00000000-0000-0000-0000-000000000000";
 

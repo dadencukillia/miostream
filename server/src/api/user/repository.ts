@@ -3,10 +3,10 @@ import type { UserModel } from '@prisma/generated/models/User'
 import type {
     CreateUserRepoInput,
     UpdateUserInput
-} from "./user.dto";
+} from "./dto";
 
 export const createUser = async (
-    data : CreateUserRepoInput
+    data: CreateUserRepoInput
 ) => await prisma.$queryRaw<UserModel[]>`
     INSERT INTO "User" (
         "nickname",
@@ -35,9 +35,9 @@ export const createUser = async (
     )
     RETURNING *;
 `;
-    
+
 export const getUserById = async (
-    id : string
+    id: string
 ) => await prisma.$queryRaw<UserModel[]>`
     SELECT *
     FROM "User"
@@ -46,7 +46,7 @@ export const getUserById = async (
 `;
 
 export const getUserByEmail = async (
-    email : string
+    email: string
 ) => await prisma.$queryRaw<UserModel[]>`
     SELECT * 
     FROM "User" 
@@ -55,8 +55,8 @@ export const getUserByEmail = async (
 `;
 
 export const updateUser = async (
-    id: string, 
-    data : UpdateUserInput
+    id: string,
+    data: UpdateUserInput
 ) => await prisma.$queryRaw<UserModel[]>`
     UPDATE "User"
     SET 
@@ -92,7 +92,7 @@ export const updateUser = async (
 `;
 
 export const deleteUser = async (
-    id : string
+    id: string
 ) => await prisma.$executeRaw`
     DELETE FROM "User"
     WHERE "id" = ${id}::uuid;

@@ -1,10 +1,10 @@
-import type { 
+import type {
     FastifyPluginCallback,
     FastifyError
 } from "fastify";
-import { UserError } from './user.errors'
-import * as userSchema from './user.schema';
-import * as userController from './user.controller';
+import { UserError } from './errors'
+import * as userSchema from './schema';
+import * as userController from './controller';
 
 const plugin: FastifyPluginCallback = (fastify, _opts) => {
     fastify.setErrorHandler<FastifyError>((error, request, reply) => {
@@ -28,7 +28,7 @@ const plugin: FastifyPluginCallback = (fastify, _opts) => {
             message: 'Unexpected error',
         });
     });
-            
+
     fastify.post('/', { schema: userSchema.createUserSchema }, userController.createUser);
     fastify.get('/:id', { schema: userSchema.getUserSchema }, userController.getUser);
     fastify.patch('/:id', { schema: userSchema.updateUserSchema }, userController.updateUser);
