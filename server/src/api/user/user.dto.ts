@@ -12,6 +12,8 @@ export interface CreateUserInput {
     bio?: string;
     avatar_url?: string;
     social_networks?: string[];
+    timezone?: string;
+    last_action?: string;
     profile_frame?: ProfileFrame;
     profile_background?: ProfileBackground;
 }

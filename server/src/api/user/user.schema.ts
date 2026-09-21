@@ -12,6 +12,8 @@ const userSchema = {
         social_networks:    { type: 'array', items: { type: 'string', format: 'uri' } },
         current_streak:     { type: 'integer' },
         max_streak:         { type: 'integer' },
+        timezone:           { type: 'string' },
+        last_action:        { type: 'string', format: 'date' },
         profile_frame:      { type: 'string', enum: Object.values(ProfileFrame) },
         profile_background: { type: 'string', enum: Object.values(ProfileBackground) },
         created_at:         { type: 'integer', format: 'date-time'},
@@ -84,6 +86,7 @@ export const createUserSchema = {
                     format: 'uri'
                 } 
             },
+            timezone: { type: 'string' },
             profile_frame: { type: 'string', enum: Object.values(ProfileFrame) },
             profile_background: { type: 'string', enum: Object.values(ProfileBackground) }
         },
@@ -139,6 +142,8 @@ export const updateUserSchema = {
                     format: 'uri'
                 } 
             },
+            timezone:    { type: 'string' },
+            last_action: { type: 'string', format: 'date' },
             profile_frame: { type: 'string', enum: Object.values(ProfileFrame) },
             profile_background: { type: 'string', enum: Object.values(ProfileBackground) }
         },

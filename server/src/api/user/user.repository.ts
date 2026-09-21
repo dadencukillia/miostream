@@ -28,6 +28,8 @@ export class UserRepository implements IUserRepository{
                     "bio",
                     "avatar_url",
                     "social_networks",
+                    "timezone",
+                    "last_action",
                     "profile_frame",
                     "profile_background"
                 ) VALUES (
@@ -38,6 +40,8 @@ export class UserRepository implements IUserRepository{
                     ${data.bio ?? null},
                     ${data.avatar_url ?? null},
                     ${data.social_networks ?? []},
+                    ${data.timezone ?? 'UTC'},
+                    ${data.last_action ?? new Date()}::date,
                     ${data.profile_frame ?? 'DEFAULT'}::"ProfileFrame",
                     ${data.profile_background ?? 'DEFAULT'}::"ProfileBackground"
                 )
@@ -88,6 +92,8 @@ export class UserRepository implements IUserRepository{
                     "nickname"  = CASE WHEN ${data.nickname != null} THEN ${data.nickname} ELSE "nickname" END,
                     "name"      = CASE WHEN ${data.name != null} THEN ${data.name} ELSE "name" END,
                     "email"     = CASE WHEN ${data.email != null} THEN ${data.email} ELSE "email" END,
+                    "timezone"    = CASE WHEN ${data.timezone != null} THEN ${data.timezone} ELSE "timezone" END,
+                    "last_action" = CASE WHEN ${data.last_action != null} THEN ${data.last_action}::date ELSE "last_action" END,
                     
                     -- Update only if exists
                     "bio"             = CASE WHEN ${data.bio !== undefined} THEN ${data.bio ?? null} ELSE "bio" END,
