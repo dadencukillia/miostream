@@ -1,9 +1,9 @@
 import type { FastifyPluginCallback } from "fastify";
 import auth from "./auth/plugin";
-import { authMiddleware } from "./auth/auth.middleware";
+import { requireAuth } from "./auth/middleware";
 
 const plugin: FastifyPluginCallback = (fastify, _opts, done) => {
-  fastify.get('/user', { preHandler: authMiddleware }, (request, reply) => {
+  fastify.get('/user', { preHandler: requireAuth }, (request, reply) => {
     reply.send({ hello: 'world' });
   });
 

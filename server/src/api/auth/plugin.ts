@@ -1,12 +1,12 @@
 import type { FastifyPluginCallback } from "fastify";
-import { getAuthUserController, googleCallbackController, logoutController, redirectGoogleFormController } from "./auth.controller";
-import { authMiddleware } from "./auth.middleware";
+import { finishGoogleLogin, getCurrentUser, logout, startGoogleLogin } from "./controller";
+import { requireAuth } from "./middleware";
 
 const plugin: FastifyPluginCallback = (fastify, _opts, done) => {
-	fastify.get("/google", redirectGoogleFormController);
-	fastify.get("/google/callback", googleCallbackController);
-	fastify.post("/logout", logoutController);
-	fastify.get("/me", { preHandler: authMiddleware }, getAuthUserController);
+	fastify.get("/google", startGoogleLogin);
+	fastify.get("/google/callback", finishGoogleLogin);
+	fastify.post("/logout", logout);
+	fastify.get("/me", { preHandler: requireAuth }, getCurrentUser);
 
 	done();
 };
