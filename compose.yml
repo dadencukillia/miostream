@@ -18,6 +18,8 @@ services:
     restart: always
     environment:
       DB_PASS_FILE: /run/secrets/db_pass
+      GOOGLE_CLIENT_SECRET_FILE: /run/secrets/google_client_secret
+      AUTH_JWT_SECRET_FILE: /run/secrets/auth_jwt_secret
       POSTGRES_HOST: postgresql:5432
       REDIS_HOST: redis:6379
       RUSTFS_HOST: rustfs:9000
@@ -30,6 +32,8 @@ services:
       - internal
     secrets:
       - db_pass
+      - google_client_secret
+      - auth_jwt_secret
     healthcheck:
       test: ["CMD-SHELL", "wget -qO - http://127.0.0.1:8080/healthcheck"]
       interval: 10s
@@ -126,3 +130,7 @@ secrets:
     environment: RUSTFS_ACCESS_KEY
   rustfs_secret_key:
     environment: RUSTFS_SECRET_KEY
+  google_client_secret:
+    environment: GOOGLE_CLIENT_SECRET
+  auth_jwt_secret:
+    environment: AUTH_JWT_SECRET

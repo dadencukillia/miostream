@@ -12,6 +12,6 @@ export const DB_URL = `postgresql://postgres:${DB_PASS}@${POSTGRES_HOST}/${DB_NA
 // Authentification
 export const AUTH_COOKIE_NAME = process.env["AUTH_COOKIE_NAME"] ?? "auth_token";
 export const GOOGLE_CLIENT_ID = process.env["GOOGLE_CLIENT_ID"] ?? "";
-export const GOOGLE_CLIENT_SECRET = process.env["GOOGLE_CLIENT_SECRET"] ?? readFileSync(process.env["GOOGLE_CLIENT_SECRET"]!, "utf-8").trim();
+export const GOOGLE_CLIENT_SECRET = process.env["GOOGLE_CLIENT_SECRET"] ?? readFileSync(process.env["GOOGLE_CLIENT_SECRET_FILE"]!, "utf-8").trim();
 export const GOOGLE_REDIRECT_URI = process.env["GOOGLE_REDIRECT_URI"] ?? "https://localhost/api/auth/google/callback";
 export const AUTH_JWT_SECRET = process.env["AUTH_JWT_SECRET"] ?? readFileSync(process.env["AUTH_JWT_SECRET_FILE"]!, "utf-8").trim();
