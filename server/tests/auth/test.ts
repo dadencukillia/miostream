@@ -2,9 +2,9 @@ import Fastify from "fastify";
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from "bun:test";
 import * as config from "../../src/config";
 
-import { resetMockPrisma } from "../../src/api/auth/prisma/mock";
-import { getGoogleAuthUrl, saveGoogleUser, verifyToken } from "../../src/api/auth/service";
-import authPlugin from "../../src/api/auth/plugin";
+const { resetMockPrisma } = await import("../../src/api/auth/prisma/mock");
+const { getGoogleAuthUrl, saveGoogleUser, verifyToken } = await import("../../src/api/auth/service");
+const { default: authPlugin } = await import("../../src/api/auth/plugin");
 
 const app = Fastify();
 
