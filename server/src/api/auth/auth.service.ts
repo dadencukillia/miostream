@@ -1,6 +1,6 @@
 import { createCipheriv, createHash, randomBytes } from "node:crypto";
-import { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI, AUTH_JWT_SECRET } from "../config/config";
-import { mockPrisma } from "../prisma/mock";
+import * as config from "../../config";
+import { mockPrisma } from "./prisma/mock";
 import jwt from "jsonwebtoken";
 
 const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
@@ -8,8 +8,8 @@ const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const GOOGLE_USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo";
 
 function secretKey() {
-	if (!AUTH_JWT_SECRET) throw new Error("AUTH_JWT_SECRET is required");
-	return AUTH_JWT_SECRET;
+	if (!config.AUTH_JWT_SECRET) throw new Error("AUTH_JWT_SECRET is required");
+	return config.AUTH_JWT_SECRET;
 }
 
 function encryptRefreshToken(token: string) {
@@ -21,7 +21,7 @@ function encryptRefreshToken(token: string) {
 }
 
 export function googleLoginUrl(state: string) {
-	const params = new URLSearchParams({ client_id: GOOGLE_CLIENT_ID, redirect_uri: GOOGLE_REDIRECT_URI, response_type: "code", scope: "openid email profile", access_type: "offline", prompt: "consent", state });
+	const params = new URLSearchParams({ client_id: config.GOOGLE_CLIENT_ID, redirect_uri: config.GOOGLE_REDIRECT_URI, response_type: "code", scope: "openid email profile", access_type: "offline", prompt: "consent", state });
 	return `${GOOGLE_AUTH_URL}?${params}`;
 }
 
@@ -29,9 +29,9 @@ export async function exchangeGoogleCode(code: string) {
 	const response = await fetch(GOOGLE_TOKEN_URL, 
 		{ method: "POST",
 			headers: { "content-type": "application/x-www-form-urlencoded" },
-			body: new URLSearchParams({ code, client_id: GOOGLE_CLIENT_ID,
-			client_secret: GOOGLE_CLIENT_SECRET,
-			redirect_uri: GOOGLE_REDIRECT_URI,
+			body: new URLSearchParams({ code, client_id: config.GOOGLE_CLIENT_ID,
+			client_secret: config.GOOGLE_CLIENT_SECRET,
+			redirect_uri: config.GOOGLE_REDIRECT_URI,
 			grant_type: "authorization_code" }) });
 
 	if (!response.ok) throw new Error(`Google token exchange failed: ${response.status}`);

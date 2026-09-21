@@ -7,9 +7,9 @@ process.env.GOOGLE_CLIENT_ID = "google-client-id";
 process.env.GOOGLE_CLIENT_SECRET = "google-client-secret";
 process.env.GOOGLE_REDIRECT_URI = "http://localhost:8080/api/auth/google/callback";
 
-const { default: authPlugin } = await import("../../src/api/auth/controllers/auth.controller");
-const { handleGoogleUser, googleLoginUrl, verifyAuthToken } = await import("../../src/api/auth/services/auth.service");
-const { resetMockPrisma } = await import("../../src/api/auth/prisma/mock");
+import { resetMockPrisma } from "../../src/api/auth/prisma/mock";
+import { handleGoogleUser, googleLoginUrl, verifyAuthToken } from "../../src/api/auth/auth.service";
+import authPlugin from "../../src/api/auth/plugin";
 
 describe("auth service", () => {
 	beforeEach(() => {
