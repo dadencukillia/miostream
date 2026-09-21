@@ -6,7 +6,7 @@ model User {
   bio                String?
   password_hash      String
   avatar_url         String?
-  social_networks    String[]
+  social_networks    String[]          @default([])
   max_streak         Int               @default(0)
   timezone           String            @default("UTC")
   last_action        DateTime          @default(now()) @db.Date

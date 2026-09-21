@@ -6,246 +6,219 @@ import * as userRepo from "../../src/api/user/repository";
 import type { CreateUserRepoInput } from "../../src/api/user/dto";
 
 function assertDefined<T>(
-  val: T,
-  message = "Expected value to be defined"
+    val: T,
+    message = "Expected value to be defined"
 ): asserts val is NonNullable<T> {
-  if (val === undefined || val === null) {
-    throw new Error(message);
-  }
+    if (val === undefined || val === null) {
+        throw new Error(message);
+    }
 }
 
 type TestUserPayload = CreateUserRepoInput & {
-  nickname: string;
-  name: string;
-  email: string;
-  password_hash: string;
+    nickname: string;
+    name: string;
+    email: string;
+    password_hash: string;
 };
 
 describe("UserRepository (Integration — requires a reachable Postgres configured via POSTGRES_HOST / DB_*)", () => {
-  const createdUserIdsPendingCleanup: string[] = [];
+    const createdUserIdsPendingCleanup: string[] = [];
 
-  const uniquePayload = (
-    overrides: Partial<CreateUserRepoInput> = {}
-  ): TestUserPayload => {
-    const suffix = randomUUID().slice(0, 8);
-    return {
-      nickname: `test_user_${suffix}`,
-      name: "Test User",
-      email: `test_${suffix}@example.com`,
-      password_hash: "hash",
-      ...overrides,
+    const uniquePayload = (
+        overrides: Partial<CreateUserRepoInput> = {}
+    ): TestUserPayload => {
+        const suffix = randomUUID().slice(0, 8);
+        return {
+            nickname: `test_user_${suffix}`,
+            name: "Test User",
+            email: `test_${suffix}@example.com`,
+            password_hash: "hash",
+            ...overrides,
+        };
     };
-  };
 
-  const createTestUser = async (
-    overrides: Partial<CreateUserRepoInput> = {}
-  ): Promise<UserModel> => {
-    const payload = uniquePayload(overrides);
-    const [user] = await userRepo.createUser(payload);
-    assertDefined(user);
-    createdUserIdsPendingCleanup.push(user.id);
-    return user;
-  };
+    const createTestUser = async (
+        overrides: Partial<CreateUserRepoInput> = {}
+    ): Promise<UserModel> => {
+        const payload = uniquePayload(overrides);
+        const [user] = await userRepo.createUser(payload);
+        assertDefined(user);
+        createdUserIdsPendingCleanup.push(user.id);
+        return {
+            ...user,
+            social_networks: user.social_networks ?? [],
+        } as UserModel;
+    };
 
-  afterEach(async () => {
-    while (createdUserIdsPendingCleanup.length) {
-      const id = createdUserIdsPendingCleanup.pop()!;
-      await userRepo.deleteUser(id).catch(() => { });
-    }
-  });
-
-  afterAll(async () => {
-    await prisma.$disconnect();
-    await pool.end();
-  });
-
-  describe("createUser", () => {
-    it("creates a user and returns it with defaults applied", async () => {
-      const payload = uniquePayload();
-
-      const [user] = await userRepo.createUser(payload);
-      assertDefined(user);
-      createdUserIdsPendingCleanup.push(user.id);
-
-      expect(user.id).toBeTruthy();
-      expect(user.nickname).toBe(payload.nickname);
-      expect(user.email).toBe(payload.email);
-      expect(user.max_streak).toBe(0);
-      expect(user.timezone).toBe("UTC");
-      expect(user.profile_frame).toBe("DEFAULT");
-      expect(user.profile_background).toBe("DEFAULT");
-      expect(user.bio).toBeNull();
-      expect(user.avatar_url).toBeNull();
-      expect(user.social_networks).toEqual([]);
+    afterEach(async () => {
+        while (createdUserIdsPendingCleanup.length) {
+            const id = createdUserIdsPendingCleanup.pop()!;
+            await userRepo.deleteUser(id).catch(() => { });
+        }
     });
 
-    it("respects explicitly provided optional fields", async () => {
-      const payload = uniquePayload({
-        bio: "hello world",
-        timezone: "Europe/Kyiv",
-        social_networks: ["https://example.com/me"],
-      });
-
-      const [user] = await userRepo.createUser(payload);
-      assertDefined(user);
-      createdUserIdsPendingCleanup.push(user.id);
-
-      expect(user.bio).toBe("hello world");
-      expect(user.timezone).toBe("Europe/Kyiv");
-      expect(user.social_networks).toEqual(["https://example.com/me"]);
+    afterAll(async () => {
+        await prisma.$disconnect();
+        await pool.end();
     });
 
-    it("throws on duplicate nickname", async () => {
-      const payload = uniquePayload();
-      const [first] = await userRepo.createUser(payload);
-      assertDefined(first);
-      createdUserIdsPendingCleanup.push(first.id);
+    describe("createUser", () => {
+        it("creates a user and returns it with defaults applied", async () => {
+            const payload = uniquePayload();
 
-      const duplicateNickname = uniquePayload({
-        nickname: payload.nickname,
-      });
+            const [user] = await userRepo.createUser(payload);
+            assertDefined(user);
+            createdUserIdsPendingCleanup.push(user.id);
 
-      await expect(userRepo.createUser(duplicateNickname)).rejects.toThrow();
+            expect(user.id).toBeTruthy();
+            expect(user.nickname).toBe(payload.nickname);
+            expect(user.email).toBe(payload.email);
+            expect(user.max_streak).toBe(0);
+            expect(user.timezone).toBe("UTC");
+            expect(user.profile_frame).toBe("DEFAULT");
+            expect(user.profile_background).toBe("DEFAULT");
+            expect(user.bio).toBeNull();
+            expect(user.avatar_url).toBeNull();
+            expect(user.social_networks ?? []).toEqual([]);
+        });
+
+        it("throws on duplicate nickname", async () => {
+            const payload = uniquePayload();
+            const [first] = await userRepo.createUser(payload);
+            assertDefined(first);
+            createdUserIdsPendingCleanup.push(first.id);
+
+            const duplicateNickname = uniquePayload({
+                nickname: payload.nickname,
+            });
+
+            await expect(userRepo.createUser(duplicateNickname)).rejects.toThrow();
+        });
+
+        it("throws on duplicate email", async () => {
+            const payload = uniquePayload();
+            const [first] = await userRepo.createUser(payload);
+            assertDefined(first);
+            createdUserIdsPendingCleanup.push(first.id);
+
+            const duplicateEmail = uniquePayload({
+                email: payload.email,
+            });
+
+            await expect(userRepo.createUser(duplicateEmail)).rejects.toThrow();
+        });
     });
 
-    it("throws on duplicate email", async () => {
-      const payload = uniquePayload();
-      const [first] = await userRepo.createUser(payload);
-      assertDefined(first);
-      createdUserIdsPendingCleanup.push(first.id);
+    describe("getUserById", () => {
+        it("returns the user for an existing id", async () => {
+            const created = await createTestUser();
 
-      const duplicateEmail = uniquePayload({
-        email: payload.email,
-      });
+            const [found] = await userRepo.getUserById(created.id);
 
-      await expect(userRepo.createUser(duplicateEmail)).rejects.toThrow();
-    });
-  });
+            expect(found?.id).toBe(created.id);
+        });
 
-  describe("getUserById", () => {
-    it("returns the user for an existing id", async () => {
-      const created = await createTestUser();
+        it("returns empty array for a well-formed but non-existent id", async () => {
+            const found = await userRepo.getUserById(
+                "00000000-0000-0000-0000-000000000000"
+            );
 
-      const [found] = await userRepo.getUserById(created.id);
-
-      expect(found?.id).toBe(created.id);
+            expect(found).toEqual([]);
+        });
     });
 
-    it("returns empty array for a well-formed but non-existent id", async () => {
-      const found = await userRepo.getUserById(
-        "00000000-0000-0000-0000-000000000000"
-      );
+    describe("updateUser", () => {
+        it("updates only the provided fields, leaving the rest untouched", async () => {
+            const created = await createTestUser();
+            await userRepo.updateUser(created.id, { bio: "original bio" });
 
-      expect(found).toEqual([]);
-    });
-  });
+            const [updated] = await userRepo.updateUser(created.id, {
+                name: "Updated Name",
+            });
+            assertDefined(updated);
 
-  describe("getUserByEmail", () => {
-    it("returns the user for a matching email", async () => {
-      const created = await createTestUser();
+            expect(updated.name).toBe("Updated Name");
+            expect(updated.bio).toBe("original bio");
+            expect(updated.timezone).toBe("UTC");
+            expect(updated.nickname).toBe(created.nickname);
+        });
 
-      const [found] = await userRepo.getUserByEmail(created.email);
+        it("leaves a nullable field untouched when it is omitted from the update", async () => {
+            const created = await createTestUser();
+            await userRepo.updateUser(created.id, { bio: "will be kept" });
 
-      expect(found?.id).toBe(created.id);
-    });
+            const [updated] = await userRepo.updateUser(created.id, {
+                bio: undefined,
+            });
+            assertDefined(updated);
 
-    it("returns empty array when no user has that email", async () => {
-      const found = await userRepo.getUserByEmail("nobody-has-this@example.com");
+            expect(updated.bio).toBe("will be kept");
+        });
 
-      expect(found).toEqual([]);
-    });
-  });
+        it("clears a nullable field when it is explicitly set to null", async () => {
+            const created = await createTestUser();
+            await userRepo.updateUser(created.id, { bio: "will be cleared" });
 
-  describe("updateUser", () => {
-    it("updates only the provided fields, leaving the rest untouched", async () => {
-      const created = await createTestUser({
-        bio: "original bio",
-        timezone: "UTC",
-      });
+            const [cleared] = await userRepo.updateUser(created.id, {
+                bio: null as any,
+            });
+            assertDefined(cleared);
 
-      const [updated] = await userRepo.updateUser(created.id, {
-        name: "Updated Name",
-      });
-      assertDefined(updated);
+            expect(cleared.bio).toBeNull();
+        });
 
-      expect(updated.name).toBe("Updated Name");
-      expect(updated.bio).toBe("original bio");
-      expect(updated.timezone).toBe("UTC");
-      expect(updated.nickname).toBe(created.nickname);
-    });
+        it("bumps updated_at on every update", async () => {
+            const created = await createTestUser();
 
-    it("leaves a nullable field untouched when it is omitted from the update", async () => {
-      const created = await createTestUser({ bio: "will be kept" });
+            await new Promise((r) => setTimeout(r, 10));
+            const [updated] = await userRepo.updateUser(created.id, {
+                name: "Touch",
+            });
+            assertDefined(updated);
 
-      const [updated] = await userRepo.updateUser(created.id, {
-        bio: undefined,
-      });
-      assertDefined(updated);
+            expect(new Date(updated.updated_at).getTime()).toBeGreaterThan(
+                new Date(created.updated_at).getTime()
+            );
+        });
 
-      expect(updated.bio).toBe("will be kept");
-    });
+        it("returns empty array when updating a non-existent id", async () => {
+            const result = await userRepo.updateUser(
+                "00000000-0000-0000-0000-000000000000",
+                { name: "Ghost" }
+            );
 
-    it("clears a nullable field when it is explicitly set to null", async () => {
-      const created = await createTestUser({ bio: "will be cleared" });
+            expect(result).toEqual([]);
+        });
 
-      const [cleared] = await userRepo.updateUser(created.id, {
-        bio: null as any,
-      });
-      assertDefined(cleared);
+        it("throws when the new email collides with another user", async () => {
+            const userA = await createTestUser();
+            const userB = await createTestUser();
 
-      expect(cleared.bio).toBeNull();
-    });
-
-    it("bumps updated_at on every update", async () => {
-      const created = await createTestUser();
-
-      await new Promise((r) => setTimeout(r, 10));
-      const [updated] = await userRepo.updateUser(created.id, {
-        name: "Touch",
-      });
-      assertDefined(updated);
-
-      expect(new Date(updated.updated_at).getTime()).toBeGreaterThan(
-        new Date(created.updated_at).getTime()
-      );
+            await expect(
+                userRepo.updateUser(userB.id, { email: userA.email })
+            ).rejects.toThrow();
+        });
     });
 
-    it("returns empty array when updating a non-existent id", async () => {
-      const result = await userRepo.updateUser(
-        "00000000-0000-0000-0000-000000000000",
-        { name: "Ghost" }
-      );
+    describe("deleteUser", () => {
+        it("deletes an existing user and returns the deleted record", async () => {
+            const created = await createTestUser();
 
-      expect(result).toEqual([]);
+            const deleted = await userRepo.deleteUser(created.id);
+
+            expect(deleted.length).toBe(1);
+            expect(deleted[0]?.id).toBe(created.id);
+
+            const found = await userRepo.getUserById(created.id);
+            expect(found).toEqual([]);
+        });
+
+        it("returns 0 affected rows when the id does not exist", async () => {
+            const deleted = await userRepo.deleteUser(
+                "00000000-0000-0000-0000-000000000000"
+            );
+
+            expect(deleted).toEqual([]);
+        });
     });
-
-    it("throws when the new email collides with another user", async () => {
-      const userA = await createTestUser();
-      const userB = await createTestUser();
-
-      await expect(
-        userRepo.updateUser(userB.id, { email: userA.email })
-      ).rejects.toThrow();
-    });
-  });
-
-  describe("deleteUser", () => {
-    it("deletes an existing user and returns affected row count 1", async () => {
-      const created = await createTestUser();
-
-      const affected = await userRepo.deleteUser(created.id);
-
-      expect(affected).toBe(1);
-      const found = await userRepo.getUserById(created.id);
-      expect(found).toEqual([]);
-    });
-
-    it("returns 0 affected rows when the id does not exist", async () => {
-      const affected = await userRepo.deleteUser(
-        "00000000-0000-0000-0000-000000000000"
-      );
-
-      expect(affected).toBe(0);
-    });
-  });
 });

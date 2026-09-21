@@ -1,6 +1,7 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../../node_modules/@prisma/generated"
+  provider        = "prisma-client"
+  previewFeatures = ["typedSql"]
+  output          = "../../node_modules/@prisma/generated"
 }
 
 datasource db {

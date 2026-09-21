@@ -9,6 +9,14 @@ export interface CreateUserInput {
     name: string;
     email: string;
     password: string;
+}
+
+export type CreateUserRepoInput = Omit<CreateUserInput, 'password'> & { password_hash: string; };
+
+export type UpdateUserInput = {
+    nickname?: string;
+    name?: string;
+    email?: string;
     bio?: string;
     avatar_url?: string;
     social_networks?: string[];
@@ -17,8 +25,3 @@ export interface CreateUserInput {
     profile_frame?: ProfileFrame;
     profile_background?: ProfileBackground;
 }
-
-export type CreateUserRepoInput = 
-    Partial<Omit<CreateUserInput, 'password'>> & { password_hash: string; };
-
-export type UpdateUserInput = Partial<Omit<CreateUserInput, 'password'>>;

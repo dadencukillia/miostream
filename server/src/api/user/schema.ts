@@ -68,25 +68,7 @@ export const createUserSchema = {
             password: { 
                 type: 'string', 
                 minLength: 8
-            },
-            bio: { 
-                type: 'string',
-                pattern: '^[^<>]*$'
-            },
-            avatar_url: { 
-                type: 'string',
-                pattern: '^[^<>]*$'
-            },
-            social_networks: { 
-                type: 'array', 
-                items: { 
-                    type: 'string', 
-                    format: 'uri'
-                } 
-            },
-            timezone:           { type: 'string' },
-            profile_frame:      { type: 'string', enum: Object.values(ProfileFrame) },
-            profile_background: { type: 'string', enum: Object.values(ProfileBackground) }
+            }
         },
         additionalProperties: false
     },
