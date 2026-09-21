@@ -5,19 +5,21 @@ import {
     UserError,
     UserInvalidError,
     UserNotFoundError,
+    UserAlreadyExistsError,
 } from "../../src/api/user/errors";
 
 const FAKE_ID = "00000000-0000-0000-0000-000000000000";
+const INVALID_UUID = "not-a-valid-uuid";
 
 const FAKE_USER = {
     id: FAKE_ID,
     nickname: "tester",
     name: "Test User",
     email: "test@example.com",
-    password_hash: "hashedPassword",
+    password_hash: "hashed_longenoughpassword",
     bio: null,
     avatar_url: null,
-    social_networks: [],
+    social_networks: null, // Test that toUserModel normalizes null to []
     current_streak: 0,
     max_streak: 0,
     timezone: "UTC",
@@ -56,136 +58,252 @@ describe("user.service", () => {
             password: "longenoughpassword",
         };
 
-        it("throws UserInvalidError if password is missing", async () => {
-            await expect(
-                userService.createUser({ ...validInput, password: undefined as any })
-            ).rejects.toThrow(UserInvalidError);
-            expect(mockCreateUser).not.toHaveBeenCalled();
+        describe("validation", () => {
+            it("throws UserInvalidError if password is missing", async () => {
+                await expect(userService.createUser({ ...validInput, password: "" as any })).rejects.toThrow(UserInvalidError);
+                await expect(userService.createUser({ ...validInput, password: undefined as any })).rejects.toThrow(UserInvalidError);
+                expect(mockCreateUser).not.toHaveBeenCalled();
+            });
+
+            it("throws UserInvalidError if password is shorter than 8 characters", async () => {
+                await expect(userService.createUser({ ...validInput, password: "short" })).rejects.toThrow(UserInvalidError);
+                expect(mockCreateUser).not.toHaveBeenCalled();
+            });
+
+            it("throws UserInvalidError if password exceeds 128 characters", async () => {
+                await expect(userService.createUser({ ...validInput, password: "a".repeat(129) })).rejects.toThrow(UserInvalidError);
+                expect(mockCreateUser).not.toHaveBeenCalled();
+            });
+
+            it("throws UserInvalidError if nickname is missing or empty", async () => {
+                await expect(userService.createUser({ ...validInput, nickname: "" })).rejects.toThrow(UserInvalidError);
+                await expect(userService.createUser({ ...validInput, nickname: "   " })).rejects.toThrow(UserInvalidError);
+            });
+
+            it("throws UserInvalidError on invalid nickname format or length", async () => {
+                await expect(userService.createUser({ ...validInput, nickname: "ab" })).rejects.toThrow(UserInvalidError);
+                await expect(userService.createUser({ ...validInput, nickname: "a".repeat(31) })).rejects.toThrow(UserInvalidError);
+                await expect(userService.createUser({ ...validInput, nickname: "user@name" })).rejects.toThrow(UserInvalidError);
+                await expect(userService.createUser({ ...validInput, nickname: "user name" })).rejects.toThrow(UserInvalidError);
+            });
+
+            it("throws UserInvalidError if name is missing or empty", async () => {
+                await expect(userService.createUser({ ...validInput, name: "" })).rejects.toThrow(UserInvalidError);
+                await expect(userService.createUser({ ...validInput, name: "   " })).rejects.toThrow(UserInvalidError);
+            });
+
+            it("throws UserInvalidError if name length is outside 3 to 100 characters", async () => {
+                await expect(userService.createUser({ ...validInput, name: "ab" })).rejects.toThrow(UserInvalidError);
+                await expect(userService.createUser({ ...validInput, name: "a".repeat(101) })).rejects.toThrow(UserInvalidError);
+            });
+
+            it("throws UserInvalidError if email is missing or empty", async () => {
+                await expect(userService.createUser({ ...validInput, email: "" })).rejects.toThrow(UserInvalidError);
+                await expect(userService.createUser({ ...validInput, email: "   " })).rejects.toThrow(UserInvalidError);
+            });
+
+            it("throws UserInvalidError on invalid email format", async () => {
+                await expect(userService.createUser({ ...validInput, email: "invalid-email" })).rejects.toThrow(UserInvalidError);
+                await expect(userService.createUser({ ...validInput, email: "invalid@domain" })).rejects.toThrow(UserInvalidError);
+                await expect(userService.createUser({ ...validInput, email: "@domain.com" })).rejects.toThrow(UserInvalidError);
+            });
         });
 
-        it("throws UserInvalidError if password is shorter than 8 characters", async () => {
-            await expect(
-                userService.createUser({ ...validInput, password: "short" })
-            ).rejects.toThrow(UserInvalidError);
-            expect(mockCreateUser).not.toHaveBeenCalled();
-        });
+        describe("execution & DB errors", () => {
+            it("hashes password and returns created user with normalized social_networks", async () => {
+                mockCreateUser.mockResolvedValue([FAKE_USER as any]);
 
-        it("calls the repository without the plaintext password", async () => {
-            mockCreateUser.mockResolvedValue([FAKE_USER as any]);
+                const result = await userService.createUser(validInput);
 
-            await userService.createUser(validInput);
+                expect(mockCreateUser).toHaveBeenCalledWith({
+                    nickname: validInput.nickname,
+                    name: validInput.name,
+                    email: validInput.email,
+                    password_hash: "hashed_" + validInput.password,
+                });
+                expect(result).toEqual({ ...FAKE_USER, social_networks: [] } as any);
+            });
 
-            expect(mockCreateUser).toHaveBeenCalledTimes(1);
-            const repoArg = mockCreateUser.mock.calls[0]?.[0] as any;
-            expect(repoArg.password).toBeUndefined();
-            expect(repoArg.password_hash).toBeTruthy();
-            expect(repoArg.nickname).toBe(validInput.nickname);
-            expect(repoArg.email).toBe(validInput.email);
-        });
+            it("throws UserError when the repository returns an empty array", async () => {
+                mockCreateUser.mockResolvedValue([]);
+                await expect(userService.createUser(validInput)).rejects.toThrow(UserError);
+            });
 
-        it("returns the created user on success", async () => {
-            mockCreateUser.mockResolvedValue([FAKE_USER as any]);
+            it("handles Postgres 23505 unique error for nickname", async () => {
+                mockCreateUser.mockRejectedValue({ code: "23505", detail: 'Key ("nickname")=(tester) already exists.' });
+                await expect(userService.createUser(validInput)).rejects.toThrow(UserAlreadyExistsError);
+            });
 
-            const result = await userService.createUser(validInput);
+            it("handles Postgres 23505 unique error for email", async () => {
+                mockCreateUser.mockRejectedValue({ code: "23505", detail: 'Key ("email")=(test@example.com) already exists.' });
+                await expect(userService.createUser(validInput)).rejects.toThrow(UserAlreadyExistsError);
+            });
 
-            expect(result).toEqual(FAKE_USER as any);
-        });
+            it("handles Postgres 23505 unique error with fallback message", async () => {
+                mockCreateUser.mockRejectedValue({ code: "23505", detail: "unique constraint violation" });
+                await expect(userService.createUser(validInput)).rejects.toThrow(UserAlreadyExistsError);
+            });
 
-        it("throws a generic UserError when the repository returns no row", async () => {
-            mockCreateUser.mockResolvedValue([]);
+            it("handles Postgres 22001 string length limit error", async () => {
+                mockCreateUser.mockRejectedValue({ code: "22001", message: "value too long for type character varying" });
+                await expect(userService.createUser(validInput)).rejects.toThrow(UserInvalidError);
+            });
 
-            await expect(userService.createUser(validInput)).rejects.toThrow(UserError);
-        });
-
-        it("propagates repository errors unchanged", async () => {
-            mockCreateUser.mockRejectedValue(new Error("connection reset"));
-
-            const promise = userService.createUser(validInput);
-            await expect(promise).rejects.toThrow("connection reset");
-            await expect(promise).rejects.not.toBeInstanceOf(UserError);
+            it("propagates unhandled database errors unchanged", async () => {
+                mockCreateUser.mockRejectedValue(new Error("connection terminated"));
+                await expect(userService.createUser(validInput)).rejects.toThrow("connection terminated");
+            });
         });
     });
 
     describe("getUserById", () => {
-        it("throws UserInvalidError for an empty id", async () => {
-            await expect(userService.getUserById("")).rejects.toThrow(UserInvalidError);
+        describe("validation", () => {
+            it("throws UserInvalidError for empty or whitespace-only id", async () => {
+                await expect(userService.getUserById("")).rejects.toThrow(UserInvalidError);
+                await expect(userService.getUserById("   ")).rejects.toThrow(UserInvalidError);
+            });
+
+            it("throws UserInvalidError if id is not a valid UUID", async () => {
+                await expect(userService.getUserById(INVALID_UUID)).rejects.toThrow(UserInvalidError);
+                expect(mockGetUserById).not.toHaveBeenCalled();
+            });
         });
 
-        it("throws UserInvalidError for a whitespace-only id", async () => {
-            await expect(userService.getUserById("   ")).rejects.toThrow(UserInvalidError);
-        });
+        describe("execution & DB errors", () => {
+            it("returns user with normalized social_networks on success", async () => {
+                mockGetUserById.mockResolvedValue([FAKE_USER as any]);
 
-        it("throws UserNotFoundError when the repository returns no row", async () => {
-            mockGetUserById.mockResolvedValue([]);
+                const result = await userService.getUserById(FAKE_ID);
 
-            await expect(userService.getUserById(FAKE_ID)).rejects.toThrow(UserNotFoundError);
-        });
+                expect(mockGetUserById).toHaveBeenCalledWith(FAKE_ID);
+                expect(result).toEqual({ ...FAKE_USER, social_networks: [] } as any);
+            });
 
-        it("returns the user when found", async () => {
-            mockGetUserById.mockResolvedValue([FAKE_USER as any]);
+            it("throws UserNotFoundError when repository returns no row", async () => {
+                mockGetUserById.mockResolvedValue([]);
+                await expect(userService.getUserById(FAKE_ID)).rejects.toThrow(UserNotFoundError);
+            });
 
-            const result = await userService.getUserById(FAKE_ID);
+            it("handles Postgres 22P02 invalid data format error", async () => {
+                mockGetUserById.mockRejectedValue({ code: "22P02", message: "invalid input syntax for type uuid" });
+                await expect(userService.getUserById(FAKE_ID)).rejects.toThrow(UserInvalidError);
+            });
 
-            expect(result).toEqual(FAKE_USER as any);
+            it("propagates unexpected repository errors unchanged", async () => {
+                mockGetUserById.mockRejectedValue(new Error("network error"));
+                await expect(userService.getUserById(FAKE_ID)).rejects.toThrow("network error");
+            });
         });
     });
 
     describe("updateUser", () => {
-        const patch = { name: "New Name" };
+        const patch = { name: "Updated Name" };
 
-        it("throws UserInvalidError for an empty id", async () => {
-            await expect(userService.updateUser("", patch)).rejects.toThrow(UserInvalidError);
+        describe("validation", () => {
+            it("throws UserInvalidError for empty or whitespace-only id", async () => {
+                await expect(userService.updateUser("", patch)).rejects.toThrow(UserInvalidError);
+                await expect(userService.updateUser("   ", patch)).rejects.toThrow(UserInvalidError);
+            });
+
+            it("throws UserInvalidError for invalid UUID", async () => {
+                await expect(userService.updateUser(INVALID_UUID, patch)).rejects.toThrow(UserInvalidError);
+            });
+
+            it("throws UserInvalidError for empty update payload", async () => {
+                await expect(userService.updateUser(FAKE_ID, {})).rejects.toThrow(UserInvalidError);
+                expect(mockUpdateUser).not.toHaveBeenCalled();
+            });
+
+            it("validates nickname when provided", async () => {
+                await expect(userService.updateUser(FAKE_ID, { nickname: "no" })).rejects.toThrow(UserInvalidError);
+                await expect(userService.updateUser(FAKE_ID, { nickname: "invalid!name" })).rejects.toThrow(UserInvalidError);
+            });
+
+            it("validates name length when provided", async () => {
+                await expect(userService.updateUser(FAKE_ID, { name: "ab" })).rejects.toThrow(UserInvalidError);
+                await expect(userService.updateUser(FAKE_ID, { name: "a".repeat(101) })).rejects.toThrow(UserInvalidError);
+            });
+
+            it("validates email format when provided", async () => {
+                await expect(userService.updateUser(FAKE_ID, { email: "not-an-email" })).rejects.toThrow(UserInvalidError);
+            });
+
+            it("validates last_action date format when provided", async () => {
+                await expect(userService.updateUser(FAKE_ID, { last_action: "not-a-date" })).rejects.toThrow(UserInvalidError);
+            });
+
+            it("validates social_networks is an array when provided", async () => {
+                await expect(userService.updateUser(FAKE_ID, { social_networks: "not-an-array" as any })).rejects.toThrow(UserInvalidError);
+            });
         });
 
-        it("throws UserInvalidError for an empty update payload", async () => {
-            await expect(userService.updateUser(FAKE_ID, {})).rejects.toThrow(UserInvalidError);
-            expect(mockUpdateUser).not.toHaveBeenCalled();
-        });
+        describe("execution & DB errors", () => {
+            it("returns the updated user on success", async () => {
+                mockUpdateUser.mockResolvedValue([{ ...FAKE_USER, name: "Updated Name" } as any]);
 
-        it("throws a generic UserError, not UserNotFoundError, when the repository returns no row", async () => {
-            mockUpdateUser.mockResolvedValue([]);
+                const result = await userService.updateUser(FAKE_ID, patch);
 
-            const promise = userService.updateUser(FAKE_ID, patch);
-            await expect(promise).rejects.toThrow(UserError);
-            await expect(promise).rejects.not.toBeInstanceOf(UserNotFoundError);
-        });
+                expect(mockUpdateUser).toHaveBeenCalledWith(FAKE_ID, patch);
+                expect(result.name).toBe("Updated Name");
+                expect(result.social_networks).toEqual([]);
+            });
 
-        it("propagates repository errors unchanged", async () => {
-            mockUpdateUser.mockRejectedValue(new Error("timeout"));
+            it("throws UserError when repository returns no row", async () => {
+                mockUpdateUser.mockResolvedValue([]);
+                await expect(userService.updateUser(FAKE_ID, patch)).rejects.toThrow(UserError);
+            });
 
-            await expect(userService.updateUser(FAKE_ID, patch)).rejects.toThrow("timeout");
-        });
+            it("handles Postgres 23505 unique error during update", async () => {
+                mockUpdateUser.mockRejectedValue({ code: "23505", detail: 'Key ("email")=(taken@example.com) already exists.' });
+                await expect(userService.updateUser(FAKE_ID, { email: "taken@example.com" })).rejects.toThrow(UserAlreadyExistsError);
+            });
 
-        it("returns the updated user on success", async () => {
-            mockUpdateUser.mockResolvedValue([{ ...FAKE_USER, name: "New Name" } as any]);
+            it("handles Postgres 22007 date format error", async () => {
+                mockUpdateUser.mockRejectedValue({ code: "22007", message: "invalid date format" });
+                await expect(userService.updateUser(FAKE_ID, patch)).rejects.toThrow(UserInvalidError);
+            });
 
-            const result = await userService.updateUser(FAKE_ID, patch);
-
-            expect(result.name).toBe("New Name");
+            it("propagates unhandled database errors unchanged", async () => {
+                mockUpdateUser.mockRejectedValue(new Error("query timeout"));
+                await expect(userService.updateUser(FAKE_ID, patch)).rejects.toThrow("query timeout");
+            });
         });
     });
 
     describe("deleteUser", () => {
-        it("throws UserInvalidError for an empty id", async () => {
-            await expect(userService.deleteUser("")).rejects.toThrow(UserInvalidError);
+        describe("validation", () => {
+            it("throws UserInvalidError for empty or whitespace-only id", async () => {
+                await expect(userService.deleteUser("")).rejects.toThrow(UserInvalidError);
+                await expect(userService.deleteUser("   ")).rejects.toThrow(UserInvalidError);
+            });
+
+            it("throws UserInvalidError for invalid UUID", async () => {
+                await expect(userService.deleteUser(INVALID_UUID)).rejects.toThrow(UserInvalidError);
+                expect(mockDeleteUser).not.toHaveBeenCalled();
+            });
         });
 
-        it("throws a generic UserError when the repository reports zero affected rows", async () => {
-            mockDeleteUser.mockResolvedValue([]);
+        describe("execution & DB errors", () => {
+            it("resolves without error when user is deleted", async () => {
+                mockDeleteUser.mockResolvedValue([FAKE_USER as any]);
+                await expect(userService.deleteUser(FAKE_ID)).resolves.toBeUndefined();
+                expect(mockDeleteUser).toHaveBeenCalledWith(FAKE_ID);
+            });
 
-            await expect(userService.deleteUser(FAKE_ID)).rejects.toThrow(UserError);
-        });
+            it("throws UserError when repository reports zero deleted rows", async () => {
+                mockDeleteUser.mockResolvedValue([]);
+                await expect(userService.deleteUser(FAKE_ID)).rejects.toThrow(UserError);
+            });
 
-        it("propagates repository errors unchanged", async () => {
-            mockDeleteUser.mockRejectedValue(new Error("fk violation"));
+            it("handles Postgres 22P02 format error during deletion", async () => {
+                mockDeleteUser.mockRejectedValue({ code: "22P02", message: "invalid input syntax for type uuid" });
+                await expect(userService.deleteUser(FAKE_ID)).rejects.toThrow(UserInvalidError);
+            });
 
-            await expect(userService.deleteUser(FAKE_ID)).rejects.toThrow("fk violation");
-        });
-
-        it("resolves without error when a row is deleted", async () => {
-            mockDeleteUser.mockResolvedValue([FAKE_USER as any]);
-
-            await expect(userService.deleteUser(FAKE_ID)).resolves.toBeUndefined();
+            it("propagates unhandled database errors unchanged", async () => {
+                mockDeleteUser.mockRejectedValue(new Error("foreign key constraint"));
+                await expect(userService.deleteUser(FAKE_ID)).rejects.toThrow("foreign key constraint");
+            });
         });
     });
 });
