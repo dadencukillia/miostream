@@ -9,6 +9,7 @@ const fastify = Fastify({
   ajv: {
     customOptions: {
       unicodeRegExp: true,
+      removeAdditional: false,
     }
   },
 });
