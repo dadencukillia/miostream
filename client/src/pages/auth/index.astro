@@ -1,0 +1,23 @@
+---
+import HtmlLayout from "@layouts/htmlLayout.astro";
+import AuthCard from "@components/features/auth/authCard.tsx";
+import GoogleAuthButton from "@components/features/auth/googleAuthButton.astro";
+import { cn } from "cn";
+import { buttonVariants } from "@components/ui/button";
+import { HugeiconsIcon } from "@hugeicons/react";
+import ArrowLeft01Icon from "@hugeicons/core-free-icons/ArrowLeft01Icon";
+---
+
+<HtmlLayout title="Авторизація">
+  <main class="flex flex-col w-full h-full items-center justify-center">
+    <a href="/" class={cn(
+      buttonVariants({ variant: "link", size: "lg" }),
+      "text-muted-foreground py-12"
+    )}>
+      <HugeiconsIcon icon={ ArrowLeft01Icon } />
+      <span>Повернутися на головну</span>
+    </a>
+    <AuthCard client:load />
+    <GoogleAuthButton />
+  </main>
+</HtmlLayout>

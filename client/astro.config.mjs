@@ -28,6 +28,9 @@ export default defineConfig({
         "@utils": resolveBase("./src/lib/utils"),
       },
     },
+    optimizeDeps: {
+      exclude: ['@hugeicons/core-free-icons', '@hugeicons/react'],
+    },
   },
 
   integrations: [react()]
