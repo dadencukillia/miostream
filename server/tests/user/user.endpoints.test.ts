@@ -36,7 +36,14 @@ describe("User Routes (HTTP)", () => {
       delete: mock(),
     } as unknown as UserService;
 
-    app = Fastify({ ajv: { customOptions: { unicodeRegExp: true } } });
+    app = Fastify({
+      ajv: {
+        customOptions: {
+          unicodeRegExp: true,
+          removeAdditional: false,
+        },
+      },
+    });
     const controller = new UserController(mockService);
     app.register(controller.registerRoutes, { prefix: "/api/user" });
   });
