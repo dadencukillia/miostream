@@ -4,16 +4,14 @@ export interface UserParams {
     id: string;
 }
 
-export interface CreateUserInput {
+export interface CreateUserRequest {
     nickname: string;
     name: string;
     email: string;
     password: string;
 }
 
-export type CreateUserRepoInput = Omit<CreateUserInput, 'password'> & { password_hash: string; };
-
-export type UpdateUserInput = {
+export type UpdateUserRequest = {
     nickname?: string;
     name?: string;
     email?: string;

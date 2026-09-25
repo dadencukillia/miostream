@@ -4,13 +4,13 @@ import type {
 } from 'fastify';
 import type {
     UserParams,
-    CreateUserInput,
-    UpdateUserInput
+    CreateUserRequest,
+    UpdateUserRequest
 } from './dto';
 import * as userService from './service';
 
 export const createUser = async (
-    request: FastifyRequest<{ Body: CreateUserInput }>,
+    request: FastifyRequest<{ Body: CreateUserRequest }>,
     reply: FastifyReply
 ) => {
     const user = await userService.createUser(request.body);
@@ -26,7 +26,7 @@ export const getUser = async (
 };
 
 export const updateUser = async (
-    request: FastifyRequest<{ Params: UserParams; Body: UpdateUserInput }>,
+    request: FastifyRequest<{ Params: UserParams; Body: UpdateUserRequest }>,
     reply: FastifyReply
 ) => {
     const user = await userService.updateUser(request.params.id, request.body);

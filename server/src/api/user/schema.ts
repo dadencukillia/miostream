@@ -123,7 +123,6 @@ export const updateUserSchema = {
                 } 
             },
             timezone:           { type: 'string' },
-            last_action:        { type: 'string', format: 'date' },
             profile_frame:      { type: 'string', enum: Object.values(ProfileFrame) },
             profile_background: { type: 'string', enum: Object.values(ProfileBackground) }
         },

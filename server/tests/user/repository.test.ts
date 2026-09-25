@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import prisma, { pool } from "../../src/db";
 import type { UserModel } from "@prisma/generated/models/User";
 import * as userRepo from "../../src/api/user/repository";
-import type { CreateUserRepoInput } from "../../src/api/user/dto";
+import type { ICreateUser } from "../../src/api/user/repository";
 
 function assertDefined<T>(
     val: T,
@@ -14,7 +14,7 @@ function assertDefined<T>(
     }
 }
 
-type TestUserPayload = CreateUserRepoInput & {
+type TestUserPayload = ICreateUser & {
     nickname: string;
     name: string;
     email: string;
@@ -25,7 +25,7 @@ describe("UserRepository (Integration — requires a reachable Postgres configur
     const createdUserIdsPendingCleanup: string[] = [];
 
     const uniquePayload = (
-        overrides: Partial<CreateUserRepoInput> = {}
+        overrides: Partial<ICreateUser> = {}
     ): TestUserPayload => {
         const suffix = randomUUID().slice(0, 8);
         return {
@@ -38,7 +38,7 @@ describe("UserRepository (Integration — requires a reachable Postgres configur
     };
 
     const createTestUser = async (
-        overrides: Partial<CreateUserRepoInput> = {}
+        overrides: Partial<ICreateUser> = {}
     ): Promise<UserModel> => {
         const payload = uniquePayload(overrides);
         const [user] = await userRepo.createUser(payload);

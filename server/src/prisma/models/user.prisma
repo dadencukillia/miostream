@@ -1,5 +1,5 @@
 model User {
-  id                 String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id                 String            @id @default(dbgenerated("uuidv7()")) @db.Uuid
   nickname           String            @unique @db.VarChar(30)
   name               String            @db.VarChar(100)
   email              String            @unique

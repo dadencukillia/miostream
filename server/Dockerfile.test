@@ -4,4 +4,4 @@ WORKDIR /app
 COPY . .
 
 RUN bun install --frozen-lockfile
-CMD bunx prisma generate && bunx prisma db push && bun test
+CMD bunx prisma generate --sql && bunx prisma db push && bun test

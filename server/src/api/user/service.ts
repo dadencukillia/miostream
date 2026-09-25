@@ -1,6 +1,6 @@
 import * as userRepo from "./repository";
 import type { UserModel } from "@prisma/generated/models/User";
-import type { CreateUserInput, UpdateUserInput } from "./dto";
+import type { CreateUserRequest, UpdateUserRequest } from "./dto";
 import {
     UserError,
     UserInvalidError,
@@ -32,7 +32,7 @@ const handleDbError = (err: any): never => {
     throw err;
 };
 
-export const createUser = async (data: CreateUserInput): Promise<UserModel> => {
+export const createUser = async (data: CreateUserRequest): Promise<UserModel> => {
     if (!data.password || data.password.length < 8) throw new UserInvalidError("Password must be at least 8 characters");
     if (data.password.length > 128) throw new UserInvalidError("Password must not exceed 128 characters");
     if (!data.nickname?.trim()) throw new UserInvalidError("Nickname is required");
@@ -68,7 +68,7 @@ export const getUserById = async (id: string): Promise<UserModel> => {
 
 export const updateUser = async (
     id: string,
-    data: UpdateUserInput
+    data: UpdateUserRequest
 ): Promise<UserModel> => {
     if (!id?.trim()) throw new UserInvalidError("User ID must be a non-empty string");
     if (!UUID_REGEX.test(id)) throw new UserInvalidError("User ID must be a valid UUID");

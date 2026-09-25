@@ -1,7 +1,7 @@
 import prisma from '../../db';
 import type {
-    CreateUserRepoInput,
-    UpdateUserInput
+    CreateUserRequest,
+    UpdateUserRequest
 } from "./dto";
 import {
     insertNewUser,
@@ -10,8 +10,12 @@ import {
     deleteUserById
 } from '@prisma/generated/sql'
 
+export type ICreateUser = Omit<CreateUserRequest, 'password'>
+    & { password_hash: string; };
+export type IUpdateUser = UpdateUserRequest;
+
 export const createUser = async (
-    data: CreateUserRepoInput
+    data: ICreateUser
 ) => await prisma.$queryRawTyped(
     insertNewUser(
         data.nickname,
@@ -27,7 +31,7 @@ export const getUserById = async (
 
 export const updateUser = async (
     id: string,
-    data: UpdateUserInput
+    data: IUpdateUser
 ) => await prisma.$queryRawTyped(patchUserById(id, data));
 
 export const deleteUser = async (

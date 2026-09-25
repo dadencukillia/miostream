@@ -5,8 +5,7 @@ SET
     "name"            = COALESCE(($2::jsonb)->>'name', "name"),
     "email"           = COALESCE(($2::jsonb)->>'email', "email"),
     "timezone"        = COALESCE(($2::jsonb)->>'timezone', "timezone"),
-    "last_action"     = COALESCE((($2::jsonb)->>'last_action')::date, "last_action"),
-
+    
     -- Update only if key exists in the object (allows setting to NULL)
     "bio"             = CASE WHEN ($2::jsonb) ? 'bio' THEN ($2::jsonb)->>'bio' ELSE "bio" END,
     "avatar_url"      = CASE WHEN ($2::jsonb) ? 'avatar_url' THEN ($2::jsonb)->>'avatar_url' ELSE "avatar_url" END,

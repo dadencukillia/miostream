@@ -5,7 +5,8 @@
   "private": true,
   "scripts": {
     "serve": "bun run ./src/index.ts",
-    "generate": "bunx prisma generate"
+    "dbgen": "bunx prisma generate --sql",
+    "dbpush": "bunx prisma db push"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.13",
@@ -22,5 +23,10 @@
     "@prisma/client": "^7",
     "fastify": "^5.12.4",
     "pg": "^8.23.0"
+  },
+  "overrides": {
+    "prisma": "<8.0.0",
+    "@prisma/client": "<8.0.0",
+    "@prisma/adapter-pg": "<8.0.0"
   }
 }
