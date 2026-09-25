@@ -1,9 +1,13 @@
-import Fastify from 'fastify';
+import Fastify from "fastify";
 import prisma, { pool } from './db';
-import api from "./api/plugin"
+import connector from "./utils/connector";
+import { S3Connection } from "./connections/s3";
+import api from "./api/plugin";
+import cdn from "./cdn/plugin";
 
 const fastify = Fastify({
   logger: true,
+  pluginTimeout: 0,
   ajv: {
     customOptions: {
       unicodeRegExp: true,
@@ -12,11 +16,20 @@ const fastify = Fastify({
   },
 });
 
+fastify.register(connector, {
+  retries: 3,
+  interval: 15 * 1000, // 15 seconds
+  connections: [
+    S3Connection
+  ],
+});
+
 fastify.get('/healthcheck', async (_request, reply) => {
   return reply.send({ health: true });
 });
 
-fastify.register(api, { prefix: '/api' });
+fastify.register(api, { prefix: "/api" });
+fastify.register(cdn, { prefix: "/cdn" });
 
 const start = async () => {
   try {
