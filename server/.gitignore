@@ -34,3 +34,9 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .DS_Store
 node_modules/
 dist/
+
+# prisma skills folders
+.agents
+.claude
+.cursor
+.devin
