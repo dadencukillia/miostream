@@ -58,11 +58,15 @@ export async function getGoogleProfile(code: string) {
 	return { ...profile, refreshToken: tokens.refresh_token, expiresIn: tokens.expires_in ?? 3600 };
 }
 
-export async function saveGoogleUser(profile: { email: string; name?: string; refreshToken?: string }) {
+export async function saveGoogleUser(profile:
+	 { email: string;
+		 name?: string;
+		 refreshToken?: string }) {
 	// Save the user and keep only the encrypted Google refresh token.
 	const user = await mockPrisma.user.upsert({
 		 conflictOn: { email: profile.email },
-		 create: { email: profile.email, name: profile.name ?? null },
+		 create: { email: profile.email,
+			         name: profile.name ?? null },
 		 update: { name: profile.name ?? null }
 		});
 

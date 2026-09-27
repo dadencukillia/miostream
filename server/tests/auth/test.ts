@@ -62,7 +62,10 @@ describe("auth tests", () => {
 
 describe("auth routes", () => {
 	test("protects /me without a JWT cookie", async () => {
-		const response = await app.inject({ method: "GET", url: "/auth/me" });
+		const response = await app.inject({ 
+			 method: "GET",
+			 url: "/auth/me" 
+			});
 
 		expect(response.statusCode).toBe(401);
 		expect(JSON.parse(response.body)).toEqual({ error: "unauthorized" });
