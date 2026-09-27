@@ -1,0 +1,58 @@
+---
+import Home05Icon from '@hugeicons/core-free-icons/Home05Icon';
+import ListVideoIcon from '@hugeicons/core-free-icons/ListVideoIcon';
+import MagicWand02Icon from '@hugeicons/core-free-icons/MagicWand02Icon';
+import User02Icon from '@hugeicons/core-free-icons/User02Icon';
+import BottombarLink from "./link.astro";
+import type { IconSvgElement } from '@hugeicons/react';
+import type { HTMLAttributes } from 'astro/types';
+import { cn } from 'cn';
+
+type Props = HTMLAttributes<"div">;
+
+const { class: className } = Astro.props;
+
+interface Link {
+  icon: IconSvgElement,
+  title: string,
+  link: string,
+  activeRegex: RegExp
+}
+
+const links: Link[] = [
+  {
+    icon: Home05Icon,
+    title: "Головна",
+    link: "/",
+    activeRegex: /^\/$/g
+  },
+  {
+    icon: MagicWand02Icon,
+    title: "Досліджуй",
+    link: "/discover",
+    activeRegex: /^\/discover/g
+  },
+  {
+    icon: ListVideoIcon,
+    title: "Список",
+    link: "/list",
+    activeRegex: /^\/list/g
+  },
+  {
+    icon: User02Icon,
+    title: "Профіль",
+    link: "/profile",
+    activeRegex: /^\/profile/g
+  },
+];
+---
+
+<nav class={cn("flex gap-6 h-15 items-center justify-center border-b border-border bg-popover text-popover-foreground px-container backdrop-blur-xl", className)}>
+  { links.map(el => (<BottombarLink 
+      icon={ el.icon }
+      title={ el.title }
+      link={ el.link }
+      activeRegex={ el.activeRegex }
+    />)
+  ) }
+</nav>
