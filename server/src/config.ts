@@ -9,13 +9,16 @@ function readSecret(name: string, fileName: string, fallback: string) {
 }
 
 // Services host
-export const POSTGRES_HOST = process.env['POSTGRES_HOST']!;
-export const REDIS_HOST = process.env['REDIS_HOST']!;
-export const RUSTFS_HOST = process.env['RUSTFS_HOST']!;
+export const POSTGRES_HOST = process.env['POSTGRES_HOST'] ?? "localhost:5432";
+export const REDIS_HOST = process.env['REDIS_HOST'] ?? "localhost:6379";
+export const RUSTFS_HOST = process.env['RUSTFS_HOST'] ?? "localhost:9000";
 
+// Secrets
 export const DB_NAME = "miostream";
 export const DB_PASS = readSecret("DB_PASS", "DB_PASS_FILE", "");
 export const DB_URL = `postgresql://postgres:${DB_PASS}@${POSTGRES_HOST}/${DB_NAME}`;
+export const RUSTFS_ACCESS_KEY = readSecret("RUSTFS_ACCESS_KEY", "RUSTFS_ACCESS_KEY_FILE", "");
+export const RUSTFS_SECRET_KEY = readSecret("RUSTFS_SECRET_KEY", "RUSTFS_SECRET_KEY_FILE", "");
 
 // Authentification
 export const AUTH_COOKIE_NAME = process.env["AUTH_COOKIE_NAME"] ?? "auth_token";
