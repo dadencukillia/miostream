@@ -4,4 +4,8 @@ declare module 'fastify' {
   interface FastifyInstance {
     s3: S3Client;
   }
+  
+  interface FastifyRequest {
+		user?: { id: number };
+	}
 }
