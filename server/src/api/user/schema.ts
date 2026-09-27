@@ -5,7 +5,7 @@ const userSchema = {
     properties: {
         id:         { type: 'string', format: 'uuid' },
         nickname:   { type: 'string' },
-        name:       { type: 'string' },
+        full_name:       { type: 'string' },
         email:      { type: 'string', format: 'email' },
         bio:        { type: 'string' },
         avatar_url: { type: 'string' },
@@ -44,7 +44,7 @@ export const createUserSchema = {
         type: 'object',
         required: [
             'nickname', 
-            'name',
+            'full_name',
             'email',
             'password',
         ],
@@ -55,7 +55,7 @@ export const createUserSchema = {
                 maxLength: 30,
                 pattern: '^[a-zA-Z0-9_]+$'
             },
-            name: { 
+            full_name: { 
                 type: 'string',
                 minLength: 3,
                 maxLength: 100,
@@ -97,7 +97,7 @@ export const updateUserSchema = {
                 maxLength: 30,
                 pattern: '^[a-zA-Z0-9_]+$'
             },
-            name: {
+            full_name: {
                 type: 'string',
                 minLength: 3,
                 maxLength: 100,

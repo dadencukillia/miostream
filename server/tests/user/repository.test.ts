@@ -16,7 +16,7 @@ function assertDefined<T>(
 
 type TestUserPayload = ICreateUser & {
     nickname: string;
-    name: string;
+    full_name: string;
     email: string;
     password_hash: string;
 };
@@ -30,7 +30,7 @@ describe("UserRepository (Integration — requires a reachable Postgres configur
         const suffix = randomUUID().slice(0, 8);
         return {
             nickname: `test_user_${suffix}`,
-            name: "Test User",
+            full_name: "Test User",
             email: `test_${suffix}@example.com`,
             password_hash: "hash",
             ...overrides,
@@ -133,11 +133,11 @@ describe("UserRepository (Integration — requires a reachable Postgres configur
             await userRepo.updateUser(created.id, { bio: "original bio" });
 
             const [updated] = await userRepo.updateUser(created.id, {
-                name: "Updated Name",
+                full_name: "Updated Name",
             });
             assertDefined(updated);
 
-            expect(updated.name).toBe("Updated Name");
+            expect(updated.full_name).toBe("Updated Name");
             expect(updated.bio).toBe("original bio");
             expect(updated.timezone).toBe("UTC");
             expect(updated.nickname).toBe(created.nickname);
@@ -172,7 +172,7 @@ describe("UserRepository (Integration — requires a reachable Postgres configur
 
             await new Promise((r) => setTimeout(r, 10));
             const [updated] = await userRepo.updateUser(created.id, {
-                name: "Touch",
+                full_name: "Touch",
             });
             assertDefined(updated);
 
@@ -184,7 +184,7 @@ describe("UserRepository (Integration — requires a reachable Postgres configur
         it("returns empty array when updating a non-existent id", async () => {
             const result = await userRepo.updateUser(
                 "00000000-0000-0000-0000-000000000000",
-                { name: "Ghost" }
+                { full_name: "Ghost" }
             );
 
             expect(result).toEqual([]);

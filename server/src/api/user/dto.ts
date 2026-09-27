@@ -6,14 +6,14 @@ export interface UserParams {
 
 export interface CreateUserRequest {
     nickname: string;
-    name: string;
+    full_name: string;
     email: string;
     password: string;
 }
 
 export type UpdateUserRequest = {
     nickname?: string;
-    name?: string;
+    full_name?: string;
     email?: string;
     bio?: string;
     avatar_url?: string;

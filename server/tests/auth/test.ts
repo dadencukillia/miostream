@@ -26,7 +26,7 @@ describe("auth tests", () => {
 	test("creates and verifies a JWT for a Google user", async () => {
 		const { token, user } = await saveGoogleUser({ 
 			email: "user@example.com",
-			name: "Test User" });
+			full_name: "Test User" });
 
 		expect(token.split(".")).toHaveLength(3);
 		expect(verifyToken(token)).toEqual({ userId: user.id });

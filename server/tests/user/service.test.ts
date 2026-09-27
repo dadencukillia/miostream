@@ -14,7 +14,7 @@ const INVALID_UUID = "not-a-valid-uuid";
 const FAKE_USER = {
     id: FAKE_ID,
     nickname: "tester",
-    name: "Test User",
+    full_name: "Test User",
     email: "test@example.com",
     password_hash: "hashed_longenoughpassword",
     bio: null,
@@ -53,7 +53,7 @@ describe("user.service", () => {
     describe("createUser", () => {
         const validInput = {
             nickname: "tester",
-            name: "Test User",
+            full_name: "Test User",
             email: "test@example.com",
             password: "longenoughpassword",
         };
@@ -88,13 +88,13 @@ describe("user.service", () => {
             });
 
             it("throws UserInvalidError if name is missing or empty", async () => {
-                await expect(userService.createUser({ ...validInput, name: "" })).rejects.toThrow(UserInvalidError);
-                await expect(userService.createUser({ ...validInput, name: "   " })).rejects.toThrow(UserInvalidError);
+                await expect(userService.createUser({ ...validInput, full_name: "" })).rejects.toThrow(UserInvalidError);
+                await expect(userService.createUser({ ...validInput, full_name: "   " })).rejects.toThrow(UserInvalidError);
             });
 
             it("throws UserInvalidError if name length is outside 3 to 100 characters", async () => {
-                await expect(userService.createUser({ ...validInput, name: "ab" })).rejects.toThrow(UserInvalidError);
-                await expect(userService.createUser({ ...validInput, name: "a".repeat(101) })).rejects.toThrow(UserInvalidError);
+                await expect(userService.createUser({ ...validInput, full_name: "ab" })).rejects.toThrow(UserInvalidError);
+                await expect(userService.createUser({ ...validInput, full_name: "a".repeat(101) })).rejects.toThrow(UserInvalidError);
             });
 
             it("throws UserInvalidError if email is missing or empty", async () => {
@@ -117,7 +117,7 @@ describe("user.service", () => {
 
                 expect(mockCreateUser).toHaveBeenCalledWith({
                     nickname: validInput.nickname,
-                    name: validInput.name,
+                    full_name: validInput.full_name,
                     email: validInput.email,
                     password_hash: "hashed_" + validInput.password,
                 });
@@ -197,7 +197,7 @@ describe("user.service", () => {
     });
 
     describe("updateUser", () => {
-        const patch = { name: "Updated Name" };
+        const patch = { full_name: "Updated Name" };
 
         describe("validation", () => {
             it("throws UserInvalidError for empty or whitespace-only id", async () => {
@@ -220,8 +220,8 @@ describe("user.service", () => {
             });
 
             it("validates name length when provided", async () => {
-                await expect(userService.updateUser(FAKE_ID, { name: "ab" })).rejects.toThrow(UserInvalidError);
-                await expect(userService.updateUser(FAKE_ID, { name: "a".repeat(101) })).rejects.toThrow(UserInvalidError);
+                await expect(userService.updateUser(FAKE_ID, { full_name: "ab" })).rejects.toThrow(UserInvalidError);
+                await expect(userService.updateUser(FAKE_ID, { full_name: "a".repeat(101) })).rejects.toThrow(UserInvalidError);
             });
 
             it("validates email format when provided", async () => {
@@ -239,12 +239,12 @@ describe("user.service", () => {
 
         describe("execution & DB errors", () => {
             it("returns the updated user on success", async () => {
-                mockUpdateUser.mockResolvedValue([{ ...FAKE_USER, name: "Updated Name" } as any]);
+                mockUpdateUser.mockResolvedValue([{ ...FAKE_USER, full_name: "Updated Name" } as any]);
 
                 const result = await userService.updateUser(FAKE_ID, patch);
 
                 expect(mockUpdateUser).toHaveBeenCalledWith(FAKE_ID, patch);
-                expect(result.name).toBe("Updated Name");
+                expect(result.full_name).toBe("Updated Name");
                 expect(result.social_networks).toEqual([]);
             });
 

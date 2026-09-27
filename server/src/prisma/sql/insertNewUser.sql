@@ -1,6 +1,6 @@
 INSERT INTO "User" (
     "nickname",
-    "name",
+    "full_name",
     "email",
     "password_hash"
 ) VALUES (

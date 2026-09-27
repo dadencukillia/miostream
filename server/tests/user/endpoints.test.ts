@@ -13,13 +13,13 @@ const FAKE_ID = "123e4567-e89b-12d3-a456-426614174000";
 const FAKE_USER = {
   id: FAKE_ID,
   nickname: "tester",
-  name: "Test User",
+  full_name: "Test User",
   email: "test@example.com",
 };
 
 const validCreatePayload = {
   nickname: "valid_nick",
-  name: "Valid Name",
+  full_name: "Valid Name",
   email: "valid@example.com",
   password: "password123",
 };
@@ -189,24 +189,24 @@ describe("User Routes (HTTP)", () => {
     it("returns 200 and the updated user on success", async () => {
       updateUserSpy.mockResolvedValue({
         ...FAKE_USER,
-        name: "New Name",
+        full_name: "New Name",
       } as any);
 
       const response = await app.inject({
         method: "PATCH",
         url: `/api/user/${FAKE_ID}`,
-        payload: { name: "New Name" },
+        payload: { full_name: "New Name" },
       });
 
       expect(response.statusCode).toBe(200);
-      expect(JSON.parse(response.body).name).toBe("New Name");
+      expect(JSON.parse(response.body).full_name).toBe("New Name");
     });
 
     it("returns 400 if the id param is not a valid UUID", async () => {
       const response = await app.inject({
         method: "PATCH",
         url: "/api/user/not-a-uuid",
-        payload: { name: "New Name" },
+        payload: { full_name: "New Name" },
       });
 
       expect(response.statusCode).toBe(400);
@@ -230,7 +230,7 @@ describe("User Routes (HTTP)", () => {
       const response = await app.inject({
         method: "PATCH",
         url: `/api/user/${FAKE_ID}`,
-        payload: { name: "New Name" },
+        payload: { full_name: "New Name" },
       });
 
       expect(response.statusCode).toBe(404);
@@ -244,7 +244,7 @@ describe("User Routes (HTTP)", () => {
       const response = await app.inject({
         method: "PATCH",
         url: `/api/user/${FAKE_ID}`,
-        payload: { name: "New Name" },
+        payload: { full_name: "New Name" },
       });
 
       expect(response.statusCode).toBe(400);

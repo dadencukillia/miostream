@@ -19,7 +19,7 @@ export const createUser = async (
 ) => await prisma.$queryRawTyped(
     insertNewUser(
         data.nickname,
-        data.name,
+        data.full_name,
         data.email,
         data.password_hash
     )

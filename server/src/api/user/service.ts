@@ -37,8 +37,8 @@ export const createUser = async (data: CreateUserRequest): Promise<UserModel> =>
     if (data.password.length > 128) throw new UserInvalidError("Password must not exceed 128 characters");
     if (!data.nickname?.trim()) throw new UserInvalidError("Nickname is required");
     if (!NICKNAME_REGEX.test(data.nickname)) throw new UserInvalidError("Nickname must be 3-30 characters containing only letters, numbers, and underscores");
-    if (!data.name?.trim()) throw new UserInvalidError("Name is required");
-    if (data.name.length < 3 || data.name.length > 100) throw new UserInvalidError("Name must be between 3 and 100 characters");
+    if (!data.full_name?.trim()) throw new UserInvalidError("Name is required");
+    if (data.full_name.length < 3 || data.full_name.length > 100) throw new UserInvalidError("Name must be between 3 and 100 characters");
     if (!data.email?.trim()) throw new UserInvalidError("Email is required");
     if (!EMAIL_REGEX.test(data.email)) throw new UserInvalidError("Invalid email format");
 
@@ -46,7 +46,7 @@ export const createUser = async (data: CreateUserRequest): Promise<UserModel> =>
 
     const [user] = await userRepo.createUser({
         nickname: data.nickname,
-        name: data.name,
+        full_name: data.full_name,
         email: data.email,
         password_hash,
     }).catch(handleDbError);
@@ -75,7 +75,7 @@ export const updateUser = async (
     if (!data || Object.keys(data).length === 0) throw new UserInvalidError("Update payload cannot be empty");
 
     if (data.nickname !== undefined && !NICKNAME_REGEX.test(data.nickname)) throw new UserInvalidError("Nickname must be 3-30 characters containing only letters, numbers, and underscores");
-    if (data.name !== undefined && (data.name.length < 3 || data.name.length > 100)) throw new UserInvalidError("Name must be between 3 and 100 characters");
+    if (data.full_name !== undefined && (data.full_name.length < 3 || data.full_name.length > 100)) throw new UserInvalidError("Name must be between 3 and 100 characters");
     if (data.email !== undefined && !EMAIL_REGEX.test(data.email)) throw new UserInvalidError("Invalid email format");
     if (data.last_action !== undefined && isNaN(Date.parse(data.last_action))) throw new UserInvalidError("Invalid date format for last_action");
     if (data.social_networks !== undefined && !Array.isArray(data.social_networks)) throw new UserInvalidError("social_networks must be an array");

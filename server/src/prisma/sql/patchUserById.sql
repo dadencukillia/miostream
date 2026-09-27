@@ -2,7 +2,7 @@ UPDATE "User"
 SET 
     -- Update only if key exists and is not null
     "nickname"        = COALESCE(($2::jsonb)->>'nickname', "nickname"),
-    "name"            = COALESCE(($2::jsonb)->>'name', "name"),
+    "full_name"            = COALESCE(($2::jsonb)->>'full_name', "full_name"),
     "email"           = COALESCE(($2::jsonb)->>'email', "email"),
     "timezone"        = COALESCE(($2::jsonb)->>'timezone', "timezone"),
     
