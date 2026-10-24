@@ -10,7 +10,7 @@ WHERE "id" = $1::uuid
 RETURNING user_id, nickname, full_name, email, google_id, bio, password_hash, avatar_url, max_streak, timezone, streak_start_date, last_watch_date, profile_frame_url, profile_background_url, user_role, user_status, created_at, updated_at`;
 
 export interface DeleteUserByIdArgs {
-    : string;
+    userId: string;
 }
 
 export interface DeleteUserByIdRow {
@@ -37,7 +37,7 @@ export interface DeleteUserByIdRow {
 export async function deleteUserById(client: Client, args: DeleteUserByIdArgs): Promise<DeleteUserByIdRow | null> {
     const result = await client.query({
         text: deleteUserByIdQuery,
-        values: [args.],
+        values: [args.userId],
         rowMode: "array"
     });
     if (result.rows.length !== 1) {
@@ -141,41 +141,41 @@ export const patchUserByIdQuery = `-- name: PatchUserById :one
 UPDATE public.users
 SET 
     -- Update only if key exists and is not null
-    "nickname"          = COALESCE(($2::jsonb)->>'nickname', "nickname"),
-    "full_name"         = COALESCE(($2::jsonb)->>'full_name', "full_name"),
-    "email"             = COALESCE(($2::jsonb)->>'email', "email"),
-    "timezone"          = COALESCE(($2::jsonb)->>'timezone', "timezone"),
+    "nickname"          = COALESCE(($1::jsonb)->>'nickname', "nickname"),
+    "full_name"         = COALESCE(($1::jsonb)->>'full_name', "full_name"),
+    "email"             = COALESCE(($1::jsonb)->>'email', "email"),
+    "timezone"          = COALESCE(($1::jsonb)->>'timezone', "timezone"),
     
     -- Update only if key exists in the object (allows setting to NULL)
-    "bio"               = CASE WHEN ($2::jsonb) ? 'bio' THEN ($2::jsonb)->>'bio' ELSE "bio" END,
-    "avatar_url"        = CASE WHEN ($2::jsonb) ? 'avatar_url' THEN ($2::jsonb)->>'avatar_url' ELSE "avatar_url" END,
+    "bio"               = CASE WHEN ($1::jsonb) ? 'bio' THEN ($1::jsonb)->>'bio' ELSE "bio" END,
+    "avatar_url"        = CASE WHEN ($1::jsonb) ? 'avatar_url' THEN ($1::jsonb)->>'avatar_url' ELSE "avatar_url" END,
     "social_networks" = CASE 
-        WHEN NOT (($2::jsonb) ? 'social_networks') THEN "social_networks"
-        WHEN (($2::jsonb)->>'social_networks') IS NULL THEN NULL
-        ELSE ARRAY(SELECT jsonb_array_elements_text(($2::jsonb)->'social_networks'))
+        WHEN NOT (($1::jsonb) ? 'social_networks') THEN "social_networks"
+        WHEN (($1::jsonb)->>'social_networks') IS NULL THEN NULL
+        ELSE ARRAY(SELECT jsonb_array_elements_text(($1::jsonb)->'social_networks'))
     END,
 
     -- Update only if exists; apply DEFAULT enum if null
     "profile_frame" = CASE 
-        WHEN NOT (($2::jsonb) ? 'profile_frame') THEN "profile_frame"
-        WHEN (($2::jsonb)->>'profile_frame') IS NULL THEN 'DEFAULT'::"ProfileFrame"
-        ELSE (($2::jsonb)->>'profile_frame')::"ProfileFrame"
+        WHEN NOT (($1::jsonb) ? 'profile_frame') THEN "profile_frame"
+        WHEN (($1::jsonb)->>'profile_frame') IS NULL THEN 'DEFAULT'::"ProfileFrame"
+        ELSE (($1::jsonb)->>'profile_frame')::"ProfileFrame"
     END,
     "profile_background" = CASE 
-        WHEN NOT (($2::jsonb) ? 'profile_background') THEN "profile_background"
-        WHEN (($2::jsonb)->>'profile_background') IS NULL THEN 'DEFAULT'::"ProfileBackground"
-        ELSE (($2::jsonb)->>'profile_background')::"ProfileBackground"
+        WHEN NOT (($1::jsonb) ? 'profile_background') THEN "profile_background"
+        WHEN (($1::jsonb)->>'profile_background') IS NULL THEN 'DEFAULT'::"ProfileBackground"
+        ELSE (($1::jsonb)->>'profile_background')::"ProfileBackground"
     END,
 
     -- Always bump timestamp
     "updated_at" = NOW()
 
-WHERE "id" = $1::uuid
+WHERE "id" = $2::uuid
 RETURNING user_id, nickname, full_name, email, google_id, bio, password_hash, avatar_url, max_streak, timezone, streak_start_date, last_watch_date, profile_frame_url, profile_background_url, user_role, user_status, created_at, updated_at`;
 
 export interface PatchUserByIdArgs {
-    : string;
-    : any;
+    patchData: any;
+    userId: string;
 }
 
 export interface PatchUserByIdRow {
@@ -202,7 +202,7 @@ export interface PatchUserByIdRow {
 export async function patchUserById(client: Client, args: PatchUserByIdArgs): Promise<PatchUserByIdRow | null> {
     const result = await client.query({
         text: patchUserByIdQuery,
-        values: [args., args.],
+        values: [args.patchData, args.userId],
         rowMode: "array"
     });
     if (result.rows.length !== 1) {
@@ -238,7 +238,7 @@ WHERE "id" = $1::uuid
 LIMIT 1`;
 
 export interface SelectUserByIdArgs {
-    : string;
+    userId: string;
 }
 
 export interface SelectUserByIdRow {
@@ -265,7 +265,7 @@ export interface SelectUserByIdRow {
 export async function selectUserById(client: Client, args: SelectUserByIdArgs): Promise<SelectUserByIdRow | null> {
     const result = await client.query({
         text: selectUserByIdQuery,
-        values: [args.],
+        values: [args.userId],
         rowMode: "array"
     });
     if (result.rows.length !== 1) {

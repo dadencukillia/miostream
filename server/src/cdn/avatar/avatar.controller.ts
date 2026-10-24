@@ -1,7 +1,6 @@
-import type { FastifyReply, FastifyRequest } from "fastify";
+import { FastifyInstance, type FastifyReply, type FastifyRequest } from "fastify";
 import "../../context";
-import { AvatarError, getAvatar, resetUserAvatar, updateUserAvatarImage } from "./avatar.service";
-import { db } from "../../prisma/db";
+import { getAvatar, resetUserAvatar, updateUserAvatarImage } from "./avatar.service";
 
 interface GetAvatarParams {
   avatarId: string,
@@ -21,17 +20,19 @@ export const getAvatarController = async (
 };
 
 export const resetAvatarController = async (
+  fastify: FastifyInstance,
   request: FastifyRequest,
   reply: FastifyReply
 ) => {
   // TODO: replace on working auth middleware context
   const userId = "user";
 
-  await resetUserAvatar(request.server.s3, db, request.log, userId);
+  await resetUserAvatar(request.server.s3, fastify.pg, request.log, userId);
   return reply.send({ ok: true });
 };
 
 export const updateAvatarController = async (
+  fastify: FastifyInstance,
   request: FastifyRequest<{ Body: string }>,
   reply: FastifyReply
 ) => {
@@ -39,7 +40,7 @@ export const updateAvatarController = async (
   const userId = "user";
 
   const result = await updateUserAvatarImage(
-    request.server.s3, db, 
+    request.server.s3, fastify.pg, 
     request.log, 
     userId, 
     Buffer.from(request.body, "base64")
