@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+SQLC_BIN="/tmp/sqlc_bin/sqlc"
+
+if [ ! -f "$SQLC_BIN" ]; then
+  wget -O /tmp/sqlc_bin.tar.gz "https://github.com/sqlc-dev/sqlc/releases/download/v1.31.1/sqlc_1.31.1_linux_amd64.tar.gz"
+  mkdir -p /tmp/sqlc_bin && tar -xvf /tmp/sqlc_bin.tar.gz -C /tmp/sqlc_bin/
+  chmod +x "$SQLC_BIN"
+fi
+
+rm /tmp/sqlc_bin.tar.gz 2> /dev/null
+exec "$SQLC_BIN" $@

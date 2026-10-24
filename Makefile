@@ -41,9 +41,10 @@ dev_backend:
 	bun serve
 
 dev_shell:
+	./sqlc version 1> /dev/null
 	. ./apply_env.sh test dev && \
 	echo "Welcome into MioStream dev shell" && \
-	${USER_SHELL}
+	PATH="$$PATH:/tmp/sqlc_bin/" ${USER_SHELL}
 
 test:
 	echo --- PREBUILD ---
