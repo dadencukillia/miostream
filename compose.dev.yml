@@ -31,7 +31,7 @@ services:
       - 6379:6379
 
   rustfs:
-    image: "rustfs/rustfs:latest"
+    image: "rustfs/rustfs:1.0.3"
     restart: always
     volumes:
       - rustfs-data-dev:/data
@@ -41,6 +41,12 @@ services:
     ports:
       - 9000:9000
       - 9001:9001
+
+  oauthmock:
+    image: "ghcr.io/geigerzaehler/oidc-provider-mock:0.4.8"
+    restart: always
+    ports:
+      - 9400:9400
     
 volumes:
   caddy-data-dev: {}

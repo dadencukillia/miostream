@@ -97,7 +97,7 @@ services:
       - internal
 
   rustfs:
-    image: "rustfs/rustfs:latest"
+    image: "rustfs/rustfs:1.0.3"
     restart: always
     volumes:
       - rustfs-data:/data

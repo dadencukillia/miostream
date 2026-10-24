@@ -161,7 +161,7 @@ services:
           memory: 32M
 
   rustfs:
-    image: "rustfs/rustfs:latest"
+    image: "rustfs/rustfs:1.0.3"
     volumes:
       - rustfs-data:/data
     healthcheck:
