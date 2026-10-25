@@ -52,10 +52,10 @@ test:
 	docker compose -f compose.test.yml build backend
 	echo --- PREPULL ---
 	docker compose -f compose.test.yml --profile frontend --profile backend pull
-	sh -c '\
+	bash -c '\
 		set -e; \
 		trap "echo --- CLEANUP ---; docker compose -f compose.test.yml down -v" EXIT; \
-		. ./apply_env.sh test && \
+		. ./apply_env.sh test; \
 		echo --- FRONTEND ---; \
 		docker compose --profile frontend -f compose.test.yml up --abort-on-container-exit --exit-code-from frontend; \
 		echo --- BACKEND ---; \
