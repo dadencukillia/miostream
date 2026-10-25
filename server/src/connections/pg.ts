@@ -37,7 +37,12 @@ export const PostgresConnection: Connection<Pool> = {
   async initFunc(_fastify) {
     const pool = new Pool({ connectionString: config.DB_URL });
     const queryResult = await pool.query("SELECT 'pong' AS ping;");
-    assert(queryResult.rows[0].ping == "pong");
+
+    if (queryResult.rows[0].ping != "pong") {
+      await pool.end();
+      assert(false);
+    }
+
     await migrateDB(pool);
 
     return pool;

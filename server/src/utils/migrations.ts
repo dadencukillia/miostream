@@ -148,10 +148,12 @@ export class Migrator {
     );
     const client = await this.db.connect();
     console.log("[Migrations] current state:", currentMigrationState);
-    if (upMigrations.length === 0) 
+    if (upMigrations.length === 0) {
       console.log(`[Migrations] up to date.`);
-    else
+      return;
+    } else {
       console.log(`[Migrations] ${upMigrations.length} migrations to do.`);
+    }
 
     try {
       for (const migration of upMigrations) {

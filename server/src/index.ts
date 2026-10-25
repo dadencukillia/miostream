@@ -42,7 +42,7 @@ const start = async () => {
 };
 
 const shutdown = async () => {
-  fastify.log.info('Stopping server and closing database pool...');
+  fastify.log.info('Stopping server...');
   await fastify.close();
   process.exit(0);
 };
