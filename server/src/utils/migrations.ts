@@ -2,8 +2,8 @@ import { PathLike, readdirSync } from "node:fs";
 import path from "node:path";
 import { Pool } from "pg";
 
-const UP_PART_LINE = "-- migrate:up";
-const DOWN_PART_LINE = "-- migrate:down";
+const UPGRADE_PART_LINE = "-- migrate:up";
+const DOWNGRADE_PART_LINE = "-- migrate:down";
 
 class MigrationError extends Error {
   constructor(message: string) {
@@ -40,10 +40,10 @@ class MigrationEntry {
 
     for (const line of content.split("\n")) {
       const trim = line.trim();
-      if (trim === UP_PART_LINE) {
+      if (trim === UPGRADE_PART_LINE) {
         upPartFlag = true;
         downPartFlag = false;
-      } else if (trim == DOWN_PART_LINE) {
+      } else if (trim == DOWNGRADE_PART_LINE) {
         upPartFlag = false;
         downPartFlag = true;
       }
@@ -52,13 +52,13 @@ class MigrationEntry {
     }
 
     if (upPartContentLines.length === 0)
-      throw new MigrationError(`no migrate:up section in ${this._timestamp} migration, probably was misspelled`);
+      throw new MigrationError(`no upgrade section in ${this._timestamp} migration, probably was misspelled`);
     if (downPartContentLines.length === 0)
-      throw new MigrationError(`no migrate:down section in ${this._timestamp} migration, probably was misspelled`);
+      throw new MigrationError(`no downgrade section in ${this._timestamp} migration, probably was misspelled`);
 
     return {
-      up: upPartContentLines.join("\n"),
-      down: downPartContentLines.join("\n")
+      up: upPartContentLines.join("\n").trim(),
+      down: downPartContentLines.join("\n").trim()
     };
   }
 
@@ -115,7 +115,7 @@ export class Migrator {
     await this.db.query(`
       CREATE TABLE IF NOT EXISTS public.schema_migrations(
         operation_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-        execution_time TIMESTAMPTZ NOT NULL DEFAULT now(),
+        executed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
         from_migration BIGINT NOT NULL,
         to_migration BIGINT NOT NULL
       );
@@ -219,6 +219,7 @@ export class Migrator {
     } catch(err) {
       console.error(`[Migrations] rollback ${currentMigrationState} ✘`);
       console.log("[Migrations] failed.");
+      await client.query("ROLLBACK;");
       throw err;
     } finally {
       client.release();
