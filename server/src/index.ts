@@ -1,9 +1,9 @@
 import Fastify from "fastify";
-import prisma, { pool } from './db';
 import connector from "./utils/connector";
 import { S3Connection } from "./connections/s3";
 import api from "./api/plugin";
 import cdn from "./cdn/plugin";
+import { PostgresConnection } from "./connections/pg";
 
 const fastify = Fastify({
   logger: true,
@@ -20,7 +20,8 @@ fastify.register(connector, {
   retries: 3,
   interval: 15 * 1000, // 15 seconds
   connections: [
-    S3Connection
+    S3Connection,
+    PostgresConnection,
   ],
 });
 
@@ -41,10 +42,8 @@ const start = async () => {
 };
 
 const shutdown = async () => {
-  fastify.log.info('Stopping server and closing database pool...');
+  fastify.log.info('Stopping server...');
   await fastify.close();
-  await prisma.$disconnect();
-  await pool.end();
   process.exit(0);
 };
 

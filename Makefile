@@ -5,12 +5,12 @@ USER_SHELL := $(shell echo $$SHELL)
 
 build_images:
 	. ./apply_env.sh prod && \
-	docker compose build frontend && \
-	docker compose build backend
+	docker compose --env-file ./.env build frontend && \
+	docker compose --env-file ./.env build backend
 
 production:
 	. ./apply_env.sh prod && \
-	docker compose up -d
+	docker compose --env-file ./.env up -d
 
 down:
 	docker compose -f compose.yml down
@@ -41,9 +41,10 @@ dev_backend:
 	bun serve
 
 dev_shell:
+	./sqlc version 1> /dev/null
 	. ./apply_env.sh test dev && \
 	echo "Welcome into MioStream dev shell" && \
-	${USER_SHELL}
+	PATH="$$PATH:/tmp/sqlc_bin/" ${USER_SHELL}
 
 test:
 	echo --- PREBUILD ---
@@ -51,10 +52,10 @@ test:
 	docker compose -f compose.test.yml build backend
 	echo --- PREPULL ---
 	docker compose -f compose.test.yml --profile frontend --profile backend pull
-	sh -c '\
+	bash -c '\
 		set -e; \
 		trap "echo --- CLEANUP ---; docker compose -f compose.test.yml down -v" EXIT; \
-		. ./apply_env.sh test && \
+		. ./apply_env.sh test; \
 		echo --- FRONTEND ---; \
 		docker compose --profile frontend -f compose.test.yml up --abort-on-container-exit --exit-code-from frontend; \
 		echo --- BACKEND ---; \

@@ -1,8 +1,7 @@
-import type { Contract } from "../../../prisma/contract";
-import type { PostgresClient } from "@prisma/orm-postgres/runtime";
+import { Pool } from "pg";
 
 export async function getAvatarIdByUserId(
-  db: PostgresClient<Contract>,
+  db: Pool,
   userId: string
 ): Promise<string|null> {
   // TODO: replace mockup onto the real database operation
@@ -10,7 +9,7 @@ export async function getAvatarIdByUserId(
 }
 
 export async function setAvatarIdForUser(
-  db: PostgresClient<Contract>,
+  db: Pool,
   userId: string,
   avatarId: string|null,
   newAvatarId: string|null
@@ -22,7 +21,7 @@ export async function setAvatarIdForUser(
 }
 
 export async function setAvatarIdForUserReturningOld(
-  db: PostgresClient<Contract>,
+  db: Pool,
   userId: string,
   newAvatarId: string|null
 ): Promise<string|null> {

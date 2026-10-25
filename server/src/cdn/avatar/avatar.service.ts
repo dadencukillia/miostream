@@ -3,9 +3,9 @@ import type { S3Client } from "@aws-sdk/client-s3";
 import { getAvatarById, removeAvatarById, setAvatarById } from "./repos/avatarBucket.repo";
 import type { PostgresClient } from "@prisma/orm-postgres/runtime";
 import { getAvatarIdByUserId, setAvatarIdForUser, setAvatarIdForUserReturningOld } from "./repos/userDatabase.repo";
-import type { Contract } from "../../prisma/contract";
 import { processImage } from "./repos/image.repo";
 import type { UpdateAvatarResult } from "./dto";
+import { Pool } from "pg";
 
 // Errors
 
@@ -37,7 +37,7 @@ export async function getAvatar(s3: S3Client, logger: FastifyBaseLogger, avatarI
 
 export async function resetUserAvatar(
   s3: S3Client, 
-  db: PostgresClient<Contract>,
+  db: Pool,
   logger: FastifyBaseLogger,
   userId: string
 ) {
@@ -68,7 +68,7 @@ export async function resetUserAvatar(
 
 export async function updateUserAvatarImage(
   s3: S3Client, 
-  db: PostgresClient<Contract>,
+  db: Pool,
   logger: FastifyBaseLogger,
   userId: string,
   imageContent: Buffer
