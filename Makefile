@@ -5,12 +5,12 @@ USER_SHELL := $(shell echo $$SHELL)
 
 build_images:
 	. ./apply_env.sh prod && \
-	docker compose build frontend && \
-	docker compose build backend
+	docker compose --env-file ./.env build frontend && \
+	docker compose --env-file ./.env build backend
 
 production:
 	. ./apply_env.sh prod && \
-	docker compose up -d
+	docker compose --env-file ./.env up -d
 
 down:
 	docker compose -f compose.yml down
