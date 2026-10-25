@@ -1,9 +1,48 @@
 import { PathLike, readdirSync } from "node:fs";
 import path from "node:path";
-import { Pool } from "pg";
+import { Client, Pool } from "pg";
 
 const UPGRADE_PART_LINE = "-- migrate:up";
 const DOWNGRADE_PART_LINE = "-- migrate:down";
+
+async function pgWrapClient<T>(pg: Pool, callback: (client: Client) => Promise<T>, fallback?: (e: unknown) => void): Promise<T> {
+  const client = await pg.connect();
+  try {
+    return await callback(client);
+  } catch(e) {
+    if (fallback) fallback(e);
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
+async function pgWrapLock<T>(client: Client, callback: (client: Client) => Promise<T>, fallback?: (e: unknown) => void): Promise<T> {
+  const LOCK_ID = 757667149;
+
+  await client.query("SELECT pg_advisory_lock($1);", [ LOCK_ID ]);
+  try {
+    return await callback(client);
+  } catch(e) {
+    if (fallback) fallback(e);
+    throw e;
+  } finally {
+    await client.query("SELECT pg_advisory_unlock($1);", [ LOCK_ID ]);
+  }
+}
+
+async function pgWrapTransaction(client: Client, callback: (client: Client) => Promise<void>, fallback?: (e: unknown) => void) {
+  await client.query("BEGIN;");
+
+  try {
+    await callback(client);
+    await client.query("COMMIT;");
+  } catch(e) {
+    await client.query("ROLLBACK;");
+    if (fallback) fallback(e);
+    throw e;
+  }
+}
 
 class MigrationError extends Error {
   constructor(message: string) {
@@ -122,8 +161,8 @@ export class Migrator {
     `);
   }
 
-  async getDatabaseMigrationState(): Promise<number|null> {
-    const queryResult = await this.db.query(
+  async getDatabaseMigrationState(db: Pool|Client): Promise<number|null> {
+    const queryResult = await db.query(
       `SELECT to_migration FROM public.schema_migrations ORDER BY operation_id DESC LIMIT 1;`
     );
 
@@ -136,97 +175,82 @@ export class Migrator {
   }
 
   async up() {
-    let currentMigrationState = await this.getDatabaseMigrationState();
-    const upMigrations = await Promise.all(
-      this.migrationFiles
-        .filter(migration => currentMigrationState === null || migration.timestamp > currentMigrationState)
-        .sort((a, b) => a.timestamp - b.timestamp)
-        .map(async file => ({
-          timestamp: file.timestamp,
-          parts: await file.parse()
-        }))
-    );
-    const client = await this.db.connect();
-    console.log("[Migrations] current state:", currentMigrationState);
-    if (upMigrations.length === 0) {
-      console.log(`[Migrations] up to date.`);
-      return;
-    } else {
-      console.log(`[Migrations] ${upMigrations.length} migrations to do.`);
-    }
-
-    try {
-      for (const migration of upMigrations) {
-        const currentMigrationStateSQL = (
-          currentMigrationState === null ? "-1" :
-          isNaN(currentMigrationState) ? "-1" :
-          currentMigrationState.toString()
+    await pgWrapClient(this.db, async client => {
+      await pgWrapLock(client, async client => {
+        let currentMigrationState = await this.getDatabaseMigrationState(client);
+        const upMigrations = await Promise.all(
+          this.migrationFiles
+            .filter(migration => currentMigrationState === null || migration.timestamp > currentMigrationState)
+            .sort((a, b) => a.timestamp - b.timestamp)
+            .map(async file => ({
+              timestamp: file.timestamp,
+              parts: await file.parse()
+            }))
         );
 
-        try {
-          await client.query("BEGIN;");
-          await client.query(`INSERT INTO schema_migrations(from_migration, to_migration) VALUES(${currentMigrationStateSQL}, ${migration.timestamp});`);
-          await client.query(migration.parts.up);
-          await client.query("COMMIT;");
-          currentMigrationState = migration.timestamp;
-          console.log(`[Migrations] ${migration.timestamp} ✔`);
-        } catch(err) {
-          await client.query("ROLLBACK;");
-          console.error(`[Migrations] ${migration.timestamp} ✘`);
-          throw err;
+        console.log("[Migrations] current state:", currentMigrationState);
+        if (upMigrations.length === 0) {
+          console.log(`[Migrations] up to date.`);
+          return;
+        } else {
+          console.log(`[Migrations] ${upMigrations.length} migrations to do.`);
         }
-      }
-    } catch(e) {
-      console.log(`[Migrations] failed.`);
-      throw e;
-    } finally {
-      client.release();
-    }
+
+        for (const migration of upMigrations) {
+          const currentMigrationStateSQL = (
+            currentMigrationState === null ? "-1" :
+            isNaN(currentMigrationState) ? "-1" :
+            currentMigrationState.toString()
+          );
+
+          await pgWrapTransaction(client, async client => {
+            await client.query("INSERT INTO schema_migrations(from_migration, to_migration) VALUES($1, $2);", [currentMigrationStateSQL, migration.timestamp]);
+            await client.query(migration.parts.up);
+            currentMigrationState = migration.timestamp;
+            console.log(`[Migrations] ${migration.timestamp} ✔`);
+          }, () => console.error(`[Migrations] ${migration.timestamp} ✘`));
+        }
+      });
+    }, () => console.log(`[Migrations] failed.`));
 
     console.log(`[Migrations] success.`);
   }
 
   async down() {
-    const currentMigrationState = await this.getDatabaseMigrationState();
-    console.log("[Migrations] current state:", currentMigrationState);
+    await pgWrapClient(this.db, async client => {
+      await pgWrapLock(client, async client => {
+        const currentMigrationState = await this.getDatabaseMigrationState(client);
+        console.log("[Migrations] current state:", currentMigrationState);
 
-    if (currentMigrationState === null) {
-      console.log("[Migrations] no downgrades possible.");
-      return;
-    }
+        if (currentMigrationState === null) {
+          console.log("[Migrations] no downgrades possible.");
+          return;
+        }
 
-    const downMigrationList = this.migrationFiles
-      .filter(migration => migration.timestamp === currentMigrationState);
+        const downMigrationList = this.migrationFiles
+          .filter(migration => migration.timestamp === currentMigrationState);
 
-    const prevMigrationList = this.migrationFiles
-      .filter(migration => migration.timestamp < currentMigrationState)
-      .sort((a, b) => a.timestamp - b.timestamp);
+        const prevMigrationList = this.migrationFiles
+          .filter(migration => migration.timestamp < currentMigrationState)
+          .sort((a, b) => a.timestamp - b.timestamp);
 
-    if (downMigrationList.length === 0) {
-      console.error("[Migrations] migration is not found.");
-      throw new MigrationError("migration is not found for downgrade");
-    }
+        if (downMigrationList.length === 0) {
+          console.error("[Migrations] migration is not found.");
+          throw new MigrationError("migration is not found for downgrade");
+        }
 
-    const downMigration = downMigrationList[0]!;
-    const prevMigration = prevMigrationList[prevMigrationList.length - 1]?.timestamp ?? -1;
-    const downMigrationContent = (await downMigration.parse()).down;
-    const client = await this.db.connect();
+        const downMigration = downMigrationList[0]!;
+        const prevMigration = prevMigrationList[prevMigrationList.length - 1]?.timestamp ?? -1;
+        const downMigrationContent = (await downMigration.parse()).down;
 
-    try {
-      await client.query("BEGIN;");
-      await client.query(`INSERT INTO schema_migrations(from_migration, to_migration) VALUES(${currentMigrationState}, ${prevMigration});`);
-      await client.query(downMigrationContent);
-      await client.query("COMMIT;");
-      console.log(`[Migrations] rollback ${currentMigrationState} ✔`);
-    } catch(err) {
-      console.error(`[Migrations] rollback ${currentMigrationState} ✘`);
-      console.log("[Migrations] failed.");
-      await client.query("ROLLBACK;");
-      throw err;
-    } finally {
-      client.release();
-    }
+        await pgWrapTransaction(client, async client => {
+          await client.query("INSERT INTO schema_migrations(from_migration, to_migration) VALUES($1, $2);", [currentMigrationState, prevMigration]);
+          await client.query(downMigrationContent);
+          console.log(`[Migrations] rollback ${currentMigrationState} ✔`);
+        }, () => console.error(`[Migrations] rollback ${currentMigrationState} ✘`));
 
-    console.log(`[Migrations] current state: ${prevMigration === -1 ? null : prevMigration}.`);
+        console.log(`[Migrations] current state: ${prevMigration === -1 ? null : prevMigration}.`);
+      });
+    }, () => console.log("[Migrations] failed."));
   }
 }
