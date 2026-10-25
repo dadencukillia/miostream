@@ -44,6 +44,6 @@ export const PostgresConnection: Connection<Pool> = {
   },
 
   async dropFunc(_fastify, instance) {
-    instance.end();
+    await instance.end();
   }
 };
