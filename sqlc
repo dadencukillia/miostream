@@ -9,4 +9,4 @@ if [ ! -f "$SQLC_BIN" ]; then
 fi
 
 rm /tmp/sqlc_bin.tar.gz 2> /dev/null
-exec "$SQLC_BIN" $@
+exec "$SQLC_BIN" "$@"

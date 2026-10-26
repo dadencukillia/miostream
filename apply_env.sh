@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-basedir="$(dirname "$0")"
+basedir="$(dirname "${BASH_SOURCE[0]}")"
 
 for i in "$@"; do
   file="$basedir/.env.$i"
@@ -8,10 +8,10 @@ for i in "$@"; do
     file="$basedir/.env"
   fi
 
-  printf "$file - "
+  printf '%s - ' "$file"
   if [ -f "$file" ]; then
     set -a
-    . "$file" && printf "✔"
+    . <(tr -d '\r' < "$file") && printf '✔'
     set +a
   else
     printf "✘"
