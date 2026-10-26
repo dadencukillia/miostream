@@ -1,6 +1,7 @@
-.PHONY: build_images production down dev_env dev_frontend dev_backend dev_shell is_dev_shell test local_test
-.SILENT: build_images production down dev_env dev_frontend dev_backend dev_shell is_dev_shell test local_test
+.PHONY: build_images production down dev_env dev_frontend dev_backend dev_shell test local_test
+.SILENT: build_images production down dev_env dev_frontend dev_backend dev_shell test local_test
 
+SHELL := /bin/bash
 USER_SHELL := $(shell echo $$SHELL)
 
 build_images:
@@ -44,7 +45,7 @@ dev_shell:
 	./sqlc version 1> /dev/null
 	. ./apply_env.sh test dev && \
 	echo "Welcome into MioStream dev shell" && \
-	PATH="$$PATH:/tmp/sqlc_bin/" ${USER_SHELL}
+	PATH="$$PATH:/tmp/sqlc_bin/" $(USER_SHELL)
 
 test:
 	echo --- PREBUILD ---
@@ -52,15 +53,13 @@ test:
 	docker compose -f compose.test.yml build backend
 	echo --- PREPULL ---
 	docker compose -f compose.test.yml --profile frontend --profile backend pull
-	bash -c '\
-		set -e; \
-		trap "echo --- CLEANUP ---; docker compose -f compose.test.yml down -v" EXIT; \
-		. ./apply_env.sh test; \
-		echo --- FRONTEND ---; \
-		docker compose --profile frontend -f compose.test.yml up --abort-on-container-exit --exit-code-from frontend; \
-		echo --- BACKEND ---; \
-		docker compose --profile backend -f compose.test.yml up --abort-on-container-exit --exit-code-from backend; \
-	'
+	set -e; \
+	trap "echo --- CLEANUP ---; docker compose -f compose.test.yml down -v" EXIT; \
+	. ./apply_env.sh test; \
+	echo --- FRONTEND ---; \
+	docker compose --profile frontend -f compose.test.yml up --abort-on-container-exit --exit-code-from frontend; \
+	echo --- BACKEND ---; \
+	docker compose --profile backend -f compose.test.yml up --abort-on-container-exit --exit-code-from backend; \
 
 local_test:
 	echo --- FRONTEND ---
