@@ -1,9 +1,15 @@
 #!/usr/bin/env bash
 
 SQLC_BIN="/tmp/sqlc_bin/sqlc"
+download_util="wget"
+which wget > /dev/null || download_util="curl"
 
 if [ ! -f "$SQLC_BIN" ]; then
-  wget -O /tmp/sqlc_bin.tar.gz "https://github.com/sqlc-dev/sqlc/releases/download/v1.31.1/sqlc_1.31.1_linux_amd64.tar.gz"
+  if [ "$download_util" = "wget" ]; then
+    wget -O /tmp/sqlc_bin.tar.gz "https://github.com/sqlc-dev/sqlc/releases/download/v1.31.1/sqlc_1.31.1_linux_amd64.tar.gz"
+  else
+    curl -fL "https://github.com/sqlc-dev/sqlc/releases/download/v1.31.1/sqlc_1.31.1_linux_amd64.tar.gz" -o /tmp/sqlc_bin.tar.gz
+  fi
   mkdir -p /tmp/sqlc_bin && tar -xvf /tmp/sqlc_bin.tar.gz -C /tmp/sqlc_bin/
   chmod +x "$SQLC_BIN"
 fi
