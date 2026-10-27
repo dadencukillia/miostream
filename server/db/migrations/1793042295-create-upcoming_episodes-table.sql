@@ -1,0 +1,14 @@
+-- migrate:up
+CREATE TABLE upcoming_episodes(
+  upcoming_episode_id UUID PRIMARY KEY DEFAULT uuidv7(),
+  anime_id UUID NOT NULL REFERENCES animes(anime_id) ON DELETE CASCADE,
+  episode_name TEXT NOT NULL CHECK(length(trim(episode_name)) > 0),
+  episode_date TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+  UNIQUE(anime_id, episode_name)
+);
+
+CREATE INDEX IF NOT EXISTS idx_upcoming_episodes_date ON public.upcoming_episodes(episode_date ASC);
+
+-- migrate:down
+DROP TABLE IF EXISTS public.upcoming_episodes;
