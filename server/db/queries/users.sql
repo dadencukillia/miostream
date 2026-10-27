@@ -10,8 +10,8 @@ INSERT INTO public.users (
     @nickname, 
     @full_name, 
     @email, 
-    sqlc.narg(password_hash),
-    sqlc.narg(google_id),
+    sqlc.narg('password_hash'),
+    sqlc.narg('google_id'),
     COALESCE(sqlc.narg('timezone'), 'Europe/Kyiv')
 )
 RETURNING *;
@@ -29,7 +29,6 @@ SET
     "full_name"  = @full_name,
     "bio"        = @bio,
     "timezone"   = @timezone,
-    "avatar_url" = @avatar_url,
     "updated_at" = NOW()
 WHERE "user_id" = @user_id::uuid
 RETURNING *;
