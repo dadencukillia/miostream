@@ -1,4 +1,4 @@
--- name: InsertNewUser :one
+-- name: CreateUser :one
 INSERT INTO public.users (
     "nickname",
     "full_name",
@@ -16,10 +16,22 @@ INSERT INTO public.users (
 )
 RETURNING *;
 
--- name: SelectUserById :one
+-- name: GetUserById :one
 SELECT *
 FROM public.users
 WHERE "user_id" = @user_id::uuid
+LIMIT 1;
+
+-- name: GetUserByEmail :one
+SELECT *
+FROM public.users
+WHERE lower("email") = lower(@email)
+LIMIT 1;
+
+-- name: GetUserByGoogleId :one
+SELECT *
+FROM public.users
+WHERE "google_id" = @google_id
 LIMIT 1;
 
 -- name: UpdateUserProfile :one
@@ -69,9 +81,16 @@ RETURNING *;
 
 -- name: UpdateUserStatus :one
 UPDATE public.users
+SET
+    "user_status" = @user_status,
+    "updated_at"  = NOW()
+WHERE "user_id" = @user_id::uuid
+RETURNING *;
+
+-- name: UpdateUserRole :one
+UPDATE public.users
 SET 
     "user_role"   = @user_role,
-    "user_status" = @user_status,
     "updated_at"  = NOW()
 WHERE "user_id" = @user_id::uuid
 RETURNING *;
