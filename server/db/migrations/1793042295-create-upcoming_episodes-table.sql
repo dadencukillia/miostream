@@ -11,5 +11,4 @@ CREATE TABLE upcoming_episodes(
 CREATE INDEX IF NOT EXISTS idx_upcoming_episodes_date ON public.upcoming_episodes(episode_date ASC);
 
 -- migrate:down
-DROP INDEX IF EXISTS idx_upcoming_episodes_date;
 DROP TABLE IF EXISTS public.upcoming_episodes;

@@ -13,6 +13,5 @@ CREATE TABLE IF NOT EXISTS public.episodes(
 CREATE INDEX IF NOT EXISTS idx_episodes_anime_id ON public.episodes(anime_id);
 
 -- migrate:down
-DROP INDEX IF EXISTS idx_episodes_anime_id;
 DROP TABLE IF EXISTS public.episodes;
 DROP TYPE IF EXISTS public.episode_localization_type_enum;

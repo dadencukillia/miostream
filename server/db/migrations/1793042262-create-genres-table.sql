@@ -52,6 +52,5 @@ CREATE TABLE IF NOT EXISTS public.genres(
 CREATE INDEX IF NOT EXISTS idx_genres_type ON public.genres(genre_type);
 
 -- migrate:down
-DROP INDEX IF EXISTS idx_genres_type;
 DROP TABLE IF EXISTS public.genres;
 DROP TYPE IF EXISTS public.genre_type_enum;

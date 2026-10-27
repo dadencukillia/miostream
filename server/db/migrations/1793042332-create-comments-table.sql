@@ -11,5 +11,4 @@ CREATE TABLE IF NOT EXISTS public.comments(
 CREATE INDEX IF NOT EXISTS idx_comments_anime_created ON public.comments(anime_id, comment_id DESC);
 
 -- migrate:down
-DROP INDEX IF EXISTS idx_comments_anime_created;
 DROP TABLE IF EXISTS public.comments;

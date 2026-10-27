@@ -28,7 +28,6 @@ CREATE TABLE IF NOT EXISTS public.animes(
 CREATE INDEX IF NOT EXISTS idx_animes_available ON public.animes(available);
 
 -- migrate:down
-DROP INDEX IF EXISTS idx_animes_available;
 DROP TABLE IF EXISTS public.animes;
 DROP TYPE IF EXISTS public.anime_format_enum;
 DROP TYPE IF EXISTS public.anime_status_enum;

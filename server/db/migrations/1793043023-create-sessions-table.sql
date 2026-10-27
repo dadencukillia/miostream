@@ -16,6 +16,4 @@ CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON public.sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_expire_time ON public.sessions(expire_time ASC);
 
 -- migrate:down
-DROP INDEX IF EXISTS idx_sessions_user_id;
-DROP INDEX IF EXISTS idx_sessions_expire_time;
 DROP TABLE IF EXISTS public.sessions;
