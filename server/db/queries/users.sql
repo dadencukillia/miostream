@@ -14,22 +14,86 @@ INSERT INTO public.users (
     sqlc.narg('google_id'),
     COALESCE(sqlc.narg('timezone'), 'Europe/Kyiv')
 )
-RETURNING *;
+RETURNING 
+    "user_id",
+    "nickname",
+    "full_name",
+    "email",
+    "bio",
+    "avatar_url",
+    "max_streak",
+    "timezone",
+    "streak_start_date",
+    "last_watch_date",
+    "profile_frame_url",
+    "profile_background_url",
+    "user_role",
+    "user_status",
+    "created_at",
+    "updated_at";
 
 -- name: GetUserById :one
-SELECT *
+SELECT 
+    "user_id",
+    "nickname",
+    "full_name",
+    "email",
+    "bio",
+    "avatar_url",
+    "max_streak",
+    "timezone",
+    "streak_start_date",
+    "last_watch_date",
+    "profile_frame_url",
+    "profile_background_url",
+    "user_role",
+    "user_status",
+    "created_at",
+    "updated_at"
 FROM public.users
 WHERE "user_id" = @user_id::uuid
 LIMIT 1;
 
 -- name: GetUserByEmail :one
-SELECT *
+SELECT 
+    "user_id",
+    "nickname",
+    "full_name",
+    "email",
+    "bio",
+    "avatar_url",
+    "max_streak",
+    "timezone",
+    "streak_start_date",
+    "last_watch_date",
+    "profile_frame_url",
+    "profile_background_url",
+    "user_role",
+    "user_status",
+    "created_at",
+    "updated_at"
 FROM public.users
 WHERE lower("email") = lower(@email)
 LIMIT 1;
 
 -- name: GetUserByGoogleId :one
-SELECT *
+SELECT 
+    "user_id",
+    "nickname",
+    "full_name",
+    "email",
+    "bio",
+    "avatar_url",
+    "max_streak",
+    "timezone",
+    "streak_start_date",
+    "last_watch_date",
+    "profile_frame_url",
+    "profile_background_url",
+    "user_role",
+    "user_status",
+    "created_at",
+    "updated_at"
 FROM public.users
 WHERE "google_id" = @google_id
 LIMIT 1;
@@ -43,7 +107,23 @@ SET
     "timezone"   = @timezone,
     "updated_at" = NOW()
 WHERE "user_id" = @user_id::uuid
-RETURNING *;
+RETURNING 
+    "user_id",
+    "nickname",
+    "full_name",
+    "email",
+    "bio",
+    "avatar_url",
+    "max_streak",
+    "timezone",
+    "streak_start_date",
+    "last_watch_date",
+    "profile_frame_url",
+    "profile_background_url",
+    "user_role",
+    "user_status",
+    "created_at",
+    "updated_at";
 
 -- name: UpdateUserAvatar :one
 UPDATE public.users
@@ -51,7 +131,23 @@ SET
     "avatar_url" = @avatar_url,
     "updated_at" = NOW()
 WHERE "user_id" = @user_id::uuid
-RETURNING *;
+RETURNING 
+    "user_id",
+    "nickname",
+    "full_name",
+    "email",
+    "bio",
+    "avatar_url",
+    "max_streak",
+    "timezone",
+    "streak_start_date",
+    "last_watch_date",
+    "profile_frame_url",
+    "profile_background_url",
+    "user_role",
+    "user_status",
+    "created_at",
+    "updated_at";
 
 -- name: UpdateUserCustomization :one
 UPDATE public.users
@@ -60,14 +156,31 @@ SET
     "profile_background_url" = sqlc.narg('profile_background_url'),
     "updated_at"             = NOW()
 WHERE "user_id" = @user_id::uuid
-RETURNING *;
+RETURNING 
+    "user_id",
+    "nickname",
+    "full_name",
+    "email",
+    "bio",
+    "avatar_url",
+    "max_streak",
+    "timezone",
+    "streak_start_date",
+    "last_watch_date",
+    "profile_frame_url",
+    "profile_background_url",
+    "user_role",
+    "user_status",
+    "created_at",
+    "updated_at";
 
--- name: UpdateUserPassword :exec
+-- name: UpdateUserPassword :one
 UPDATE public.users
 SET 
     "password_hash" = @password_hash,
     "updated_at"    = NOW()
-WHERE "user_id" = @user_id::uuid;
+WHERE "user_id" = @user_id::uuid
+RETURNING "user_id";
 
 -- name: UpdateUserStreak :one
 UPDATE public.users
@@ -77,7 +190,23 @@ SET
     "last_watch_date"   = sqlc.narg('last_watch_date'),
     "updated_at"        = NOW()
 WHERE "user_id" = @user_id::uuid
-RETURNING *;
+RETURNING 
+    "user_id",
+    "nickname",
+    "full_name",
+    "email",
+    "bio",
+    "avatar_url",
+    "max_streak",
+    "timezone",
+    "streak_start_date",
+    "last_watch_date",
+    "profile_frame_url",
+    "profile_background_url",
+    "user_role",
+    "user_status",
+    "created_at",
+    "updated_at";
 
 -- name: UpdateUserStatus :one
 UPDATE public.users
@@ -85,7 +214,23 @@ SET
     "user_status" = @user_status,
     "updated_at"  = NOW()
 WHERE "user_id" = @user_id::uuid
-RETURNING *;
+RETURNING 
+    "user_id",
+    "nickname",
+    "full_name",
+    "email",
+    "bio",
+    "avatar_url",
+    "max_streak",
+    "timezone",
+    "streak_start_date",
+    "last_watch_date",
+    "profile_frame_url",
+    "profile_background_url",
+    "user_role",
+    "user_status",
+    "created_at",
+    "updated_at";
 
 -- name: UpdateUserRole :one
 UPDATE public.users
@@ -93,9 +238,24 @@ SET
     "user_role"   = @user_role,
     "updated_at"  = NOW()
 WHERE "user_id" = @user_id::uuid
-RETURNING *;
+RETURNING 
+    "user_id",
+    "nickname",
+    "full_name",
+    "email",
+    "bio",
+    "avatar_url",
+    "max_streak",
+    "timezone",
+    "streak_start_date",
+    "last_watch_date",
+    "profile_frame_url",
+    "profile_background_url",
+    "user_role",
+    "user_status",
+    "created_at",
+    "updated_at";
 
--- name: DeleteUserById :one
+-- name: DeleteUserById :exec
 DELETE FROM public.users
-WHERE "user_id" = @user_id::uuid
-RETURNING *;
+WHERE "user_id" = @user_id::uuid;

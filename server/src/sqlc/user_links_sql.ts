@@ -12,7 +12,10 @@ INSERT INTO public.user_links (
     $1::uuid,
     $2
 )
-RETURNING user_link_id, user_id, user_link_url`;
+RETURNING 
+    "user_link_id",
+    "user_id",
+    "user_link_url"`;
 
 export interface CreateUserLinkArgs {
     userId: string;
@@ -43,9 +46,13 @@ export async function createUserLink(client: Client, args: CreateUserLinkArgs): 
 }
 
 export const listUserLinksByUserIdQuery = `-- name: ListUserLinksByUserId :many
-SELECT user_link_id, user_id, user_link_url
+SELECT 
+    "user_link_id",
+    "user_id",
+    "user_link_url"
 FROM public.user_links
-WHERE "user_id" = $1::uuid`;
+WHERE "user_id" = $1::uuid
+ORDER BY "user_link_id" ASC`;
 
 export interface ListUserLinksByUserIdArgs {
     userId: string;
@@ -74,12 +81,14 @@ export async function listUserLinksByUserId(client: Client, args: ListUserLinksB
 
 export const updateUserLinkQuery = `-- name: UpdateUserLink :one
 UPDATE public.user_links
-SET
+SET 
     "user_link_url" = $1
-WHERE 
-    "user_link_id" = $2
+WHERE "user_link_id" = $2
     AND "user_id" = $3::uuid
-RETURNING user_link_id, user_id, user_link_url`;
+RETURNING 
+    "user_link_id",
+    "user_id",
+    "user_link_url"`;
 
 export interface UpdateUserLinkArgs {
     userLinkUrl: string;
@@ -110,39 +119,22 @@ export async function updateUserLink(client: Client, args: UpdateUserLinkArgs): 
     };
 }
 
-export const deleteUserLinkByIdQuery = `-- name: DeleteUserLinkById :one
+export const deleteUserLinkQuery = `-- name: DeleteUserLink :exec
 DELETE FROM public.user_links
-WHERE 
-    "user_link_id" = $1
-    AND "user_id" = $2::uuid
-RETURNING user_link_id, user_id, user_link_url`;
+WHERE "user_link_id" = $1
+    AND "user_id" = $2::uuid`;
 
-export interface DeleteUserLinkByIdArgs {
+export interface DeleteUserLinkArgs {
     userLinkId: string;
     userId: string;
 }
 
-export interface DeleteUserLinkByIdRow {
-    userLinkId: string;
-    userId: string;
-    userLinkUrl: string;
-}
-
-export async function deleteUserLinkById(client: Client, args: DeleteUserLinkByIdArgs): Promise<DeleteUserLinkByIdRow | null> {
-    const result = await client.query({
-        text: deleteUserLinkByIdQuery,
+export async function deleteUserLink(client: Client, args: DeleteUserLinkArgs): Promise<void> {
+    await client.query({
+        text: deleteUserLinkQuery,
         values: [args.userLinkId, args.userId],
         rowMode: "array"
     });
-    if (result.rows.length !== 1) {
-        return null;
-    }
-    const row = result.rows[0];
-    return {
-        userLinkId: row[0],
-        userId: row[1],
-        userLinkUrl: row[2]
-    };
 }
 
 export const deleteAllUserLinksByUserIdQuery = `-- name: DeleteAllUserLinksByUserId :exec

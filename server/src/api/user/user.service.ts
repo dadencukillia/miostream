@@ -1,6 +1,7 @@
 import type { Pool } from 'pg';
 import * as usersSqlc from '../../sqlc/users_sql';
 import * as userLinksSqlc from '../../sqlc/user_links_sql';
+import { UserError, UserNotFoundError } from './user.errors';
 import type {
     CreateUserDto,
     UpdateUserProfileDto,
@@ -18,98 +19,132 @@ const hashPassword = async (password: string): Promise<string> => {
 export const createUser = async (client: Pool, data: CreateUserDto) => {
     const passwordHash = data.password ? await hashPassword(data.password) : null;
 
-    return await usersSqlc.createUser(client, {
+    const user = await usersSqlc.createUser(client, {
         nickname: data.nickname,
-        fullName: data.full_name,
+        fullName: data.fullName,
         email: data.email,
         passwordHash: passwordHash,
-        googleId: data.google_id ?? null,
+        googleId: data.googleId ?? null,
         timezone: data.timezone ?? null
     });
+
+    if (!user) {
+        throw new UserError('Failed to create user');
+    }
+
+    return user;
 };
 
 export const getUserById = async (client: Pool, userId: string) => {
-    return await usersSqlc.getUserById(client, { userId });
+    const user = await usersSqlc.getUserById(client, { userId });
+    if (!user) {
+        throw new UserNotFoundError(`User with id '${userId}' not found`);
+    }
+    return user;
 };
 
 export const getUserByEmail = async (client: Pool, email: string) => {
-    return await usersSqlc.getUserByEmail(client, { email });
+    const user = await usersSqlc.getUserByEmail(client, { email });
+    if (!user) {
+        throw new UserNotFoundError(`User with email '${email}' not found`);
+    }
+    return user;
 };
 
 export const getUserByGoogleId = async (client: Pool, googleId: string) => {
-    return await usersSqlc.getUserByGoogleId(client, { googleId });
+    const user = await usersSqlc.getUserByGoogleId(client, { googleId });
+    if (!user) {
+        throw new UserNotFoundError(`User with Google ID '${googleId}' not found`);
+    }
+    return user;
 };
 
 export const deleteUserById = async (client: Pool, userId: string) => {
-    return await usersSqlc.deleteUserById(client, { userId });
+    await usersSqlc.deleteUserById(client, { userId });
 };
 
 export const updateUserProfile = async (client: Pool, userId: string, data: UpdateUserProfileDto) => {
-    return await usersSqlc.updateUserProfile(client, {
+    const user = await usersSqlc.updateUserProfile(client, {
         userId: userId,
         nickname: data.nickname,
-        fullName: data.full_name,
+        fullName: data.fullName,
         bio: data.bio,
         timezone: data.timezone
     });
+    if (!user) {
+        throw new UserNotFoundError(`User with id '${userId}' not found`);
+    }
+    return user;
 };
 
 export const updateUserAvatar = async (client: Pool, userId: string, avatarUrl: string) => {
-    return await usersSqlc.updateUserAvatar(client, {
+    const user = await usersSqlc.updateUserAvatar(client, {
         userId: userId,
         avatarUrl: avatarUrl
     });
+    if (!user) {
+        throw new UserNotFoundError(`User with id '${userId}' not found`);
+    }
+    return user;
 };
 
 export const updateUserCustomization = async (client: Pool, userId: string, data: UpdateUserCustomizationDto) => {
-    return await usersSqlc.updateUserCustomization(client, {
+    const user = await usersSqlc.updateUserCustomization(client, {
         userId: userId,
-        profileFrameUrl: data.profile_frame_url ?? null,
-        profileBackgroundUrl: data.profile_background_url ?? null
+        profileFrameUrl: data.profileFrameUrl ?? null,
+        profileBackgroundUrl: data.profileBackgroundUrl ?? null
     });
+    if (!user) {
+        throw new UserNotFoundError(`User with id '${userId}' not found`);
+    }
+    return user;
 };
 
 export const updateUserPassword = async (client: Pool, userId: string, data: UpdateUserPasswordDto) => {
-    const passwordHash = await hashPassword(data.new_password);
+    // TODO: add old password validation
+    const passwordHash = await hashPassword(data.newPassword);
 
-    await usersSqlc.updateUserPassword(client, {
+    const user = await usersSqlc.updateUserPassword(client, {
         userId: userId,
         passwordHash: passwordHash
     });
+
+    if (!user) {
+        throw new UserNotFoundError(`User with id '${userId}' not found`);
+    }
 };
 
 export const updateUserStatus = async (client: Pool, userId: string, status: UserStatus) => {
-    return await usersSqlc.updateUserStatus(client, {
+    const user = await usersSqlc.updateUserStatus(client, {
         userId: userId,
         userStatus: status
     });
+    if (!user) {
+        throw new UserNotFoundError(`User with id '${userId}' not found`);
+    }
+    return user;
 };
 
 export const updateUserRole = async (client: Pool, userId: string, role: UserRole) => {
-    return await usersSqlc.updateUserRole(client, {
+    const user = await usersSqlc.updateUserRole(client, {
         userId: userId,
         userRole: role
     });
-};
-
-export const updateUserStreak = async (
-    client: Pool,
-    userId: string,
-    data: { max_streak: number; streak_start_date: Date | null; last_watch_date: Date | null }
-) => {
-    return await usersSqlc.updateUserStreak(client, {
-        userId: userId,
-        maxStreak: data.max_streak,
-        streakStartDate: data.streak_start_date,
-        lastWatchDate: data.last_watch_date
-    });
+    if (!user) {
+        throw new UserNotFoundError(`User with id '${userId}' not found`);
+    }
+    return user;
 };
 
 export const createUserLink = async (client: Pool, userId: string, url: string) => {
-    return await userLinksSqlc.createUserLink(client, {
+    const link = await userLinksSqlc.createUserLink(client, {
         userId: userId,
         userLinkUrl: url
     });
+    if (!link) {
+        throw new UserError('Failed to create user link');
+    }
+    return link;
 };
 
 export const listUserLinksByUserId = async (client: Pool, userId: string) => {
@@ -122,11 +157,15 @@ export const updateUserLink = async (
     linkId: string | number | bigint,
     url: string
 ) => {
-    return await userLinksSqlc.updateUserLink(client, {
+    const link = await userLinksSqlc.updateUserLink(client, {
         userId: userId,
         userLinkId: String(linkId),
         userLinkUrl: url
     });
+    if (!link) {
+        throw new UserNotFoundError(`User link with id '${linkId}' not found`);
+    }
+    return link;
 };
 
 export const deleteUserLinkById = async (
@@ -134,10 +173,11 @@ export const deleteUserLinkById = async (
     userId: string,
     linkId: string | number | bigint
 ) => {
-    return await userLinksSqlc.deleteUserLinkById(client, {
+    const link = await userLinksSqlc.deleteUserLink(client, {
         userId: userId,
         userLinkId: String(linkId)
     });
+    return link;
 };
 
 export const deleteAllUserLinksByUserId = async (client: Pool, userId: string) => {

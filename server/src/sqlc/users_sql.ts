@@ -20,7 +20,23 @@ INSERT INTO public.users (
     $5,
     COALESCE($6, 'Europe/Kyiv')
 )
-RETURNING user_id, nickname, full_name, email, google_id, bio, password_hash, avatar_url, max_streak, timezone, streak_start_date, last_watch_date, profile_frame_url, profile_background_url, user_role, user_status, created_at, updated_at`;
+RETURNING 
+    "user_id",
+    "nickname",
+    "full_name",
+    "email",
+    "bio",
+    "avatar_url",
+    "max_streak",
+    "timezone",
+    "streak_start_date",
+    "last_watch_date",
+    "profile_frame_url",
+    "profile_background_url",
+    "user_role",
+    "user_status",
+    "created_at",
+    "updated_at"`;
 
 export interface CreateUserArgs {
     nickname: string;
@@ -36,9 +52,7 @@ export interface CreateUserRow {
     nickname: string;
     fullName: string;
     email: string;
-    googleId: string | null;
     bio: string;
-    passwordHash: string | null;
     avatarUrl: string;
     maxStreak: number;
     timezone: string;
@@ -67,25 +81,39 @@ export async function createUser(client: Client, args: CreateUserArgs): Promise<
         nickname: row[1],
         fullName: row[2],
         email: row[3],
-        googleId: row[4],
-        bio: row[5],
-        passwordHash: row[6],
-        avatarUrl: row[7],
-        maxStreak: row[8],
-        timezone: row[9],
-        streakStartDate: row[10],
-        lastWatchDate: row[11],
-        profileFrameUrl: row[12],
-        profileBackgroundUrl: row[13],
-        userRole: row[14],
-        userStatus: row[15],
-        createdAt: row[16],
-        updatedAt: row[17]
+        bio: row[4],
+        avatarUrl: row[5],
+        maxStreak: row[6],
+        timezone: row[7],
+        streakStartDate: row[8],
+        lastWatchDate: row[9],
+        profileFrameUrl: row[10],
+        profileBackgroundUrl: row[11],
+        userRole: row[12],
+        userStatus: row[13],
+        createdAt: row[14],
+        updatedAt: row[15]
     };
 }
 
 export const getUserByIdQuery = `-- name: GetUserById :one
-SELECT user_id, nickname, full_name, email, google_id, bio, password_hash, avatar_url, max_streak, timezone, streak_start_date, last_watch_date, profile_frame_url, profile_background_url, user_role, user_status, created_at, updated_at
+SELECT 
+    "user_id",
+    "nickname",
+    "full_name",
+    "email",
+    "bio",
+    "avatar_url",
+    "max_streak",
+    "timezone",
+    "streak_start_date",
+    "last_watch_date",
+    "profile_frame_url",
+    "profile_background_url",
+    "user_role",
+    "user_status",
+    "created_at",
+    "updated_at"
 FROM public.users
 WHERE "user_id" = $1::uuid
 LIMIT 1`;
@@ -99,9 +127,7 @@ export interface GetUserByIdRow {
     nickname: string;
     fullName: string;
     email: string;
-    googleId: string | null;
     bio: string;
-    passwordHash: string | null;
     avatarUrl: string;
     maxStreak: number;
     timezone: string;
@@ -130,25 +156,39 @@ export async function getUserById(client: Client, args: GetUserByIdArgs): Promis
         nickname: row[1],
         fullName: row[2],
         email: row[3],
-        googleId: row[4],
-        bio: row[5],
-        passwordHash: row[6],
-        avatarUrl: row[7],
-        maxStreak: row[8],
-        timezone: row[9],
-        streakStartDate: row[10],
-        lastWatchDate: row[11],
-        profileFrameUrl: row[12],
-        profileBackgroundUrl: row[13],
-        userRole: row[14],
-        userStatus: row[15],
-        createdAt: row[16],
-        updatedAt: row[17]
+        bio: row[4],
+        avatarUrl: row[5],
+        maxStreak: row[6],
+        timezone: row[7],
+        streakStartDate: row[8],
+        lastWatchDate: row[9],
+        profileFrameUrl: row[10],
+        profileBackgroundUrl: row[11],
+        userRole: row[12],
+        userStatus: row[13],
+        createdAt: row[14],
+        updatedAt: row[15]
     };
 }
 
 export const getUserByEmailQuery = `-- name: GetUserByEmail :one
-SELECT user_id, nickname, full_name, email, google_id, bio, password_hash, avatar_url, max_streak, timezone, streak_start_date, last_watch_date, profile_frame_url, profile_background_url, user_role, user_status, created_at, updated_at
+SELECT 
+    "user_id",
+    "nickname",
+    "full_name",
+    "email",
+    "bio",
+    "avatar_url",
+    "max_streak",
+    "timezone",
+    "streak_start_date",
+    "last_watch_date",
+    "profile_frame_url",
+    "profile_background_url",
+    "user_role",
+    "user_status",
+    "created_at",
+    "updated_at"
 FROM public.users
 WHERE lower("email") = lower($1)
 LIMIT 1`;
@@ -162,9 +202,7 @@ export interface GetUserByEmailRow {
     nickname: string;
     fullName: string;
     email: string;
-    googleId: string | null;
     bio: string;
-    passwordHash: string | null;
     avatarUrl: string;
     maxStreak: number;
     timezone: string;
@@ -193,25 +231,39 @@ export async function getUserByEmail(client: Client, args: GetUserByEmailArgs): 
         nickname: row[1],
         fullName: row[2],
         email: row[3],
-        googleId: row[4],
-        bio: row[5],
-        passwordHash: row[6],
-        avatarUrl: row[7],
-        maxStreak: row[8],
-        timezone: row[9],
-        streakStartDate: row[10],
-        lastWatchDate: row[11],
-        profileFrameUrl: row[12],
-        profileBackgroundUrl: row[13],
-        userRole: row[14],
-        userStatus: row[15],
-        createdAt: row[16],
-        updatedAt: row[17]
+        bio: row[4],
+        avatarUrl: row[5],
+        maxStreak: row[6],
+        timezone: row[7],
+        streakStartDate: row[8],
+        lastWatchDate: row[9],
+        profileFrameUrl: row[10],
+        profileBackgroundUrl: row[11],
+        userRole: row[12],
+        userStatus: row[13],
+        createdAt: row[14],
+        updatedAt: row[15]
     };
 }
 
 export const getUserByGoogleIdQuery = `-- name: GetUserByGoogleId :one
-SELECT user_id, nickname, full_name, email, google_id, bio, password_hash, avatar_url, max_streak, timezone, streak_start_date, last_watch_date, profile_frame_url, profile_background_url, user_role, user_status, created_at, updated_at
+SELECT 
+    "user_id",
+    "nickname",
+    "full_name",
+    "email",
+    "bio",
+    "avatar_url",
+    "max_streak",
+    "timezone",
+    "streak_start_date",
+    "last_watch_date",
+    "profile_frame_url",
+    "profile_background_url",
+    "user_role",
+    "user_status",
+    "created_at",
+    "updated_at"
 FROM public.users
 WHERE "google_id" = $1
 LIMIT 1`;
@@ -225,9 +277,7 @@ export interface GetUserByGoogleIdRow {
     nickname: string;
     fullName: string;
     email: string;
-    googleId: string | null;
     bio: string;
-    passwordHash: string | null;
     avatarUrl: string;
     maxStreak: number;
     timezone: string;
@@ -256,20 +306,18 @@ export async function getUserByGoogleId(client: Client, args: GetUserByGoogleIdA
         nickname: row[1],
         fullName: row[2],
         email: row[3],
-        googleId: row[4],
-        bio: row[5],
-        passwordHash: row[6],
-        avatarUrl: row[7],
-        maxStreak: row[8],
-        timezone: row[9],
-        streakStartDate: row[10],
-        lastWatchDate: row[11],
-        profileFrameUrl: row[12],
-        profileBackgroundUrl: row[13],
-        userRole: row[14],
-        userStatus: row[15],
-        createdAt: row[16],
-        updatedAt: row[17]
+        bio: row[4],
+        avatarUrl: row[5],
+        maxStreak: row[6],
+        timezone: row[7],
+        streakStartDate: row[8],
+        lastWatchDate: row[9],
+        profileFrameUrl: row[10],
+        profileBackgroundUrl: row[11],
+        userRole: row[12],
+        userStatus: row[13],
+        createdAt: row[14],
+        updatedAt: row[15]
     };
 }
 
@@ -282,7 +330,23 @@ SET
     "timezone"   = $4,
     "updated_at" = NOW()
 WHERE "user_id" = $5::uuid
-RETURNING user_id, nickname, full_name, email, google_id, bio, password_hash, avatar_url, max_streak, timezone, streak_start_date, last_watch_date, profile_frame_url, profile_background_url, user_role, user_status, created_at, updated_at`;
+RETURNING 
+    "user_id",
+    "nickname",
+    "full_name",
+    "email",
+    "bio",
+    "avatar_url",
+    "max_streak",
+    "timezone",
+    "streak_start_date",
+    "last_watch_date",
+    "profile_frame_url",
+    "profile_background_url",
+    "user_role",
+    "user_status",
+    "created_at",
+    "updated_at"`;
 
 export interface UpdateUserProfileArgs {
     nickname: string;
@@ -297,9 +361,7 @@ export interface UpdateUserProfileRow {
     nickname: string;
     fullName: string;
     email: string;
-    googleId: string | null;
     bio: string;
-    passwordHash: string | null;
     avatarUrl: string;
     maxStreak: number;
     timezone: string;
@@ -328,20 +390,18 @@ export async function updateUserProfile(client: Client, args: UpdateUserProfileA
         nickname: row[1],
         fullName: row[2],
         email: row[3],
-        googleId: row[4],
-        bio: row[5],
-        passwordHash: row[6],
-        avatarUrl: row[7],
-        maxStreak: row[8],
-        timezone: row[9],
-        streakStartDate: row[10],
-        lastWatchDate: row[11],
-        profileFrameUrl: row[12],
-        profileBackgroundUrl: row[13],
-        userRole: row[14],
-        userStatus: row[15],
-        createdAt: row[16],
-        updatedAt: row[17]
+        bio: row[4],
+        avatarUrl: row[5],
+        maxStreak: row[6],
+        timezone: row[7],
+        streakStartDate: row[8],
+        lastWatchDate: row[9],
+        profileFrameUrl: row[10],
+        profileBackgroundUrl: row[11],
+        userRole: row[12],
+        userStatus: row[13],
+        createdAt: row[14],
+        updatedAt: row[15]
     };
 }
 
@@ -351,7 +411,23 @@ SET
     "avatar_url" = $1,
     "updated_at" = NOW()
 WHERE "user_id" = $2::uuid
-RETURNING user_id, nickname, full_name, email, google_id, bio, password_hash, avatar_url, max_streak, timezone, streak_start_date, last_watch_date, profile_frame_url, profile_background_url, user_role, user_status, created_at, updated_at`;
+RETURNING 
+    "user_id",
+    "nickname",
+    "full_name",
+    "email",
+    "bio",
+    "avatar_url",
+    "max_streak",
+    "timezone",
+    "streak_start_date",
+    "last_watch_date",
+    "profile_frame_url",
+    "profile_background_url",
+    "user_role",
+    "user_status",
+    "created_at",
+    "updated_at"`;
 
 export interface UpdateUserAvatarArgs {
     avatarUrl: string;
@@ -363,9 +439,7 @@ export interface UpdateUserAvatarRow {
     nickname: string;
     fullName: string;
     email: string;
-    googleId: string | null;
     bio: string;
-    passwordHash: string | null;
     avatarUrl: string;
     maxStreak: number;
     timezone: string;
@@ -394,20 +468,18 @@ export async function updateUserAvatar(client: Client, args: UpdateUserAvatarArg
         nickname: row[1],
         fullName: row[2],
         email: row[3],
-        googleId: row[4],
-        bio: row[5],
-        passwordHash: row[6],
-        avatarUrl: row[7],
-        maxStreak: row[8],
-        timezone: row[9],
-        streakStartDate: row[10],
-        lastWatchDate: row[11],
-        profileFrameUrl: row[12],
-        profileBackgroundUrl: row[13],
-        userRole: row[14],
-        userStatus: row[15],
-        createdAt: row[16],
-        updatedAt: row[17]
+        bio: row[4],
+        avatarUrl: row[5],
+        maxStreak: row[6],
+        timezone: row[7],
+        streakStartDate: row[8],
+        lastWatchDate: row[9],
+        profileFrameUrl: row[10],
+        profileBackgroundUrl: row[11],
+        userRole: row[12],
+        userStatus: row[13],
+        createdAt: row[14],
+        updatedAt: row[15]
     };
 }
 
@@ -418,7 +490,23 @@ SET
     "profile_background_url" = $2,
     "updated_at"             = NOW()
 WHERE "user_id" = $3::uuid
-RETURNING user_id, nickname, full_name, email, google_id, bio, password_hash, avatar_url, max_streak, timezone, streak_start_date, last_watch_date, profile_frame_url, profile_background_url, user_role, user_status, created_at, updated_at`;
+RETURNING 
+    "user_id",
+    "nickname",
+    "full_name",
+    "email",
+    "bio",
+    "avatar_url",
+    "max_streak",
+    "timezone",
+    "streak_start_date",
+    "last_watch_date",
+    "profile_frame_url",
+    "profile_background_url",
+    "user_role",
+    "user_status",
+    "created_at",
+    "updated_at"`;
 
 export interface UpdateUserCustomizationArgs {
     profileFrameUrl: string | null;
@@ -431,9 +519,7 @@ export interface UpdateUserCustomizationRow {
     nickname: string;
     fullName: string;
     email: string;
-    googleId: string | null;
     bio: string;
-    passwordHash: string | null;
     avatarUrl: string;
     maxStreak: number;
     timezone: string;
@@ -462,41 +548,51 @@ export async function updateUserCustomization(client: Client, args: UpdateUserCu
         nickname: row[1],
         fullName: row[2],
         email: row[3],
-        googleId: row[4],
-        bio: row[5],
-        passwordHash: row[6],
-        avatarUrl: row[7],
-        maxStreak: row[8],
-        timezone: row[9],
-        streakStartDate: row[10],
-        lastWatchDate: row[11],
-        profileFrameUrl: row[12],
-        profileBackgroundUrl: row[13],
-        userRole: row[14],
-        userStatus: row[15],
-        createdAt: row[16],
-        updatedAt: row[17]
+        bio: row[4],
+        avatarUrl: row[5],
+        maxStreak: row[6],
+        timezone: row[7],
+        streakStartDate: row[8],
+        lastWatchDate: row[9],
+        profileFrameUrl: row[10],
+        profileBackgroundUrl: row[11],
+        userRole: row[12],
+        userStatus: row[13],
+        createdAt: row[14],
+        updatedAt: row[15]
     };
 }
 
-export const updateUserPasswordQuery = `-- name: UpdateUserPassword :exec
+export const updateUserPasswordQuery = `-- name: UpdateUserPassword :one
 UPDATE public.users
 SET 
     "password_hash" = $1,
     "updated_at"    = NOW()
-WHERE "user_id" = $2::uuid`;
+WHERE "user_id" = $2::uuid
+RETURNING "user_id"`;
 
 export interface UpdateUserPasswordArgs {
     passwordHash: string | null;
     userId: string;
 }
 
-export async function updateUserPassword(client: Client, args: UpdateUserPasswordArgs): Promise<void> {
-    await client.query({
+export interface UpdateUserPasswordRow {
+    userId: string;
+}
+
+export async function updateUserPassword(client: Client, args: UpdateUserPasswordArgs): Promise<UpdateUserPasswordRow | null> {
+    const result = await client.query({
         text: updateUserPasswordQuery,
         values: [args.passwordHash, args.userId],
         rowMode: "array"
     });
+    if (result.rows.length !== 1) {
+        return null;
+    }
+    const row = result.rows[0];
+    return {
+        userId: row[0]
+    };
 }
 
 export const updateUserStreakQuery = `-- name: UpdateUserStreak :one
@@ -507,7 +603,23 @@ SET
     "last_watch_date"   = $3,
     "updated_at"        = NOW()
 WHERE "user_id" = $4::uuid
-RETURNING user_id, nickname, full_name, email, google_id, bio, password_hash, avatar_url, max_streak, timezone, streak_start_date, last_watch_date, profile_frame_url, profile_background_url, user_role, user_status, created_at, updated_at`;
+RETURNING 
+    "user_id",
+    "nickname",
+    "full_name",
+    "email",
+    "bio",
+    "avatar_url",
+    "max_streak",
+    "timezone",
+    "streak_start_date",
+    "last_watch_date",
+    "profile_frame_url",
+    "profile_background_url",
+    "user_role",
+    "user_status",
+    "created_at",
+    "updated_at"`;
 
 export interface UpdateUserStreakArgs {
     maxStreak: number;
@@ -521,9 +633,7 @@ export interface UpdateUserStreakRow {
     nickname: string;
     fullName: string;
     email: string;
-    googleId: string | null;
     bio: string;
-    passwordHash: string | null;
     avatarUrl: string;
     maxStreak: number;
     timezone: string;
@@ -552,20 +662,18 @@ export async function updateUserStreak(client: Client, args: UpdateUserStreakArg
         nickname: row[1],
         fullName: row[2],
         email: row[3],
-        googleId: row[4],
-        bio: row[5],
-        passwordHash: row[6],
-        avatarUrl: row[7],
-        maxStreak: row[8],
-        timezone: row[9],
-        streakStartDate: row[10],
-        lastWatchDate: row[11],
-        profileFrameUrl: row[12],
-        profileBackgroundUrl: row[13],
-        userRole: row[14],
-        userStatus: row[15],
-        createdAt: row[16],
-        updatedAt: row[17]
+        bio: row[4],
+        avatarUrl: row[5],
+        maxStreak: row[6],
+        timezone: row[7],
+        streakStartDate: row[8],
+        lastWatchDate: row[9],
+        profileFrameUrl: row[10],
+        profileBackgroundUrl: row[11],
+        userRole: row[12],
+        userStatus: row[13],
+        createdAt: row[14],
+        updatedAt: row[15]
     };
 }
 
@@ -575,7 +683,23 @@ SET
     "user_status" = $1,
     "updated_at"  = NOW()
 WHERE "user_id" = $2::uuid
-RETURNING user_id, nickname, full_name, email, google_id, bio, password_hash, avatar_url, max_streak, timezone, streak_start_date, last_watch_date, profile_frame_url, profile_background_url, user_role, user_status, created_at, updated_at`;
+RETURNING 
+    "user_id",
+    "nickname",
+    "full_name",
+    "email",
+    "bio",
+    "avatar_url",
+    "max_streak",
+    "timezone",
+    "streak_start_date",
+    "last_watch_date",
+    "profile_frame_url",
+    "profile_background_url",
+    "user_role",
+    "user_status",
+    "created_at",
+    "updated_at"`;
 
 export interface UpdateUserStatusArgs {
     userStatus: string;
@@ -587,9 +711,7 @@ export interface UpdateUserStatusRow {
     nickname: string;
     fullName: string;
     email: string;
-    googleId: string | null;
     bio: string;
-    passwordHash: string | null;
     avatarUrl: string;
     maxStreak: number;
     timezone: string;
@@ -618,20 +740,18 @@ export async function updateUserStatus(client: Client, args: UpdateUserStatusArg
         nickname: row[1],
         fullName: row[2],
         email: row[3],
-        googleId: row[4],
-        bio: row[5],
-        passwordHash: row[6],
-        avatarUrl: row[7],
-        maxStreak: row[8],
-        timezone: row[9],
-        streakStartDate: row[10],
-        lastWatchDate: row[11],
-        profileFrameUrl: row[12],
-        profileBackgroundUrl: row[13],
-        userRole: row[14],
-        userStatus: row[15],
-        createdAt: row[16],
-        updatedAt: row[17]
+        bio: row[4],
+        avatarUrl: row[5],
+        maxStreak: row[6],
+        timezone: row[7],
+        streakStartDate: row[8],
+        lastWatchDate: row[9],
+        profileFrameUrl: row[10],
+        profileBackgroundUrl: row[11],
+        userRole: row[12],
+        userStatus: row[13],
+        createdAt: row[14],
+        updatedAt: row[15]
     };
 }
 
@@ -641,7 +761,23 @@ SET
     "user_role"   = $1,
     "updated_at"  = NOW()
 WHERE "user_id" = $2::uuid
-RETURNING user_id, nickname, full_name, email, google_id, bio, password_hash, avatar_url, max_streak, timezone, streak_start_date, last_watch_date, profile_frame_url, profile_background_url, user_role, user_status, created_at, updated_at`;
+RETURNING 
+    "user_id",
+    "nickname",
+    "full_name",
+    "email",
+    "bio",
+    "avatar_url",
+    "max_streak",
+    "timezone",
+    "streak_start_date",
+    "last_watch_date",
+    "profile_frame_url",
+    "profile_background_url",
+    "user_role",
+    "user_status",
+    "created_at",
+    "updated_at"`;
 
 export interface UpdateUserRoleArgs {
     userRole: string;
@@ -653,9 +789,7 @@ export interface UpdateUserRoleRow {
     nickname: string;
     fullName: string;
     email: string;
-    googleId: string | null;
     bio: string;
-    passwordHash: string | null;
     avatarUrl: string;
     maxStreak: number;
     timezone: string;
@@ -684,82 +818,34 @@ export async function updateUserRole(client: Client, args: UpdateUserRoleArgs): 
         nickname: row[1],
         fullName: row[2],
         email: row[3],
-        googleId: row[4],
-        bio: row[5],
-        passwordHash: row[6],
-        avatarUrl: row[7],
-        maxStreak: row[8],
-        timezone: row[9],
-        streakStartDate: row[10],
-        lastWatchDate: row[11],
-        profileFrameUrl: row[12],
-        profileBackgroundUrl: row[13],
-        userRole: row[14],
-        userStatus: row[15],
-        createdAt: row[16],
-        updatedAt: row[17]
+        bio: row[4],
+        avatarUrl: row[5],
+        maxStreak: row[6],
+        timezone: row[7],
+        streakStartDate: row[8],
+        lastWatchDate: row[9],
+        profileFrameUrl: row[10],
+        profileBackgroundUrl: row[11],
+        userRole: row[12],
+        userStatus: row[13],
+        createdAt: row[14],
+        updatedAt: row[15]
     };
 }
 
-export const deleteUserByIdQuery = `-- name: DeleteUserById :one
+export const deleteUserByIdQuery = `-- name: DeleteUserById :exec
 DELETE FROM public.users
-WHERE "user_id" = $1::uuid
-RETURNING user_id, nickname, full_name, email, google_id, bio, password_hash, avatar_url, max_streak, timezone, streak_start_date, last_watch_date, profile_frame_url, profile_background_url, user_role, user_status, created_at, updated_at`;
+WHERE "user_id" = $1::uuid`;
 
 export interface DeleteUserByIdArgs {
     userId: string;
 }
 
-export interface DeleteUserByIdRow {
-    userId: string;
-    nickname: string;
-    fullName: string;
-    email: string;
-    googleId: string | null;
-    bio: string;
-    passwordHash: string | null;
-    avatarUrl: string;
-    maxStreak: number;
-    timezone: string;
-    streakStartDate: Date | null;
-    lastWatchDate: Date | null;
-    profileFrameUrl: string | null;
-    profileBackgroundUrl: string | null;
-    userRole: string;
-    userStatus: string;
-    createdAt: Date;
-    updatedAt: Date;
-}
-
-export async function deleteUserById(client: Client, args: DeleteUserByIdArgs): Promise<DeleteUserByIdRow | null> {
-    const result = await client.query({
+export async function deleteUserById(client: Client, args: DeleteUserByIdArgs): Promise<void> {
+    await client.query({
         text: deleteUserByIdQuery,
         values: [args.userId],
         rowMode: "array"
     });
-    if (result.rows.length !== 1) {
-        return null;
-    }
-    const row = result.rows[0];
-    return {
-        userId: row[0],
-        nickname: row[1],
-        fullName: row[2],
-        email: row[3],
-        googleId: row[4],
-        bio: row[5],
-        passwordHash: row[6],
-        avatarUrl: row[7],
-        maxStreak: row[8],
-        timezone: row[9],
-        streakStartDate: row[10],
-        lastWatchDate: row[11],
-        profileFrameUrl: row[12],
-        profileBackgroundUrl: row[13],
-        userRole: row[14],
-        userStatus: row[15],
-        createdAt: row[16],
-        updatedAt: row[17]
-    };
 }
 

@@ -19,49 +19,62 @@ export const ErrorResponseSchema = Type.Object({
 }, { additionalProperties: false });
 export type ErrorResponseDto = Static<typeof ErrorResponseSchema>;
 
+const NullableDateType = Type.Union([
+    Type.Unsafe<Date | string>(Type.String({ format: 'date' })),
+    Type.Null()
+]);
+
+const DateTimeType = Type.Unsafe<Date | string>(Type.String({ format: 'date-time' }));
+
+const UserRoleResponseType = Type.Unsafe<string>(UserRoleSchema);
+const UserStatusResponseType = Type.Unsafe<string>(UserStatusSchema);
+
+const BigIntIdResponseType = Type.Unsafe<string | number>(Type.Integer({ minimum: 1 }));
+
 // Params
 
 export const UserIdParamSchema = Type.Object({
-    user_id: Type.String({ format: 'uuid' })
+    userId: Type.String({ format: 'uuid' })
 }, { additionalProperties: false });
 export type UserIdParamDto = Static<typeof UserIdParamSchema>;
 
 export const UserLinkParamSchema = Type.Object({
-    user_id: Type.String({ format: 'uuid' }),
-    user_link_id: Type.Integer({ minimum: 1 })
+    userId: Type.String({ format: 'uuid' }),
+    userLinkId: Type.Integer({ minimum: 1 })
 }, { additionalProperties: false });
 export type UserLinkParamDto = Static<typeof UserLinkParamSchema>;
 
-// Response
+// Response Schemas
 
 export const UserResponseSchema = Type.Object({
-    user_id: Type.String({ format: 'uuid' }),
+    userId: Type.String({ format: 'uuid' }),
     nickname: Type.String(),
-    full_name: Type.String(),
+    fullName: Type.String(),
     email: Type.String({ format: 'email' }),
     bio: Type.String(),
-    avatar_url: Type.String(),
-    max_streak: Type.Integer({ minimum: 0 }),
+    avatarUrl: Type.String(),
+    maxStreak: Type.Integer({ minimum: 0 }),
     timezone: Type.String(),
-    streak_start_date: Type.Union([Type.String({ format: 'date' }), Type.Null()]),
-    last_watch_date: Type.Union([Type.String({ format: 'date' }), Type.Null()]),
-    profile_frame_url: Type.Union([Type.String({ format: 'uri' }), Type.Null()]),
-    profile_background_url: Type.Union([Type.String({ format: 'uri' }), Type.Null()]),
-    user_role: UserRoleSchema,
-    user_status: UserStatusSchema,
-    created_at: Type.String({ format: 'date-time' }),
-    updated_at: Type.String({ format: 'date-time' })
+    streakStartDate: NullableDateType,
+    lastWatchDate: NullableDateType,
+    profileFrameUrl: Type.Union([Type.String({ format: 'uri' }), Type.Null()]),
+    profileBackgroundUrl: Type.Union([Type.String({ format: 'uri' }), Type.Null()]),
+    userRole: UserRoleResponseType,
+    userStatus: UserStatusResponseType,
+    createdAt: DateTimeType,
+    updatedAt: DateTimeType
 }, { additionalProperties: false });
 export type UserResponseDto = Static<typeof UserResponseSchema>;
 
 export const UserLinkResponseSchema = Type.Object({
-    user_link_id: Type.Integer({ minimum: 1 }),
-    user_id: Type.String({ format: 'uuid' }),
-    user_link_url: Type.String({ format: 'uri' })
+    userLinkId: BigIntIdResponseType,
+    userId: Type.String({ format: 'uuid' }),
+    userLinkUrl: Type.String({ format: 'uri' })
 }, { additionalProperties: false });
 export type UserLinkResponseDto = Static<typeof UserLinkResponseSchema>;
+export type UserLinkListResponseDto = Static<typeof UserLinkResponseSchema>[];
 
-// Request
+// Request Body Schemas
 
 export const CreateUserBodySchema = Type.Object({
     nickname: Type.String({
@@ -69,7 +82,7 @@ export const CreateUserBodySchema = Type.Object({
         maxLength: 30,
         pattern: '^[a-zA-Z0-9_]+$'
     }),
-    full_name: Type.String({
+    fullName: Type.String({
         minLength: 2,
         maxLength: 100,
         pattern: '^[\\p{L}]([\\p{L} \'\\u2019\\u02BC.-]*[\\p{L}.])?$'
@@ -82,7 +95,7 @@ export const CreateUserBodySchema = Type.Object({
         minLength: 8,
         maxLength: 72
     })),
-    google_id: Type.Optional(Type.String({
+    googleId: Type.Optional(Type.String({
         maxLength: 255
     })),
     timezone: Type.Optional(Type.String({
@@ -97,7 +110,7 @@ export const UpdateUserProfileBodySchema = Type.Object({
         maxLength: 30,
         pattern: '^[a-zA-Z0-9_]+$'
     }),
-    full_name: Type.String({
+    fullName: Type.String({
         minLength: 2,
         maxLength: 100,
         pattern: '^[\\p{L}]([\\p{L} \'\\u2019\\u02BC.-]*[\\p{L}.])?$'
@@ -113,7 +126,7 @@ export const UpdateUserProfileBodySchema = Type.Object({
 export type UpdateUserProfileDto = Static<typeof UpdateUserProfileBodySchema>;
 
 export const UpdateUserAvatarBodySchema = Type.Object({
-    avatar_url: Type.String({
+    avatarUrl: Type.String({
         format: 'uri',
         maxLength: 2048
     })
@@ -121,42 +134,42 @@ export const UpdateUserAvatarBodySchema = Type.Object({
 export type UpdateUserAvatarDto = Static<typeof UpdateUserAvatarBodySchema>;
 
 export const UpdateUserCustomizationBodySchema = Type.Object({
-    profile_frame_url: Type.Optional(
+    profileFrameUrl: Type.Optional(
         Type.Union([Type.String({ format: 'uri', maxLength: 2048 }), Type.Null()])
     ),
-    profile_background_url: Type.Optional(
+    profileBackgroundUrl: Type.Optional(
         Type.Union([Type.String({ format: 'uri', maxLength: 2048 }), Type.Null()])
     )
 }, { additionalProperties: false });
 export type UpdateUserCustomizationDto = Static<typeof UpdateUserCustomizationBodySchema>;
 
 export const UpdateUserPasswordBodySchema = Type.Object({
-    old_password: Type.String({ minLength: 8, maxLength: 72 }),
-    new_password: Type.String({ minLength: 8, maxLength: 72 })
+    oldPassword: Type.String({ minLength: 8, maxLength: 72 }),
+    newPassword: Type.String({ minLength: 8, maxLength: 72 })
 }, { additionalProperties: false });
 export type UpdateUserPasswordDto = Static<typeof UpdateUserPasswordBodySchema>;
 
 export const UpdateUserStatusBodySchema = Type.Object({
-    user_status: UserStatusSchema
+    userStatus: UserStatusSchema
 }, { additionalProperties: false });
 export type UpdateUserStatusDto = Static<typeof UpdateUserStatusBodySchema>;
 
 export const UpdateUserRoleBodySchema = Type.Object({
-    user_role: UserRoleSchema
+    userRole: UserRoleSchema
 }, { additionalProperties: false });
 export type UpdateUserRoleDto = Static<typeof UpdateUserRoleBodySchema>;
 
 export const CreateUserLinkBodySchema = Type.Object({
-    user_link_url: Type.String({ format: 'uri', maxLength: 2048 })
+    userLinkUrl: Type.String({ format: 'uri', maxLength: 2048 })
 }, { additionalProperties: false });
 export type CreateUserLinkDto = Static<typeof CreateUserLinkBodySchema>;
 
 export const UpdateUserLinkBodySchema = Type.Object({
-    user_link_url: Type.String({ format: 'uri', maxLength: 2048 })
+    userLinkUrl: Type.String({ format: 'uri', maxLength: 2048 })
 }, { additionalProperties: false });
 export type UpdateUserLinkDto = Static<typeof UpdateUserLinkBodySchema>;
 
-// Fastify schemas
+// Fastify Route Schemas
 
 export const createUserRouteSchema = {
     body: CreateUserBodySchema,
