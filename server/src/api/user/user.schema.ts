@@ -1,7 +1,5 @@
 import { Type, Static } from '@sinclair/typebox';
 
-// Enums
-
 export const UserRoleSchema = Type.Union([
     Type.Literal('user'),
     Type.Literal('admin')
