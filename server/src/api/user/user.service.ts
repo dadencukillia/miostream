@@ -126,6 +126,7 @@ export const getUserById = async (client: Pool, userId: string) => {
     }
 };
 
+// TODO(auth): move getUserByEmail/getUserByGoogleId to an auth module; keep email/googleId out of client-facing errors.
 export const getUserByEmail = async (client: Pool, email: string) => {
     try {
         const user = await usersSqlc.getUserByEmail(client, { email });
@@ -257,6 +258,7 @@ export const updateUserStatus = async (client: Pool, userId: string, status: Use
     }
 };
 
+// TODO(admin): check last-admin rule.
 export const updateUserRole = async (client: Pool, userId: string, role: UserRole) => {
     try {
         const user = await usersSqlc.updateUserRole(client, {

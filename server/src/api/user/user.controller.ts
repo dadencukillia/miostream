@@ -40,6 +40,7 @@ export const createUser = async (
     request: FastifyRequest<{ Body: CreateUserDto }>,
     reply: FastifyReply<{ Body: CreateUserDto; Reply: UserResponseDto }>
 ) => {
+    // TODO(auth): take googleId/email from a verified Google ID token, not from body.
     const { password, googleId, timezone } = request.body;
 
     if (!password && !googleId) {
@@ -66,6 +67,8 @@ export const deleteUser = async (
     request: FastifyRequest<{ Params: UserIdParamDto }>,
     reply: FastifyReply<{ Params: UserIdParamDto; Reply: void }>
 ) => {
+    // TODO(auth): revoke user sessions after deletion.
+    // TODO(admin): forbid deleting the last admin.
     await userService.deleteUserById(request.server.pg, request.params.userId);
     return reply.status(204).send();
 };
@@ -141,6 +144,7 @@ export const updateUserPassword = async (
     reply: FastifyReply<{ Params: UserIdParamDto; Body: UpdateUserPasswordDto; Reply: void }>
 ) => {
     const { oldPassword, newPassword } = request.body;
+    // TODO(auth): revoke all other sessions/tokens after password change.
 
     if (oldPassword === newPassword) {
         throw new UserInvalidError('New password must be different from the old password');
@@ -158,6 +162,7 @@ export const updateUserStatus = async (
     request: FastifyRequest<{ Params: UserIdParamDto; Body: UpdateUserStatusDto }>,
     reply: FastifyReply<{ Params: UserIdParamDto; Body: UpdateUserStatusDto; Reply: UserResponseDto }>
 ) => {
+    // TODO(admin): forbid self-ban; revoke sessions on ban/deactivation;
     const user = await userService.updateUserStatus(
         request.server.pg,
         request.params.userId,
@@ -170,6 +175,7 @@ export const updateUserRole = async (
     request: FastifyRequest<{ Params: UserIdParamDto; Body: UpdateUserRoleDto }>,
     reply: FastifyReply<{ Params: UserIdParamDto; Body: UpdateUserRoleDto; Reply: UserResponseDto }>
 ) => {
+    // TODO(admin): forbid self-demotion and removing the last admin;
     const user = await userService.updateUserRole(
         request.server.pg,
         request.params.userId,

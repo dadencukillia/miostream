@@ -46,6 +46,7 @@ export type UserLinkParamDto = Static<typeof UserLinkParamSchema>;
 
 // Response Schemas
 
+// TODO(auth): split into public (no email/role/status) and private (self/admin) responses.
 export const UserResponseSchema = Type.Object({
     userId: Type.String({ format: 'uuid' }),
     nickname: Type.String(),
