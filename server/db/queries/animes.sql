@@ -40,6 +40,12 @@ INSERT INTO public.animes (
 )
 RETURNING anime_id; --or 1
 
+-- name: CreateAnimeGenres :exec
+INSERT INTO public.genres (anime_id, genre_type)
+SELECT @anime_id::uuid, g
+FROM unnest(@genres::genre_type_enum[]) AS g
+ON CONFLICT DO NOTHING;
+
 -- name: ListAnimes :many
 SELECT
     a.anime_id,
@@ -172,65 +178,6 @@ SELECT
 FROM public.animes a
 WHERE a.slug = @slug::text;
 
--- name: UpdateAnimeById :one
-UPDATE public.animes
-SET
-    "slug"                 = COALESCE(@slug::text, slug),
-    "title_ua"             = COALESCE(@title_ua::text, title_ua),
-    "title_en"             = COALESCE(sqlc.narg('title_en')::text, title_en),
-    "title_original"       = COALESCE(sqlc.narg('title_original')::text, title_original),
-    "anime_description"    = COALESCE(sqlc.narg('anime_description')::text, anime_description),
-    "cover_url"            = COALESCE(sqlc.narg('cover_url')::text, cover_url),
-    "production_studio"    = COALESCE(sqlc.narg('production_studio')::text, production_studio),
-    "mal_id"               = sqlc.narg('mal_id')::bigint,
-    "anilist_id"           = sqlc.narg('anilist_id')::bigint,
-    "hikka_id"             = sqlc.narg('hikka_id')::text,
-    "imdb_id"              = sqlc.narg('imdb_id')::text,
-    "year_released"        = COALESCE(sqlc.narg('year_released')::smallint, year_released),
-    "avg_episode_duration" = COALESCE(sqlc.narg('avg_episode_duration')::smallint, avg_episode_duration),
-    "episodes_count"       = COALESCE(sqlc.narg('episodes_count')::smallint, episodes_count),
-    "age_restriction"      = COALESCE(sqlc.narg('age_restriction')::mpaa_rating_enum, age_restriction),
-    "anime_status"         = COALESCE(sqlc.narg('anime_status')::anime_status_enum, anime_status),
-    "anime_format"         = COALESCE(@anime_format::anime_format_enum, anime_format),
-    "available"            = COALESCE(@available::boolean, available),
-    "updated_at"           = NOW()
-WHERE "anime_id" = @anime_id::uuid
-RETURNING
-    "anime_id",
-    "slug",
-    "title_ua",
-    "title_en",
-    "title_original",
-    "anime_description",
-    "cover_url",
-    "production_studio",
-    "mal_id",
-    "anilist_id",
-    "hikka_id",
-    "imdb_id",
-    "year_released",
-    "avg_episode_duration",
-    "episodes_count",
-    "age_restriction",
-    "anime_status",
-    "anime_format",
-    "available";
-
--- name: DeleteAnimeById :one
-DELETE FROM public.animes
-WHERE anime_id = @anime_id::uuid
-RETURNING anime_id;
-
--- name: DeleteAnimeGenres :exec
-DELETE FROM public.genres
-WHERE anime_id = @anime_id::uuid;
-
--- name: CreateAnimeGenres :exec
-INSERT INTO public.genres (anime_id, genre_type)
-SELECT @anime_id::uuid, g
-FROM unnest(@genres::genre_type_enum[]) AS g
-ON CONFLICT DO NOTHING;
-
 -- name: CountAnimesByStatus :many
 SELECT
     a.anime_status,
@@ -288,16 +235,6 @@ FROM public.animes a
 WHERE a.anime_status = 'ongoing'::anime_status_enum
 ORDER BY a.episodes_count DESC, a.title_ua;
 
--- name: GetAnimesWithMaxEpisodes :many
-SELECT
-    a.anime_id,
-    a.slug,
-    a.title_ua,
-    a.title_en,
-    a.episodes_count
-FROM public.animes a
-WHERE a.episodes_count = (SELECT MAX(episodes_count) FROM public.animes);
-
 -- name: GetAvailableAnimesByCurrentYear :many
 SELECT
     "anime_id",
@@ -311,6 +248,50 @@ WHERE
     "available" = TRUE
     AND "year_released" = EXTRACT(YEAR FROM NOW()::date)::smallint
 ORDER BY "year_released" DESC;
+
+-- name: UpdateAnimeById :one
+UPDATE public.animes
+SET
+    "slug"                 = COALESCE(@slug::text, slug),
+    "title_ua"             = COALESCE(@title_ua::text, title_ua),
+    "title_en"             = COALESCE(sqlc.narg('title_en')::text, title_en),
+    "title_original"       = COALESCE(sqlc.narg('title_original')::text, title_original),
+    "anime_description"    = COALESCE(sqlc.narg('anime_description')::text, anime_description),
+    "cover_url"            = COALESCE(sqlc.narg('cover_url')::text, cover_url),
+    "production_studio"    = COALESCE(sqlc.narg('production_studio')::text, production_studio),
+    "mal_id"               = sqlc.narg('mal_id')::bigint,
+    "anilist_id"           = sqlc.narg('anilist_id')::bigint,
+    "hikka_id"             = sqlc.narg('hikka_id')::text,
+    "imdb_id"              = sqlc.narg('imdb_id')::text,
+    "year_released"        = COALESCE(sqlc.narg('year_released')::smallint, year_released),
+    "avg_episode_duration" = COALESCE(sqlc.narg('avg_episode_duration')::smallint, avg_episode_duration),
+    "episodes_count"       = COALESCE(sqlc.narg('episodes_count')::smallint, episodes_count),
+    "age_restriction"      = COALESCE(sqlc.narg('age_restriction')::mpaa_rating_enum, age_restriction),
+    "anime_status"         = COALESCE(sqlc.narg('anime_status')::anime_status_enum, anime_status),
+    "anime_format"         = COALESCE(@anime_format::anime_format_enum, anime_format),
+    "available"            = COALESCE(@available::boolean, available),
+    "updated_at"           = NOW()
+WHERE "anime_id" = @anime_id::uuid
+RETURNING
+    "anime_id",
+    "slug",
+    "title_ua",
+    "title_en",
+    "title_original",
+    "anime_description",
+    "cover_url",
+    "production_studio",
+    "mal_id",
+    "anilist_id",
+    "hikka_id",
+    "imdb_id",
+    "year_released",
+    "avg_episode_duration",
+    "episodes_count",
+    "age_restriction",
+    "anime_status",
+    "anime_format",
+    "available";
 
 -- name: UpdateAnimeStatusById :one
 UPDATE public.animes

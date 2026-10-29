@@ -4,6 +4,108 @@ interface Client {
     query: (config: QueryArrayConfig) => Promise<QueryArrayResult>;
 }
 
+export const createAnimeQuery = `-- name: CreateAnime :one
+INSERT INTO public.animes (
+    slug,
+    title_ua,
+    title_en,
+    title_original,
+    anime_description,
+    cover_url,
+    production_studio,
+    mal_id,
+    anilist_id,
+    hikka_id,
+    imdb_id,
+    year_released,
+    avg_episode_duration,
+    episodes_count,
+    age_restriction,
+    anime_status,
+    anime_format,
+    available
+) VALUES (
+    $1::text,
+    $2::text,
+    $3::text,
+    $4::text,
+    $5::text,
+    $6::text,
+    $7::text,
+    $8::bigint,
+    $9::bigint,
+    $10::text,
+    $11::text,
+    $12::smallint,
+    $13::smallint,
+    $14::smallint,
+    $15::mpaa_rating_enum,
+    $16::anime_status_enum,
+    $17::anime_format_enum,
+    $18::boolean
+)
+RETURNING anime_id`;
+
+export interface CreateAnimeArgs {
+    slug: string;
+    titleUa: string;
+    titleEn: string;
+    titleOriginal: string;
+    animeDescription: string;
+    coverUrl: string;
+    productionStudio: string;
+    malId: string | null;
+    anilistId: string | null;
+    hikkaId: string | null;
+    imdbId: string | null;
+    yearReleased: number | null;
+    avgEpisodeDuration: number;
+    episodesCount: number;
+    ageRestriction: string | null;
+    animeStatus: string | null;
+    animeFormat: string;
+    available: boolean;
+}
+
+export interface CreateAnimeRow {
+    animeId: string;
+}
+
+export async function createAnime(client: Client, args: CreateAnimeArgs): Promise<CreateAnimeRow | null> {
+    const result = await client.query({
+        text: createAnimeQuery,
+        values: [args.slug, args.titleUa, args.titleEn, args.titleOriginal, args.animeDescription, args.coverUrl, args.productionStudio, args.malId, args.anilistId, args.hikkaId, args.imdbId, args.yearReleased, args.avgEpisodeDuration, args.episodesCount, args.ageRestriction, args.animeStatus, args.animeFormat, args.available],
+        rowMode: "array"
+    });
+    if (result.rows.length !== 1) {
+        return null;
+    }
+    const row = result.rows[0];
+    return {
+        animeId: row[0]
+    };
+}
+
+export const createAnimeGenresQuery = `-- name: CreateAnimeGenres :exec
+
+INSERT INTO public.genres (anime_id, genre_type)
+SELECT $1::uuid, g
+FROM unnest($2::genre_type_enum[]) AS g
+ON CONFLICT DO NOTHING`;
+
+export interface CreateAnimeGenresArgs {
+    animeId: string;
+    genres: string[];
+}
+
+export async function createAnimeGenres(client: Client, args: CreateAnimeGenresArgs): Promise<void> {
+    await client.query({
+        text: createAnimeGenresQuery,
+        values: [args.animeId, args.genres],
+        rowMode: "array"
+    });
+}
+
 export const listAnimesQuery = `-- name: ListAnimes :many
 SELECT
     a.anime_id,
@@ -171,7 +273,7 @@ export async function countAnimes(client: Client, args: CountAnimesArgs): Promis
     };
 }
 
-export const selectAnimeByIdQuery = `-- name: SelectAnimeById :one
+export const getAnimeByIdQuery = `-- name: GetAnimeById :one
 SELECT
     a.anime_id,
     a.slug,
@@ -201,11 +303,11 @@ SELECT
 FROM public.animes a
 WHERE a.anime_id = $1::uuid`;
 
-export interface SelectAnimeByIdArgs {
+export interface GetAnimeByIdArgs {
     animeId: string;
 }
 
-export interface SelectAnimeByIdRow {
+export interface GetAnimeByIdRow {
     animeId: string;
     slug: string;
     titleUa: string;
@@ -228,9 +330,9 @@ export interface SelectAnimeByIdRow {
     genres: string[];
 }
 
-export async function selectAnimeById(client: Client, args: SelectAnimeByIdArgs): Promise<SelectAnimeByIdRow | null> {
+export async function getAnimeById(client: Client, args: GetAnimeByIdArgs): Promise<GetAnimeByIdRow | null> {
     const result = await client.query({
-        text: selectAnimeByIdQuery,
+        text: getAnimeByIdQuery,
         values: [args.animeId],
         rowMode: "array"
     });
@@ -262,7 +364,7 @@ export async function selectAnimeById(client: Client, args: SelectAnimeByIdArgs)
     };
 }
 
-export const selectAnimeBySlugQuery = `-- name: SelectAnimeBySlug :one
+export const getAnimeBySlugQuery = `-- name: GetAnimeBySlug :one
 SELECT
     a.anime_id,
     a.slug,
@@ -292,11 +394,11 @@ SELECT
 FROM public.animes a
 WHERE a.slug = $1::text`;
 
-export interface SelectAnimeBySlugArgs {
+export interface GetAnimeBySlugArgs {
     slug: string;
 }
 
-export interface SelectAnimeBySlugRow {
+export interface GetAnimeBySlugRow {
     animeId: string;
     slug: string;
     titleUa: string;
@@ -319,9 +421,9 @@ export interface SelectAnimeBySlugRow {
     genres: string[];
 }
 
-export async function selectAnimeBySlug(client: Client, args: SelectAnimeBySlugArgs): Promise<SelectAnimeBySlugRow | null> {
+export async function getAnimeBySlug(client: Client, args: GetAnimeBySlugArgs): Promise<GetAnimeBySlugRow | null> {
     const result = await client.query({
-        text: selectAnimeBySlugQuery,
+        text: getAnimeBySlugQuery,
         values: [args.slug],
         rowMode: "array"
     });
@@ -351,253 +453,6 @@ export async function selectAnimeBySlug(client: Client, args: SelectAnimeBySlugA
         available: row[18],
         genres: row[19]
     };
-}
-
-export const insertAnimeQuery = `-- name: InsertAnime :one
-INSERT INTO public.animes (
-    slug,
-    title_ua,
-    title_en,
-    title_original,
-    anime_description,
-    cover_url,
-    production_studio,
-    mal_id,
-    anilist_id,
-    hikka_id,
-    imdb_id,
-    year_released,
-    avg_episode_duration,
-    episodes_count,
-    age_restriction,
-    anime_status,
-    anime_format,
-    available
-) VALUES (
-    $1::text,
-    $2::text,
-    $3::text,
-    $4::text,
-    $5::text,
-    $6::text,
-    $7::text,
-    $8::bigint,
-    $9::bigint,
-    $10::text,
-    $11::text,
-    $12::smallint,
-    $13::smallint,
-    $14::smallint,
-    $15::mpaa_rating_enum,
-    $16::anime_status_enum,
-    $17::anime_format_enum,
-    $18::boolean
-)
-RETURNING anime_id`;
-
-export interface InsertAnimeArgs {
-    slug: string;
-    titleUa: string;
-    titleEn: string;
-    titleOriginal: string;
-    animeDescription: string;
-    coverUrl: string;
-    productionStudio: string;
-    malId: string | null;
-    anilistId: string | null;
-    hikkaId: string | null;
-    imdbId: string | null;
-    yearReleased: number | null;
-    avgEpisodeDuration: number;
-    episodesCount: number;
-    ageRestriction: string | null;
-    animeStatus: string | null;
-    animeFormat: string;
-    available: boolean;
-}
-
-export interface InsertAnimeRow {
-    animeId: string;
-}
-
-export async function insertAnime(client: Client, args: InsertAnimeArgs): Promise<InsertAnimeRow | null> {
-    const result = await client.query({
-        text: insertAnimeQuery,
-        values: [args.slug, args.titleUa, args.titleEn, args.titleOriginal, args.animeDescription, args.coverUrl, args.productionStudio, args.malId, args.anilistId, args.hikkaId, args.imdbId, args.yearReleased, args.avgEpisodeDuration, args.episodesCount, args.ageRestriction, args.animeStatus, args.animeFormat, args.available],
-        rowMode: "array"
-    });
-    if (result.rows.length !== 1) {
-        return null;
-    }
-    const row = result.rows[0];
-    return {
-        animeId: row[0]
-    };
-}
-
-export const patchAnimeByIdQuery = `-- name: PatchAnimeById :one
-UPDATE public.animes
-SET
-    slug = CASE
-        WHEN $1::jsonb ? 'slug' THEN $1::jsonb->>'slug'
-        ELSE slug
-    END,
-    title_ua = CASE
-        WHEN $1::jsonb ? 'title_ua' THEN $1::jsonb->>'title_ua'
-        ELSE title_ua
-    END,
-    title_en = CASE
-        WHEN $1::jsonb ? 'title_en' THEN $1::jsonb->>'title_en'
-        ELSE title_en
-    END,
-    title_original = CASE
-        WHEN $1::jsonb ? 'title_original' THEN $1::jsonb->>'title_original'
-        ELSE title_original
-    END,
-    anime_description = CASE
-        WHEN $1::jsonb ? 'anime_description' THEN $1::jsonb->>'anime_description'
-        ELSE anime_description
-    END,
-    cover_url = CASE
-        WHEN $1::jsonb ? 'cover_url' THEN $1::jsonb->>'cover_url'
-        ELSE cover_url
-    END,
-    production_studio = CASE
-        WHEN $1::jsonb ? 'production_studio' THEN $1::jsonb->>'production_studio'
-        ELSE production_studio
-    END,
-    mal_id = CASE
-        WHEN $1::jsonb ? 'mal_id' THEN ($1::jsonb->>'mal_id')::bigint
-        ELSE mal_id
-    END,
-    anilist_id = CASE
-        WHEN $1::jsonb ? 'anilist_id' THEN ($1::jsonb->>'anilist_id')::bigint
-        ELSE anilist_id
-    END,
-    hikka_id = CASE
-        WHEN $1::jsonb ? 'hikka_id' THEN $1::jsonb->>'hikka_id'
-        ELSE hikka_id
-    END,
-    imdb_id = CASE
-        WHEN $1::jsonb ? 'imdb_id' THEN $1::jsonb->>'imdb_id'
-        ELSE imdb_id
-    END,
-    year_released = CASE
-        WHEN $1::jsonb ? 'year_released' THEN ($1::jsonb->>'year_released')::smallint
-        ELSE year_released
-    END,
-    avg_episode_duration = CASE
-        WHEN $1::jsonb ? 'avg_episode_duration' THEN ($1::jsonb->>'avg_episode_duration')::smallint
-        ELSE avg_episode_duration
-    END,
-    episodes_count = CASE
-        WHEN $1::jsonb ? 'episodes_count' THEN ($1::jsonb->>'episodes_count')::smallint
-        ELSE episodes_count
-    END,
-    age_restriction = CASE
-        WHEN $1::jsonb ? 'age_restriction' THEN ($1::jsonb->>'age_restriction')::mpaa_rating_enum
-        ELSE age_restriction
-    END,
-    anime_status = CASE
-        WHEN $1::jsonb ? 'anime_status' THEN ($1::jsonb->>'anime_status')::anime_status_enum
-        ELSE anime_status
-    END,
-    anime_format = CASE
-        WHEN $1::jsonb ? 'anime_format' THEN ($1::jsonb->>'anime_format')::anime_format_enum
-        ELSE anime_format
-    END,
-    available = CASE
-        WHEN $1::jsonb ? 'available' THEN ($1::jsonb->>'available')::boolean
-        ELSE available
-    END
-WHERE anime_id = $2::uuid
-RETURNING anime_id`;
-
-export interface PatchAnimeByIdArgs {
-    patchData: any;
-    animeId: string;
-}
-
-export interface PatchAnimeByIdRow {
-    animeId: string;
-}
-
-export async function patchAnimeById(client: Client, args: PatchAnimeByIdArgs): Promise<PatchAnimeByIdRow | null> {
-    const result = await client.query({
-        text: patchAnimeByIdQuery,
-        values: [args.patchData, args.animeId],
-        rowMode: "array"
-    });
-    if (result.rows.length !== 1) {
-        return null;
-    }
-    const row = result.rows[0];
-    return {
-        animeId: row[0]
-    };
-}
-
-export const deleteAnimeByIdQuery = `-- name: DeleteAnimeById :one
-DELETE FROM public.animes
-WHERE anime_id = $1::uuid
-RETURNING anime_id`;
-
-export interface DeleteAnimeByIdArgs {
-    animeId: string;
-}
-
-export interface DeleteAnimeByIdRow {
-    animeId: string;
-}
-
-export async function deleteAnimeById(client: Client, args: DeleteAnimeByIdArgs): Promise<DeleteAnimeByIdRow | null> {
-    const result = await client.query({
-        text: deleteAnimeByIdQuery,
-        values: [args.animeId],
-        rowMode: "array"
-    });
-    if (result.rows.length !== 1) {
-        return null;
-    }
-    const row = result.rows[0];
-    return {
-        animeId: row[0]
-    };
-}
-
-export const deleteAnimeGenresQuery = `-- name: DeleteAnimeGenres :exec
-DELETE FROM public.genres
-WHERE anime_id = $1::uuid`;
-
-export interface DeleteAnimeGenresArgs {
-    animeId: string;
-}
-
-export async function deleteAnimeGenres(client: Client, args: DeleteAnimeGenresArgs): Promise<void> {
-    await client.query({
-        text: deleteAnimeGenresQuery,
-        values: [args.animeId],
-        rowMode: "array"
-    });
-}
-
-export const insertAnimeGenresQuery = `-- name: InsertAnimeGenres :exec
-INSERT INTO public.genres (anime_id, genre_type)
-SELECT $1::uuid, g
-FROM unnest($2::genre_type_enum[]) AS g
-ON CONFLICT DO NOTHING`;
-
-export interface InsertAnimeGenresArgs {
-    animeId: string;
-    genres: string[];
-}
-
-export async function insertAnimeGenres(client: Client, args: InsertAnimeGenresArgs): Promise<void> {
-    await client.query({
-        text: insertAnimeGenresQuery,
-        values: [args.animeId, args.genres],
-        rowMode: "array"
-    });
 }
 
 export const countAnimesByStatusQuery = `-- name: CountAnimesByStatus :many
@@ -732,7 +587,7 @@ export async function getStudiosAboveAverageEpisodes(client: Client): Promise<Ge
     });
 }
 
-export const selectAnimesAboveAverageEpisodesQuery = `-- name: SelectAnimesAboveAverageEpisodes :many
+export const getOngoingAnimesQuery = `-- name: GetOngoingAnimes :many
 SELECT
     a.anime_id,
     a.slug,
@@ -740,14 +595,10 @@ SELECT
     a.title_en,
     a.episodes_count
 FROM public.animes a
-WHERE a.episodes_count > (
-    SELECT AVG(episodes_count)
-    FROM public.animes
-    WHERE episodes_count > 0
-)
+WHERE a.anime_status = 'ongoing'::anime_status_enum
 ORDER BY a.episodes_count DESC, a.title_ua`;
 
-export interface SelectAnimesAboveAverageEpisodesRow {
+export interface GetOngoingAnimesRow {
     animeId: string;
     slug: string;
     titleUa: string;
@@ -755,9 +606,9 @@ export interface SelectAnimesAboveAverageEpisodesRow {
     episodesCount: number;
 }
 
-export async function selectAnimesAboveAverageEpisodes(client: Client): Promise<SelectAnimesAboveAverageEpisodesRow[]> {
+export async function getOngoingAnimes(client: Client): Promise<GetOngoingAnimesRow[]> {
     const result = await client.query({
-        text: selectAnimesAboveAverageEpisodesQuery,
+        text: getOngoingAnimesQuery,
         values: [],
         rowMode: "array"
     });
@@ -772,28 +623,32 @@ export async function selectAnimesAboveAverageEpisodes(client: Client): Promise<
     });
 }
 
-export const selectAnimesWithMaxEpisodesQuery = `-- name: SelectAnimesWithMaxEpisodes :many
+export const getAvailableAnimesByCurrentYearQuery = `-- name: GetAvailableAnimesByCurrentYear :many
 SELECT
-    a.anime_id,
-    a.slug,
-    a.title_ua,
-    a.title_en,
-    a.episodes_count
-FROM public.animes a
-WHERE a.episodes_count = (SELECT MAX(episodes_count) FROM public.animes)
-ORDER BY a.title_ua`;
+    "anime_id",
+    "slug",
+    "title_ua",
+    "year_released",
+    "cover_url",
+    "episodes_count"
+FROM public.animes
+WHERE
+    "available" = TRUE
+    AND "year_released" = EXTRACT(YEAR FROM NOW()::date)::smallint
+ORDER BY "year_released" DESC`;
 
-export interface SelectAnimesWithMaxEpisodesRow {
+export interface GetAvailableAnimesByCurrentYearRow {
     animeId: string;
     slug: string;
     titleUa: string;
-    titleEn: string;
+    yearReleased: number | null;
+    coverUrl: string;
     episodesCount: number;
 }
 
-export async function selectAnimesWithMaxEpisodes(client: Client): Promise<SelectAnimesWithMaxEpisodesRow[]> {
+export async function getAvailableAnimesByCurrentYear(client: Client): Promise<GetAvailableAnimesByCurrentYearRow[]> {
     const result = await client.query({
-        text: selectAnimesWithMaxEpisodesQuery,
+        text: getAvailableAnimesByCurrentYearQuery,
         values: [],
         rowMode: "array"
     });
@@ -802,9 +657,236 @@ export async function selectAnimesWithMaxEpisodes(client: Client): Promise<Selec
             animeId: row[0],
             slug: row[1],
             titleUa: row[2],
-            titleEn: row[3],
-            episodesCount: row[4]
+            yearReleased: row[3],
+            coverUrl: row[4],
+            episodesCount: row[5]
         };
     });
+}
+
+export const updateAnimeByIdQuery = `-- name: UpdateAnimeById :one
+UPDATE public.animes
+SET
+    "slug"                 = COALESCE($1::text, slug),
+    "title_ua"             = COALESCE($2::text, title_ua),
+    "title_en"             = COALESCE($3::text, title_en),
+    "title_original"       = COALESCE($4::text, title_original),
+    "anime_description"    = COALESCE($5::text, anime_description),
+    "cover_url"            = COALESCE($6::text, cover_url),
+    "production_studio"    = COALESCE($7::text, production_studio),
+    "mal_id"               = $8::bigint,
+    "anilist_id"           = $9::bigint,
+    "hikka_id"             = $10::text,
+    "imdb_id"              = $11::text,
+    "year_released"        = COALESCE($12::smallint, year_released),
+    "avg_episode_duration" = COALESCE($13::smallint, avg_episode_duration),
+    "episodes_count"       = COALESCE($14::smallint, episodes_count),
+    "age_restriction"      = COALESCE($15::mpaa_rating_enum, age_restriction),
+    "anime_status"         = COALESCE($16::anime_status_enum, anime_status),
+    "anime_format"         = COALESCE($17::anime_format_enum, anime_format),
+    "available"            = COALESCE($18::boolean, available),
+    "updated_at"           = NOW()
+WHERE "anime_id" = $19::uuid
+RETURNING
+    "anime_id",
+    "slug",
+    "title_ua",
+    "title_en",
+    "title_original",
+    "anime_description",
+    "cover_url",
+    "production_studio",
+    "mal_id",
+    "anilist_id",
+    "hikka_id",
+    "imdb_id",
+    "year_released",
+    "avg_episode_duration",
+    "episodes_count",
+    "age_restriction",
+    "anime_status",
+    "anime_format",
+    "available"`;
+
+export interface UpdateAnimeByIdArgs {
+    slug: string;
+    titleUa: string;
+    titleEn: string | null;
+    titleOriginal: string | null;
+    animeDescription: string | null;
+    coverUrl: string | null;
+    productionStudio: string | null;
+    malId: string | null;
+    anilistId: string | null;
+    hikkaId: string | null;
+    imdbId: string | null;
+    yearReleased: number | null;
+    avgEpisodeDuration: number | null;
+    episodesCount: number | null;
+    ageRestriction: string | null;
+    animeStatus: string | null;
+    animeFormat: string;
+    available: boolean;
+    animeId: string;
+}
+
+export interface UpdateAnimeByIdRow {
+    animeId: string;
+    slug: string;
+    titleUa: string;
+    titleEn: string;
+    titleOriginal: string;
+    animeDescription: string;
+    coverUrl: string;
+    productionStudio: string;
+    malId: string | null;
+    anilistId: string | null;
+    hikkaId: string | null;
+    imdbId: string | null;
+    yearReleased: number | null;
+    avgEpisodeDuration: number;
+    episodesCount: number;
+    ageRestriction: string | null;
+    animeStatus: string | null;
+    animeFormat: string;
+    available: boolean;
+}
+
+export async function updateAnimeById(client: Client, args: UpdateAnimeByIdArgs): Promise<UpdateAnimeByIdRow | null> {
+    const result = await client.query({
+        text: updateAnimeByIdQuery,
+        values: [args.slug, args.titleUa, args.titleEn, args.titleOriginal, args.animeDescription, args.coverUrl, args.productionStudio, args.malId, args.anilistId, args.hikkaId, args.imdbId, args.yearReleased, args.avgEpisodeDuration, args.episodesCount, args.ageRestriction, args.animeStatus, args.animeFormat, args.available, args.animeId],
+        rowMode: "array"
+    });
+    if (result.rows.length !== 1) {
+        return null;
+    }
+    const row = result.rows[0];
+    return {
+        animeId: row[0],
+        slug: row[1],
+        titleUa: row[2],
+        titleEn: row[3],
+        titleOriginal: row[4],
+        animeDescription: row[5],
+        coverUrl: row[6],
+        productionStudio: row[7],
+        malId: row[8],
+        anilistId: row[9],
+        hikkaId: row[10],
+        imdbId: row[11],
+        yearReleased: row[12],
+        avgEpisodeDuration: row[13],
+        episodesCount: row[14],
+        ageRestriction: row[15],
+        animeStatus: row[16],
+        animeFormat: row[17],
+        available: row[18]
+    };
+}
+
+export const updateAnimeStatusByIdQuery = `-- name: UpdateAnimeStatusById :one
+UPDATE public.animes
+SET
+    "anime_status" = $1::anime_status_enum,
+    "updated_at"   = NOW()
+WHERE "anime_id" = $2::uuid
+RETURNING "anime_id",
+          "anime_status"`;
+
+export interface UpdateAnimeStatusByIdArgs {
+    animeStatus: string;
+    animeId: string;
+}
+
+export interface UpdateAnimeStatusByIdRow {
+    animeId: string;
+    animeStatus: string | null;
+}
+
+export async function updateAnimeStatusById(client: Client, args: UpdateAnimeStatusByIdArgs): Promise<UpdateAnimeStatusByIdRow | null> {
+    const result = await client.query({
+        text: updateAnimeStatusByIdQuery,
+        values: [args.animeStatus, args.animeId],
+        rowMode: "array"
+    });
+    if (result.rows.length !== 1) {
+        return null;
+    }
+    const row = result.rows[0];
+    return {
+        animeId: row[0],
+        animeStatus: row[1]
+    };
+}
+
+export const updateAnimeAvailableByIdQuery = `-- name: UpdateAnimeAvailableById :one
+UPDATE public.animes
+SET
+    "available"  = $1::boolean,
+    "updated_at" = NOW()
+WHERE "anime_id" = $2::uuid
+RETURNING "anime_id",
+          "available"`;
+
+export interface UpdateAnimeAvailableByIdArgs {
+    available: boolean;
+    animeId: string;
+}
+
+export interface UpdateAnimeAvailableByIdRow {
+    animeId: string;
+    available: boolean;
+}
+
+export async function updateAnimeAvailableById(client: Client, args: UpdateAnimeAvailableByIdArgs): Promise<UpdateAnimeAvailableByIdRow | null> {
+    const result = await client.query({
+        text: updateAnimeAvailableByIdQuery,
+        values: [args.available, args.animeId],
+        rowMode: "array"
+    });
+    if (result.rows.length !== 1) {
+        return null;
+    }
+    const row = result.rows[0];
+    return {
+        animeId: row[0],
+        available: row[1]
+    };
+}
+
+export const incrementAnimeEpisodesByIdQuery = `-- name: IncrementAnimeEpisodesById :one
+UPDATE public.animes
+SET
+    "episodes_count" = GREATEST(episodes_count, $1::smallint),
+    "updated_at"     = NOW()
+WHERE "anime_id" = $2::uuid
+RETURNING "anime_id",
+          "episodes_count"`;
+
+export interface IncrementAnimeEpisodesByIdArgs {
+    episodesCount: number;
+    animeId: string;
+}
+
+export interface IncrementAnimeEpisodesByIdRow {
+    animeId: string;
+    episodesCount: number;
+}
+
+export async function incrementAnimeEpisodesById(client: Client, args: IncrementAnimeEpisodesByIdArgs): Promise<IncrementAnimeEpisodesByIdRow | null> {
+    const result = await client.query({
+        text: incrementAnimeEpisodesByIdQuery,
+        values: [args.episodesCount, args.animeId],
+        rowMode: "array"
+    });
+    if (result.rows.length !== 1) {
+        return null;
+    }
+    const row = result.rows[0];
+    return {
+        animeId: row[0],
+        episodesCount: row[1]
+    };
 }
 
