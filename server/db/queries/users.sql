@@ -156,11 +156,17 @@ RETURNING
     "updated_at";
 
 -- name: UpdateUserCustomization :one
-UPDATE public.users
+UPDATE public.users 
 SET 
-    "profile_frame_url"      = sqlc.narg('profile_frame_url'),
-    "profile_background_url" = sqlc.narg('profile_background_url'),
-    "updated_at"             = NOW()
+    "profile_frame_url" = CASE 
+        WHEN @set_frame::boolean
+        THEN sqlc.narg('profile_frame_url')::text
+        ELSE profile_frame_url END,
+    "profile_background_url" = CASE 
+        WHEN @set_background::boolean
+        THEN sqlc.narg('profile_background_url')::text
+        ELSE profile_background_url END,
+    "updated_at" = NOW()
 WHERE "user_id" = @user_id::uuid
 RETURNING 
     "user_id",
@@ -262,6 +268,7 @@ RETURNING
     "created_at",
     "updated_at";
 
--- name: DeleteUserById :exec
+-- name: DeleteUserById :one
 DELETE FROM public.users
-WHERE "user_id" = @user_id::uuid;
+WHERE "user_id" = @user_id::uuid
+RETURNING 1;

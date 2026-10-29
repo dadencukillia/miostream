@@ -119,37 +119,33 @@ export async function updateUserLink(client: Client, args: UpdateUserLinkArgs): 
     };
 }
 
-export const deleteUserLinkQuery = `-- name: DeleteUserLink :exec
+export const deleteUserLinkQuery = `-- name: DeleteUserLink :one
 DELETE FROM public.user_links
 WHERE "user_link_id" = $1
-    AND "user_id" = $2::uuid`;
+    AND "user_id" = $2::uuid
+RETURNING 1`;
 
 export interface DeleteUserLinkArgs {
     userLinkId: string;
     userId: string;
 }
 
-export async function deleteUserLink(client: Client, args: DeleteUserLinkArgs): Promise<void> {
-    await client.query({
+export interface DeleteUserLinkRow {
+    : string;
+}
+
+export async function deleteUserLink(client: Client, args: DeleteUserLinkArgs): Promise<DeleteUserLinkRow | null> {
+    const result = await client.query({
         text: deleteUserLinkQuery,
         values: [args.userLinkId, args.userId],
         rowMode: "array"
     });
-}
-
-export const deleteAllUserLinksByUserIdQuery = `-- name: DeleteAllUserLinksByUserId :exec
-DELETE FROM public.user_links
-WHERE "user_id" = $1::uuid`;
-
-export interface DeleteAllUserLinksByUserIdArgs {
-    userId: string;
-}
-
-export async function deleteAllUserLinksByUserId(client: Client, args: DeleteAllUserLinksByUserIdArgs): Promise<void> {
-    await client.query({
-        text: deleteAllUserLinksByUserIdQuery,
-        values: [args.userId],
-        rowMode: "array"
-    });
+    if (result.rows.length !== 1) {
+        return null;
+    }
+    const row = result.rows[0];
+    return {
+        : row[0]
+    };
 }
 

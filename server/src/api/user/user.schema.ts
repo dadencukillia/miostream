@@ -40,7 +40,7 @@ export type UserIdParamDto = Static<typeof UserIdParamSchema>;
 
 export const UserLinkParamSchema = Type.Object({
     userId: Type.String({ format: 'uuid' }),
-    userLinkId: Type.Integer({ minimum: 1 })
+    userLinkId: Type.Integer({ minimum: 1, maximum: Number.MAX_SAFE_INTEGER })
 }, { additionalProperties: false });
 export type UserLinkParamDto = Static<typeof UserLinkParamSchema>;
 

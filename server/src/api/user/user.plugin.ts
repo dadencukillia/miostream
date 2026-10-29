@@ -13,10 +13,15 @@ const plugin: FastifyPluginAsync = async (fastify, _opts) => {
         }
 
         if (error instanceof UserError) {
-            return reply.status(error.status).send({
-                ok: false,
-                message: error.message
-            });
+            if (error.status >= 500) {
+                request.log.error(error);
+                return reply.status(500).send({ ok: false, message: 'Unexpected error' });
+            }
+            return reply.status(error.status).send({ ok: false, message: error.message });
+        }
+
+        if (error.statusCode && error.statusCode >= 400 && error.statusCode < 500) {
+            return reply.status(error.statusCode).send({ ok: false, message: error.message });
         }
 
         request.log.error(error);

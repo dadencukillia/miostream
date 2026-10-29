@@ -513,12 +513,18 @@ export async function updateUserAvatar(client: Client, args: UpdateUserAvatarArg
 }
 
 export const updateUserCustomizationQuery = `-- name: UpdateUserCustomization :one
-UPDATE public.users
+UPDATE public.users 
 SET 
-    "profile_frame_url"      = $1,
-    "profile_background_url" = $2,
-    "updated_at"             = NOW()
-WHERE "user_id" = $3::uuid
+    "profile_frame_url" = CASE 
+        WHEN $1::boolean
+        THEN $2::text
+        ELSE profile_frame_url END,
+    "profile_background_url" = CASE 
+        WHEN $3::boolean
+        THEN $4::text
+        ELSE profile_background_url END,
+    "updated_at" = NOW()
+WHERE "user_id" = $5::uuid
 RETURNING 
     "user_id",
     "nickname",
@@ -538,7 +544,9 @@ RETURNING
     "updated_at"`;
 
 export interface UpdateUserCustomizationArgs {
+    setFrame: boolean;
     profileFrameUrl: string | null;
+    setBackground: boolean;
     profileBackgroundUrl: string | null;
     userId: string;
 }
@@ -565,7 +573,7 @@ export interface UpdateUserCustomizationRow {
 export async function updateUserCustomization(client: Client, args: UpdateUserCustomizationArgs): Promise<UpdateUserCustomizationRow | null> {
     const result = await client.query({
         text: updateUserCustomizationQuery,
-        values: [args.profileFrameUrl, args.profileBackgroundUrl, args.userId],
+        values: [args.setFrame, args.profileFrameUrl, args.setBackground, args.profileBackgroundUrl, args.userId],
         rowMode: "array"
     });
     if (result.rows.length !== 1) {
@@ -862,19 +870,31 @@ export async function updateUserRole(client: Client, args: UpdateUserRoleArgs): 
     };
 }
 
-export const deleteUserByIdQuery = `-- name: DeleteUserById :exec
+export const deleteUserByIdQuery = `-- name: DeleteUserById :one
 DELETE FROM public.users
-WHERE "user_id" = $1::uuid`;
+WHERE "user_id" = $1::uuid
+RETURNING 1`;
 
 export interface DeleteUserByIdArgs {
     userId: string;
 }
 
-export async function deleteUserById(client: Client, args: DeleteUserByIdArgs): Promise<void> {
-    await client.query({
+export interface DeleteUserByIdRow {
+    : string;
+}
+
+export async function deleteUserById(client: Client, args: DeleteUserByIdArgs): Promise<DeleteUserByIdRow | null> {
+    const result = await client.query({
         text: deleteUserByIdQuery,
         values: [args.userId],
         rowMode: "array"
     });
+    if (result.rows.length !== 1) {
+        return null;
+    }
+    const row = result.rows[0];
+    return {
+        : row[0]
+    };
 }
 

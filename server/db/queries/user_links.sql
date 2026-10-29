@@ -31,11 +31,8 @@ RETURNING
     "user_id",
     "user_link_url";
 
--- name: DeleteUserLink :exec
+-- name: DeleteUserLink :one
 DELETE FROM public.user_links
 WHERE "user_link_id" = @user_link_id
-    AND "user_id" = @user_id::uuid;
-
--- name: DeleteAllUserLinksByUserId :exec
-DELETE FROM public.user_links
-WHERE "user_id" = @user_id::uuid;
+    AND "user_id" = @user_id::uuid
+RETURNING 1;
