@@ -123,7 +123,7 @@ export const deleteUserLinkQuery = `-- name: DeleteUserLink :one
 DELETE FROM public.user_links
 WHERE "user_link_id" = $1
     AND "user_id" = $2::uuid
-RETURNING 1`;
+RETURNING "user_link_id"`;
 
 export interface DeleteUserLinkArgs {
     userLinkId: string;
@@ -131,7 +131,7 @@ export interface DeleteUserLinkArgs {
 }
 
 export interface DeleteUserLinkRow {
-    : string;
+    userLinkId: string;
 }
 
 export async function deleteUserLink(client: Client, args: DeleteUserLinkArgs): Promise<DeleteUserLinkRow | null> {
@@ -145,7 +145,7 @@ export async function deleteUserLink(client: Client, args: DeleteUserLinkArgs): 
     }
     const row = result.rows[0];
     return {
-        : row[0]
+        userLinkId: row[0]
     };
 }
 

@@ -271,4 +271,4 @@ RETURNING
 -- name: DeleteUserById :one
 DELETE FROM public.users
 WHERE "user_id" = @user_id::uuid
-RETURNING 1;
+RETURNING "user_id";

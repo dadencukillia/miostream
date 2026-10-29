@@ -873,14 +873,14 @@ export async function updateUserRole(client: Client, args: UpdateUserRoleArgs): 
 export const deleteUserByIdQuery = `-- name: DeleteUserById :one
 DELETE FROM public.users
 WHERE "user_id" = $1::uuid
-RETURNING 1`;
+RETURNING "user_id"`;
 
 export interface DeleteUserByIdArgs {
     userId: string;
 }
 
 export interface DeleteUserByIdRow {
-    : string;
+    userId: string;
 }
 
 export async function deleteUserById(client: Client, args: DeleteUserByIdArgs): Promise<DeleteUserByIdRow | null> {
@@ -894,7 +894,7 @@ export async function deleteUserById(client: Client, args: DeleteUserByIdArgs): 
     }
     const row = result.rows[0];
     return {
-        : row[0]
+        userId: row[0]
     };
 }
 

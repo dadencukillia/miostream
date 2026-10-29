@@ -35,4 +35,4 @@ RETURNING
 DELETE FROM public.user_links
 WHERE "user_link_id" = @user_link_id
     AND "user_id" = @user_id::uuid
-RETURNING 1;
+RETURNING "user_link_id";
