@@ -1,3 +1,45 @@
+-- name: CreateAnime :one
+INSERT INTO public.animes (
+    slug,
+    title_ua,
+    title_en,
+    title_original,
+    anime_description,
+    cover_url,
+    production_studio,
+    mal_id,
+    anilist_id,
+    hikka_id,
+    imdb_id,
+    year_released,
+    avg_episode_duration,
+    episodes_count,
+    age_restriction,
+    anime_status,
+    anime_format,
+    available
+) VALUES (
+    @slug::text,
+    @title_ua::text,
+    @title_en::text,
+    @title_original::text,
+    @anime_description::text,
+    @cover_url::text,
+    @production_studio::text,
+    sqlc.narg('mal_id')::bigint,
+    sqlc.narg('anilist_id')::bigint,
+    sqlc.narg('hikka_id')::text,
+    sqlc.narg('imdb_id')::text,
+    sqlc.narg('year_released')::smallint,
+    @avg_episode_duration::smallint,
+    @episodes_count::smallint,
+    sqlc.narg('age_restriction')::mpaa_rating_enum,
+    sqlc.narg('anime_status')::anime_status_enum,
+    @anime_format::anime_format_enum,
+    @available::boolean
+)
+RETURNING anime_id; --or 1
+
 -- name: ListAnimes :many
 SELECT
     a.anime_id,
@@ -43,10 +85,10 @@ WHERE
     AND (sqlc.narg('year')::smallint IS NULL OR a.year_released = sqlc.narg('year')::smallint)
     AND (sqlc.narg('available')::boolean IS NULL OR a.available = sqlc.narg('available')::boolean)
 ORDER BY
-    CASE WHEN sqlc.arg('sort')::text = 'oldest' THEN a.anime_id END ASC,
-    CASE WHEN sqlc.arg('sort')::text = 'title' THEN lower(a.title_ua) END ASC,
-    CASE WHEN sqlc.arg('sort')::text = 'year_desc' THEN a.year_released END DESC NULLS LAST,
-    CASE WHEN sqlc.arg('sort')::text = 'year_asc' THEN a.year_released END ASC NULLS LAST,
+    CASE WHEN @sort::text = 'oldest' THEN a.anime_id END ASC,
+    CASE WHEN @sort::text = 'title' THEN lower(a.title_ua) END ASC,
+    CASE WHEN @sort::text = 'year_desc' THEN a.year_released END DESC NULLS LAST,
+    CASE WHEN @sort::text = 'year_asc' THEN a.year_released END ASC NULLS LAST,
     a.anime_id DESC
 LIMIT sqlc.arg('limit')::int OFFSET sqlc.arg('offset')::int;
 
@@ -70,7 +112,7 @@ WHERE
     AND (sqlc.narg('year')::smallint IS NULL OR a.year_released = sqlc.narg('year')::smallint)
     AND (sqlc.narg('available')::boolean IS NULL OR a.available = sqlc.narg('available')::boolean);
 
--- name: SelectAnimeById :one
+-- name: GetAnimeById :one
 SELECT
     a.anime_id,
     a.slug,
@@ -98,9 +140,9 @@ SELECT
         ORDER BY g.genre_type
     )::genre_type_enum[] AS genres
 FROM public.animes a
-WHERE a.anime_id = sqlc.arg('anime_id')::uuid;
+WHERE a.anime_id = @anime_id::uuid;
 
--- name: SelectAnimeBySlug :one
+-- name: GetAnimeBySlug :one
 SELECT
     a.anime_id,
     a.slug,
@@ -128,141 +170,65 @@ SELECT
         ORDER BY g.genre_type
     )::genre_type_enum[] AS genres
 FROM public.animes a
-WHERE a.slug = sqlc.arg('slug')::text;
+WHERE a.slug = @slug::text;
 
--- name: InsertAnime :one
-INSERT INTO public.animes (
-    slug,
-    title_ua,
-    title_en,
-    title_original,
-    anime_description,
-    cover_url,
-    production_studio,
-    mal_id,
-    anilist_id,
-    hikka_id,
-    imdb_id,
-    year_released,
-    avg_episode_duration,
-    episodes_count,
-    age_restriction,
-    anime_status,
-    anime_format,
-    available
-) VALUES (
-    sqlc.arg('slug')::text,
-    sqlc.arg('title_ua')::text,
-    sqlc.arg('title_en')::text,
-    sqlc.arg('title_original')::text,
-    sqlc.arg('anime_description')::text,
-    sqlc.arg('cover_url')::text,
-    sqlc.arg('production_studio')::text,
-    sqlc.narg('mal_id')::bigint,
-    sqlc.narg('anilist_id')::bigint,
-    sqlc.narg('hikka_id')::text,
-    sqlc.narg('imdb_id')::text,
-    sqlc.narg('year_released')::smallint,
-    sqlc.arg('avg_episode_duration')::smallint,
-    sqlc.arg('episodes_count')::smallint,
-    sqlc.narg('age_restriction')::mpaa_rating_enum,
-    sqlc.narg('anime_status')::anime_status_enum,
-    sqlc.arg('anime_format')::anime_format_enum,
-    sqlc.arg('available')::boolean
-)
-RETURNING anime_id;
-
--- name: PatchAnimeById :one
+-- name: UpdateAnimeById :one
 UPDATE public.animes
 SET
-    slug = CASE
-        WHEN sqlc.arg('patch_data')::jsonb ? 'slug' THEN sqlc.arg('patch_data')::jsonb->>'slug'
-        ELSE slug
-    END,
-    title_ua = CASE
-        WHEN sqlc.arg('patch_data')::jsonb ? 'title_ua' THEN sqlc.arg('patch_data')::jsonb->>'title_ua'
-        ELSE title_ua
-    END,
-    title_en = CASE
-        WHEN sqlc.arg('patch_data')::jsonb ? 'title_en' THEN sqlc.arg('patch_data')::jsonb->>'title_en'
-        ELSE title_en
-    END,
-    title_original = CASE
-        WHEN sqlc.arg('patch_data')::jsonb ? 'title_original' THEN sqlc.arg('patch_data')::jsonb->>'title_original'
-        ELSE title_original
-    END,
-    anime_description = CASE
-        WHEN sqlc.arg('patch_data')::jsonb ? 'anime_description' THEN sqlc.arg('patch_data')::jsonb->>'anime_description'
-        ELSE anime_description
-    END,
-    cover_url = CASE
-        WHEN sqlc.arg('patch_data')::jsonb ? 'cover_url' THEN sqlc.arg('patch_data')::jsonb->>'cover_url'
-        ELSE cover_url
-    END,
-    production_studio = CASE
-        WHEN sqlc.arg('patch_data')::jsonb ? 'production_studio' THEN sqlc.arg('patch_data')::jsonb->>'production_studio'
-        ELSE production_studio
-    END,
-    mal_id = CASE
-        WHEN sqlc.arg('patch_data')::jsonb ? 'mal_id' THEN (sqlc.arg('patch_data')::jsonb->>'mal_id')::bigint
-        ELSE mal_id
-    END,
-    anilist_id = CASE
-        WHEN sqlc.arg('patch_data')::jsonb ? 'anilist_id' THEN (sqlc.arg('patch_data')::jsonb->>'anilist_id')::bigint
-        ELSE anilist_id
-    END,
-    hikka_id = CASE
-        WHEN sqlc.arg('patch_data')::jsonb ? 'hikka_id' THEN sqlc.arg('patch_data')::jsonb->>'hikka_id'
-        ELSE hikka_id
-    END,
-    imdb_id = CASE
-        WHEN sqlc.arg('patch_data')::jsonb ? 'imdb_id' THEN sqlc.arg('patch_data')::jsonb->>'imdb_id'
-        ELSE imdb_id
-    END,
-    year_released = CASE
-        WHEN sqlc.arg('patch_data')::jsonb ? 'year_released' THEN (sqlc.arg('patch_data')::jsonb->>'year_released')::smallint
-        ELSE year_released
-    END,
-    avg_episode_duration = CASE
-        WHEN sqlc.arg('patch_data')::jsonb ? 'avg_episode_duration' THEN (sqlc.arg('patch_data')::jsonb->>'avg_episode_duration')::smallint
-        ELSE avg_episode_duration
-    END,
-    episodes_count = CASE
-        WHEN sqlc.arg('patch_data')::jsonb ? 'episodes_count' THEN (sqlc.arg('patch_data')::jsonb->>'episodes_count')::smallint
-        ELSE episodes_count
-    END,
-    age_restriction = CASE
-        WHEN sqlc.arg('patch_data')::jsonb ? 'age_restriction' THEN (sqlc.arg('patch_data')::jsonb->>'age_restriction')::mpaa_rating_enum
-        ELSE age_restriction
-    END,
-    anime_status = CASE
-        WHEN sqlc.arg('patch_data')::jsonb ? 'anime_status' THEN (sqlc.arg('patch_data')::jsonb->>'anime_status')::anime_status_enum
-        ELSE anime_status
-    END,
-    anime_format = CASE
-        WHEN sqlc.arg('patch_data')::jsonb ? 'anime_format' THEN (sqlc.arg('patch_data')::jsonb->>'anime_format')::anime_format_enum
-        ELSE anime_format
-    END,
-    available = CASE
-        WHEN sqlc.arg('patch_data')::jsonb ? 'available' THEN (sqlc.arg('patch_data')::jsonb->>'available')::boolean
-        ELSE available
-    END
-WHERE anime_id = sqlc.arg('anime_id')::uuid
-RETURNING anime_id;
+    "slug"                 = COALESCE(@slug::text, slug),
+    "title_ua"             = COALESCE(@title_ua::text, title_ua),
+    "title_en"             = COALESCE(sqlc.narg('title_en')::text, title_en),
+    "title_original"       = COALESCE(sqlc.narg('title_original')::text, title_original),
+    "anime_description"    = COALESCE(sqlc.narg('anime_description')::text, anime_description),
+    "cover_url"            = COALESCE(sqlc.narg('cover_url')::text, cover_url),
+    "production_studio"    = COALESCE(sqlc.narg('production_studio')::text, production_studio),
+    "mal_id"               = sqlc.narg('mal_id')::bigint,
+    "anilist_id"           = sqlc.narg('anilist_id')::bigint,
+    "hikka_id"             = sqlc.narg('hikka_id')::text,
+    "imdb_id"              = sqlc.narg('imdb_id')::text,
+    "year_released"        = COALESCE(sqlc.narg('year_released')::smallint, year_released),
+    "avg_episode_duration" = COALESCE(sqlc.narg('avg_episode_duration')::smallint, avg_episode_duration),
+    "episodes_count"       = COALESCE(sqlc.narg('episodes_count')::smallint, episodes_count),
+    "age_restriction"      = COALESCE(sqlc.narg('age_restriction')::mpaa_rating_enum, age_restriction),
+    "anime_status"         = COALESCE(sqlc.narg('anime_status')::anime_status_enum, anime_status),
+    "anime_format"         = COALESCE(@anime_format::anime_format_enum, anime_format),
+    "available"            = COALESCE(@available::boolean, available),
+    "updated_at"           = NOW()
+WHERE "anime_id" = @anime_id::uuid
+RETURNING
+    "anime_id",
+    "slug",
+    "title_ua",
+    "title_en",
+    "title_original",
+    "anime_description",
+    "cover_url",
+    "production_studio",
+    "mal_id",
+    "anilist_id",
+    "hikka_id",
+    "imdb_id",
+    "year_released",
+    "avg_episode_duration",
+    "episodes_count",
+    "age_restriction",
+    "anime_status",
+    "anime_format",
+    "available";
 
 -- name: DeleteAnimeById :one
 DELETE FROM public.animes
-WHERE anime_id = sqlc.arg('anime_id')::uuid
+WHERE anime_id = @anime_id::uuid
 RETURNING anime_id;
 
 -- name: DeleteAnimeGenres :exec
 DELETE FROM public.genres
-WHERE anime_id = sqlc.arg('anime_id')::uuid;
+WHERE anime_id = @anime_id::uuid;
 
--- name: InsertAnimeGenres :exec
+-- name: CreateAnimeGenres :exec
 INSERT INTO public.genres (anime_id, genre_type)
-SELECT sqlc.arg('anime_id')::uuid, g
-FROM unnest(sqlc.arg('genres')::genre_type_enum[]) AS g
+SELECT @anime_id::uuid, g
+FROM unnest(@genres::genre_type_enum[]) AS g
 ON CONFLICT DO NOTHING;
 
 -- name: CountAnimesByStatus :many
@@ -311,7 +277,7 @@ HAVING AVG(a.episodes_count) > (
 )
 ORDER BY avg_episodes DESC;
 
--- name: SelectAnimesAboveAverageEpisodes :many
+-- name: GetOngoingAnimes :many
 SELECT
     a.anime_id,
     a.slug,
@@ -319,14 +285,10 @@ SELECT
     a.title_en,
     a.episodes_count
 FROM public.animes a
-WHERE a.episodes_count > (
-    SELECT AVG(episodes_count)
-    FROM public.animes
-    WHERE episodes_count > 0
-)
+WHERE a.anime_status = 'ongoing'::anime_status_enum
 ORDER BY a.episodes_count DESC, a.title_ua;
 
--- name: SelectAnimesWithMaxEpisodes :many
+-- name: GetAnimesWithMaxEpisodes :many
 SELECT
     a.anime_id,
     a.slug,
@@ -334,5 +296,45 @@ SELECT
     a.title_en,
     a.episodes_count
 FROM public.animes a
-WHERE a.episodes_count = (SELECT MAX(episodes_count) FROM public.animes)
-ORDER BY a.title_ua;
+WHERE a.episodes_count = (SELECT MAX(episodes_count) FROM public.animes);
+
+-- name: GetAvailableAnimesByCurrentYear :many
+SELECT
+    "anime_id",
+    "slug",
+    "title_ua",
+    "year_released",
+    "cover_url",
+    "episodes_count"
+FROM public.animes
+WHERE
+    "available" = TRUE
+    AND "year_released" = EXTRACT(YEAR FROM NOW()::date)::smallint
+ORDER BY "year_released" DESC;
+
+-- name: UpdateAnimeStatusById :one
+UPDATE public.animes
+SET
+    "anime_status" = @anime_status::anime_status_enum,
+    "updated_at"   = NOW()
+WHERE "anime_id" = @anime_id::uuid
+RETURNING "anime_id",
+          "anime_status";
+
+-- name: UpdateAnimeAvailableById :one
+UPDATE public.animes
+SET
+    "available"  = @available::boolean,
+    "updated_at" = NOW()
+WHERE "anime_id" = @anime_id::uuid
+RETURNING "anime_id",
+          "available";
+
+-- name: IncrementAnimeEpisodesById :one
+UPDATE public.animes
+SET
+    "episodes_count" = GREATEST(episodes_count, @episodes_count::smallint),
+    "updated_at"     = NOW()
+WHERE "anime_id" = @anime_id::uuid
+RETURNING "anime_id",
+          "episodes_count";
