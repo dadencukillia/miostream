@@ -98,6 +98,12 @@ FROM public.users
 WHERE "google_id" = @google_id
 LIMIT 1;
 
+-- name: GetPasswordHashById :one
+SELECT "password_hash"
+FROM public.users
+WHERE "user_id" = @user_id::uuid
+LIMIT 1;
+
 -- name: UpdateUserProfile :one
 UPDATE public.users
 SET 

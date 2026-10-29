@@ -321,6 +321,35 @@ export async function getUserByGoogleId(client: Client, args: GetUserByGoogleIdA
     };
 }
 
+export const getPasswordHashByIdQuery = `-- name: GetPasswordHashById :one
+SELECT "password_hash"
+FROM public.users
+WHERE "user_id" = $1::uuid
+LIMIT 1`;
+
+export interface GetPasswordHashByIdArgs {
+    userId: string;
+}
+
+export interface GetPasswordHashByIdRow {
+    passwordHash: string | null;
+}
+
+export async function getPasswordHashById(client: Client, args: GetPasswordHashByIdArgs): Promise<GetPasswordHashByIdRow | null> {
+    const result = await client.query({
+        text: getPasswordHashByIdQuery,
+        values: [args.userId],
+        rowMode: "array"
+    });
+    if (result.rows.length !== 1) {
+        return null;
+    }
+    const row = result.rows[0];
+    return {
+        passwordHash: row[0]
+    };
+}
+
 export const updateUserProfileQuery = `-- name: UpdateUserProfile :one
 UPDATE public.users
 SET 

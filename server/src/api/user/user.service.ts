@@ -1,7 +1,7 @@
 import type { Pool } from 'pg';
 import * as usersSqlc from '../../sqlc/users_sql';
 import * as userLinksSqlc from '../../sqlc/user_links_sql';
-import { UserError, UserNotFoundError } from './user.errors';
+import { UserError, UserInvalidError, UserNotFoundError } from './user.errors';
 import type {
     CreateUserDto,
     UpdateUserProfileDto,
@@ -12,8 +12,13 @@ import type {
 } from './user.schema';
 
 const hashPassword = async (password: string): Promise<string> => {
-    // TODO: add good password hashing logic
-    return `hashed_${password}`;
+    const hashedPassword = Bun.password.hash(password, { algorithm: "bcrypt" });
+    return hashedPassword;
+};
+
+const verifyPassword = async (password: string, hash: string): Promise<boolean> => {
+    const isMatch = await Bun.password.verify(password, hash);
+    return isMatch;
 };
 
 export const createUser = async (client: Pool, data: CreateUserDto) => {
@@ -101,12 +106,18 @@ export const updateUserCustomization = async (client: Pool, userId: string, data
 };
 
 export const updateUserPassword = async (client: Pool, userId: string, data: UpdateUserPasswordDto) => {
-    // TODO: add old password validation
-    const passwordHash = await hashPassword(data.newPassword);
+    const userRow = await usersSqlc.getPasswordHashById(client, { userId: userId })
+    if (!userRow) throw new UserNotFoundError(`User with id '${userId}' not found`);
+    if (!userRow.passwordHash) throw new UserInvalidError('User does not have a password set');
+
+    const isMatch = verifyPassword(data.oldPassword, userRow.passwordHash)
+    if (!isMatch) throw new UserInvalidError('Invalid old password');
+
+    const hashedPassword = await hashPassword(data.newPassword);
 
     const user = await usersSqlc.updateUserPassword(client, {
         userId: userId,
-        passwordHash: passwordHash
+        passwordHash: hashedPassword
     });
 
     if (!user) {
