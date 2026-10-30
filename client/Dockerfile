@@ -1,4 +1,4 @@
-FROM oven/bun:1.3.13-alpine AS base
+FROM oven/bun:1.4.4-alpine AS base
 WORKDIR /app
 
 FROM base AS install
@@ -15,14 +15,13 @@ COPY . .
 ENV NODE_ENV=production
 RUN bun run build
 
-FROM node:22-alpine AS release
+FROM base AS release
 WORKDIR /app
 ENV NODE_ENV=production HOST=0.0.0.0 PORT=8080
 COPY --from=install /temp/prod/node_modules ./node_modules
 COPY --from=prerelease /app/dist ./dist
 COPY --from=prerelease /app/package.json .
 
-USER node
 EXPOSE 8080
 
-CMD ["node", "./dist/server/entry.mjs"]
+CMD ["bun", "./dist/server/entry.mjs"]
