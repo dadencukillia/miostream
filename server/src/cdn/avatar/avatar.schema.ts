@@ -1,5 +1,13 @@
 import type { FastifySchema } from "fastify";
 
+export interface UpdateAvatarResult {
+  ok: boolean,
+  user: string,
+  avatar: string,
+  format: string,
+  url: string,
+}
+
 export const getSchema: FastifySchema = {
   params: {
     type: "object",

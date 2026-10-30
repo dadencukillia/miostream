@@ -1,22 +1,30 @@
+import sharp from "sharp";
 import type { FastifyBaseLogger } from "fastify";
 import type { S3Client } from "@aws-sdk/client-s3";
-import { getAvatarById, removeAvatarById, setAvatarById } from "./repos/avatarBucket.repo";
-import type { PostgresClient } from "@prisma/orm-postgres/runtime";
-import { getAvatarIdByUserId, setAvatarIdForUser, setAvatarIdForUserReturningOld } from "./repos/userDatabase.repo";
-import { processImage } from "./repos/image.repo";
-import type { UpdateAvatarResult } from "./dto";
+import {
+  getAvatarById,
+  removeAvatarById,
+  setAvatarById
+} from "./repos/avatarBucket.repo";
+import {
+  getAvatarIdByUserId,
+  setAvatarIdForUser,
+  setAvatarIdForUserReturningOld
+} from "./repos/userDatabase.repo";
+import type { UpdateAvatarResult } from "./avatar.schema";
 import { Pool } from "pg";
+import {
+  AvatarS3Error,
+  AvatarNotFoundError,
+  AvatarCouldntReachDBError,
+  AvatarAlreadyNoAvatarError,
+  AvatarAnotherRequestInProcessError,
+  AvatarInvalidImageError
+} from "./avatar.errors";
 
-// Errors
-
-export class AvatarError extends Error { status = 500; }
-
-export class AvatarS3Error extends AvatarError { override status = 500; }
-export class AvatarNotFoundError extends AvatarError { override status = 404; }
-export class AvatarCouldntReachDBError extends AvatarError { override status = 500; }
-export class AvatarAlreadyNoAvatarError extends AvatarError { override status = 409; }
-export class AvatarAnotherRequestInProcessError extends AvatarError { override status = 409; }
-export class AvatarInvalidImageError extends AvatarError { override status = 400; }
+const AVATAR_WIDTH = 256;
+const AVATAR_HEIGHT = 256;
+const WEBP_QUALITY = 80;
 
 // Services
 
@@ -80,7 +88,10 @@ export async function updateUserAvatarImage(
   let webpImage: Buffer;
 
   try {
-    webpImage = await processImage(imageContent);
+    webpImage = await sharp(imageContent)
+      .resize(AVATAR_WIDTH, AVATAR_HEIGHT, { fit: "cover" })
+      .webp({ quality: WEBP_QUALITY })
+      .toBuffer();
   } catch(e) {
     logger.error(e);
     throw new AvatarInvalidImageError("invalid image");

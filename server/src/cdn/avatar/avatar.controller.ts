@@ -1,4 +1,4 @@
-import { FastifyInstance, type FastifyReply, type FastifyRequest } from "fastify";
+import { type FastifyReply, type FastifyRequest } from "fastify";
 import "../../context";
 import { getAvatar, resetUserAvatar, updateUserAvatarImage } from "./avatar.service";
 

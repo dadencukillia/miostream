@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
-import { getSchema, resetSchema, updateSchema } from "./schemas";
+import { getSchema, resetSchema, updateSchema } from "./avatar.schema";
 import { getAvatarController, resetAvatarController, updateAvatarController } from "./avatar.controller";
-import { AvatarError } from "./avatar.service";
+import { AvatarError } from "./avatar.errors";
 
 export default function(fastify: FastifyInstance, _opts: {}, done: () => void) {
   fastify.setErrorHandler<Error>((error, request, reply) => {
