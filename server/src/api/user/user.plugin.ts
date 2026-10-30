@@ -8,6 +8,8 @@ const plugin: FastifyPluginAsync = async (fastify, _opts) => {
     // TODO(auth): add module augmentation for request.user ({ id, role, status }).
 
     fastify.setErrorHandler<FastifyError>((error, request, reply) => {
+        if (reply.sent) return;
+        
         if (error.validation) {
             return reply.status(400).send({
                 ok: false,
@@ -17,8 +19,7 @@ const plugin: FastifyPluginAsync = async (fastify, _opts) => {
 
         if (error instanceof UserError) {
             if (error.status >= 500) {
-                request.log.error(error);
-                return reply.status(500).send({ ok: false, message: 'Unexpected error' });
+                request.log.error({ err: error }, error.message);
             }
             return reply.status(error.status).send({ ok: false, message: error.message });
         }
@@ -27,7 +28,7 @@ const plugin: FastifyPluginAsync = async (fastify, _opts) => {
             return reply.status(error.statusCode).send({ ok: false, message: error.message });
         }
 
-        request.log.error(error);
+        request.log.error({ err: error }, 'Unhandled server error');
         return reply.status(500).send({
             ok: false,
             message: 'Unexpected error'
