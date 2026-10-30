@@ -41,13 +41,6 @@ class CustomError extends Error {
   }
 
   /**
-   * Gets the error message.
-   */
-  public override get message(): string {
-    return super.message;
-  }
-
-  /**
    * Gets immutable structured details attached to the error for logging purposes.
    */
   public get details(): readonly any[] {
@@ -60,7 +53,7 @@ class CustomError extends Error {
    * @param statusCode - The new HTTP status code.
    */
   public withStatusCode(statusCode: number) {
-    const error = new CustomError(this._collection, statusCode, super.message);
+    const error = new CustomError(this._collection, statusCode, this.message);
     const details = Object.freeze([...this._details]);
     error._details = details;
     return error;
@@ -172,12 +165,12 @@ export class ErrorsCollection {
   ) {
     fastify.setErrorHandler((
       error: unknown,
-      _request: FastifyRequest,
+      request: FastifyRequest,
       reply: FastifyReply
     ) => {
       const collectionIds = safeCollections.map(c => c.id);
 
-      fastify.log.error(error);
+      request.log.error(error);
 
       if (error instanceof CustomError) {
         if (
