@@ -50,13 +50,23 @@ class MigrationError extends Error {
   }
 }
 
+/**
+ * Represents a single migration file, handling its path validation, timestamp extraction,
+ * and parsing of upgrade/downgrade SQL query sections.
+ */
 class MigrationEntry {
   private _path: string;
   private _timestamp: number;
   private _upQuery: string|null = null;
   private _downQuery: string|null = null;
 
-  constructor(migrationPath: PathLike) {
+  /**
+   * Creates an instance of MigrationEntry.
+   * 
+   * @param migrationPath - Path to the migration SQL file.
+   * @throws {MigrationError} If the filename format is invalid or lacks a numeric timestamp.
+   */
+  public constructor(migrationPath: PathLike) {
     this._path = migrationPath.toString();
     const basename = path.basename(this._path);
     const split = basename.split("-");
@@ -68,6 +78,13 @@ class MigrationEntry {
     if (isNaN(this.timestamp)) throw new MigrationError("migration file name must have a timestamp");
   }
 
+  /**
+   * Parses the file content into upgrade and downgrade SQL query sections.
+   * 
+   * @param content - Raw string content of the migration file.
+   * @returns An object containing `up` and `down` SQL query strings.
+   * @throws {MigrationError} If upgrade or downgrade sections are missing or misspelled.
+   */
   private parseMigrationQuery(content: string): {
     up: string,
     down: string
@@ -101,6 +118,11 @@ class MigrationEntry {
     };
   }
 
+  /**
+   * Reads and parses the migration file from disk, caching the resulting SQL queries.
+   * 
+   * @returns A promise resolving to an object containing `up` and `down` query strings.
+   */
   public async parse(): Promise<{
     up: string,
     down: string
@@ -117,29 +139,49 @@ class MigrationEntry {
     }
   }
 
-  get timestamp(): number {
+  /** Gets the unique numeric timestamp extracted from the migration filename. */
+  public get timestamp(): number {
     return this._timestamp;
   }
 
-  get upQuery(): string {
+  /** Gets the parsed upgrade SQL query. 
+    *
+    * @remarks
+    * call the `parse` method a single time before use.
+    */
+  public get upQuery(): string {
     if (this._upQuery === null) throw new MigrationError("call parse() first");
 
     return this._upQuery;
   }
 
-  get downQuery(): string {
+  /** Gets the parsed downgrade SQL query. 
+    *
+    * @remarks
+    * call the `parse` method a single time before use.
+    */
+  public get downQuery(): string {
     if (this._downQuery === null) throw new MigrationError("call parse() first");
 
     return this._downQuery;
   }
 }
 
+/**
+ * Handles discovery, execution, rollback, and state tracking of database schema migrations.
+ */
 export class Migrator {
   private db: Pool;
   private migrationsDirectory: string;
   private migrationFiles: Array<MigrationEntry>;
 
-  constructor(db: Pool, migrationsDirectory: PathLike) {
+  /**
+   * Initializes the Migrator instance, loading and sorting all migration files from the specified directory.
+   * 
+   * @param db - PostgreSQL connection pool.
+   * @param migrationsDirectory - Path to the directory containing `.sql` migration files.
+   */
+  public constructor(db: Pool, migrationsDirectory: PathLike) {
     this.db = db;
     this.migrationsDirectory = migrationsDirectory.toString();
 
@@ -150,7 +192,10 @@ export class Migrator {
       .sort((a, b) => a.timestamp - b.timestamp);
   }
 
-  async ensureMigrationsTable() {
+  /**
+   * Ensures that the `schema_migrations` tracking table exists in the database.
+   */
+  public async ensureMigrationsTable() {
     await this.db.query(`
       CREATE TABLE IF NOT EXISTS public.schema_migrations(
         operation_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -161,7 +206,13 @@ export class Migrator {
     `);
   }
 
-  async getDatabaseMigrationState(db: Pool|Client): Promise<number|null> {
+  /**
+   * Retrieves the current migration timestamp state from the database.
+   * 
+   * @param db - Active PostgreSQL pool or client connection.
+   * @returns The latest applied migration timestamp, or `null` if no migrations have been executed.
+   */
+  public async getDatabaseMigrationState(db: Pool|Client): Promise<number|null> {
     const queryResult = await db.query(
       `SELECT to_migration FROM public.schema_migrations ORDER BY operation_id DESC LIMIT 1;`
     );
@@ -174,7 +225,10 @@ export class Migrator {
     return toMigration;
   }
 
-  async up() {
+  /**
+   * Executes all pending upward migrations sequentially within transactions, protected by an advisory lock.
+   */
+  public async up() {
     await pgWrapClient(this.db, async client => {
       await pgWrapLock(client, async client => {
         let currentMigrationState = await this.getDatabaseMigrationState(client);
@@ -216,7 +270,12 @@ export class Migrator {
     console.log(`[Migrations] success.`);
   }
 
-  async down() {
+  /**
+   * Rolls back the most recently applied migration (downward migration) inside a transaction with advisory locking.
+   * 
+   * @throws {MigrationError} If no migration is found to roll back.
+   */
+  public async down() {
     await pgWrapClient(this.db, async client => {
       await pgWrapLock(client, async client => {
         const currentMigrationState = await this.getDatabaseMigrationState(client);
