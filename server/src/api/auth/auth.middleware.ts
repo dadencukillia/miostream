@@ -1,4 +1,4 @@
-import { FastifyReply, FastifyRequest } from "fastify";
+import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import "../../context";
 
 export class AuthContext {
@@ -57,7 +57,7 @@ export class AuthContext {
   public logout(req: FastifyRequest, resp: FastifyReply) {
     // TODO: real session deletion, cookies cleaning
   }
-};
+}
 
 export async function authMiddleware(req: FastifyRequest, _resp: FastifyReply) {
   // TODO: replace onto the real auth operations
@@ -70,15 +70,29 @@ export async function authMiddleware(req: FastifyRequest, _resp: FastifyReply) {
   );
 }
 
-export const grantAuthMiddleware = (
-  receiveAuthData: boolean = true,
-  unsignedOnly: boolean = false,
-  userHasRole: string[] = [],
-  userHasStatus: string[] = ["active"],
-  fallback: (req: FastifyRequest, resp: FastifyReply) => void = (_req, resp) => {
+interface grantAuthFilters {
+  receiveAuthData: boolean,
+  unsignedOnly: boolean,
+  userHasRole: string[],
+  userHasStatus: string[],
+  fallback: (req: FastifyRequest, resp: FastifyReply) => void,
+}
+
+const grantAuthDefaultFilters: grantAuthFilters = {
+  receiveAuthData: true,
+  unsignedOnly: false,
+  userHasRole: [],
+  userHasStatus: ["active"],
+  fallback: (_req, resp) => {
     resp.status(403).send({ ok: false, message: "no access" });
   }
-) => async (req: FastifyRequest, resp: FastifyReply) => {
+} as const;
+
+export const grantAuthMiddleware = (opts: grantAuthFilters = grantAuthDefaultFilters) => async (req: FastifyRequest, resp: FastifyReply) => {
+  const {
+    receiveAuthData, unsignedOnly, userHasRole, userHasStatus, fallback
+  } = { ...grantAuthDefaultFilters, ...opts };
+
   if (receiveAuthData) await authMiddleware(req, resp);
 
   if (unsignedOnly) {
@@ -95,4 +109,22 @@ export const grantAuthMiddleware = (
   if (userHasStatus.length > 0 && !userHasStatus.includes(req.auth.status)) {
     return fallback(req, resp);
   }
+};
+
+export const authPlugin = (
+  fastify: FastifyInstance,
+  _opts: {},
+  done: () => void
+) => {
+  fastify.addHook("preHandler", authMiddleware);
+  done();
+};
+
+export const grantAuthPlugin = (
+  fastify: FastifyInstance,
+  opts: grantAuthFilters,
+  done: () => void
+) => {
+  fastify.addHook("preHandler", grantAuthMiddleware(opts));
+  done();
 };
