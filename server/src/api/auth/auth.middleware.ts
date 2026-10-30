@@ -57,15 +57,6 @@ export class AuthContext {
   }
 
   /**
-   * Generates a new short-lived access token for the session.
-   * @returns A signed access token string.
-   */
-  public generateAccessToken() {
-    // TODO: replace onto the real token generation
-    return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJoZWxsbyI6IndvcmxkIn0.E-kYKw8QcPqfOLmuT6IW5KZ7qytQQkh4YSC1c-0HWGU";
-  }
-
-  /**
    * Terminates the user session and cleans up authentication cookies/tokens.
    * @param req - The Fastify request object.
    * @param resp - The Fastify reply object.
