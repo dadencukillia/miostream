@@ -27,7 +27,7 @@ export const updateAvatarController = async (
   reply: FastifyReply<{ Body: string, Reply: UpdateAvatarReturnType }>
 ) => {
   // TODO: replace on working auth middleware context
-  const userId = "user";
+  const userId = "844bb852-bd3a-46d8-8062-a4e43b34f454";
 
   const result = await updateUserAvatarImage(
     request.server.s3, request.server.pg, 
@@ -44,7 +44,7 @@ export const resetAvatarController = async (
   reply: FastifyReply<{ Reply: ResetAvatarReturnType }>
 ) => {
   // TODO: replace on working auth middleware context
-  const userId = "user";
+  const userId = "844bb852-bd3a-46d8-8062-a4e43b34f454";
 
   await resetUserAvatar(request.server.s3, request.server.pg, request.log, userId);
   return reply.send({ ok: true });

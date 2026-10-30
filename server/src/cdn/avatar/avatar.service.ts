@@ -6,11 +6,6 @@ import {
   removeAvatarById,
   setAvatarById
 } from "./repos/avatarBucket.repo";
-import {
-  getAvatarIdByUserId,
-  setAvatarIdForUser,
-  setAvatarIdForUserReturningOld
-} from "./repos/userDatabase.repo";
 import { Pool } from "pg";
 import {
   AvatarS3Error,
@@ -22,6 +17,7 @@ import {
 } from "./avatar.errors";
 import { AvatarUpdatedResponse } from "./avatar.schema";
 import { Static } from "@sinclair/typebox";
+import { getAvatarIdByUserId, safeUpdateUserAvatar, updateUserAvatar } from "../../sqlc/users_sql";
 
 const AVATAR_WIDTH = 256;
 const AVATAR_HEIGHT = 256;
@@ -55,7 +51,10 @@ export async function resetUserAvatar(
   // Receive avatar id from database
 
   try {
-    avatarId = await setAvatarIdForUserReturningOld(db, userId, null);
+    avatarId = (await updateUserAvatar(db, {
+      userId: userId,
+      newAvatarUrl: ""
+    }))!.avatarUrl;
   } catch(e) {
     logger.error(e);
     throw new AvatarCouldntReachDBError("couldn't reset user avatar");
@@ -103,7 +102,9 @@ export async function updateUserAvatarImage(
   let oldAvatarId: string|null;
 
   try {
-    oldAvatarId = await getAvatarIdByUserId(db, userId);
+    oldAvatarId = (await getAvatarIdByUserId(db, {
+      userId: userId,
+    }))!.avatarUrl;
   } catch(e) {
     logger.error(e);
     throw new AvatarCouldntReachDBError("couldn't receive old avatar id");
@@ -121,8 +122,12 @@ export async function updateUserAvatarImage(
   // Update avatar in the database
 
   try {
-    const updated = await setAvatarIdForUser(db, userId, oldAvatarId, newAvatarId);
-    if (!updated) {
+    const affected = (await safeUpdateUserAvatar(db, {
+      userId: userId,
+      oldAvatarUrl: oldAvatarId,
+      newAvatarUrl: newAvatarId
+    }))!.affected;
+    if (!affected) {
       await removeAvatarById(s3, newAvatarId);
       throw new AvatarAnotherRequestInProcessError("concurrent requests conflict");
     }
