@@ -19,7 +19,7 @@ export default function(fastify: FastifyInstance, _opts: {}, done: () => void) {
       .status(500)
       .send({
         ok: false,
-        message: error.message
+        message: "unknown error"
       });
   });
 

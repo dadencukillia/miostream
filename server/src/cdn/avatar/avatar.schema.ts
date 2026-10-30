@@ -1,5 +1,4 @@
-import { Type } from "@sinclair/typebox";
-import type { Static } from "@sinclair/typebox";
+import { Type, type Static } from "@sinclair/typebox";
 import type { FastifySchema } from "fastify";
 
 // Primitives
@@ -77,7 +76,7 @@ export type UpdateAvatarReturnType = Static<typeof AvatarUpdatedResponse>|Static
 
 export const resetAvatarSchema: FastifySchema = {
   response: {
-    200: AvatarErrorResponse,
+    200: AvatarSuccessResponse,
     400: AvatarErrorResponse,
     409: AvatarErrorResponse,
     500: AvatarErrorResponse,
