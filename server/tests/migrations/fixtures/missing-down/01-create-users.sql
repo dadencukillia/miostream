@@ -1,0 +1,5 @@
+-- migrate:up
+CREATE TABLE test.users (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  name TEXT NOT NULL
+);
