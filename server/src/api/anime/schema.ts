@@ -188,7 +188,7 @@ export const AnimeSchema = Type.Object(
 export const CreateAnimeBodySchema = Type.Object(
 	{
 		slug: slugSchema,
-		titleUa: Type.Optional(Type.String({ maxLength: 400 })),
+		titleUa: Type.Optional(Type.String({ minLength: 1, maxLength: 400 })),
 		titleEn: Type.Optional(Type.String({ maxLength: 400 })),
 		titleOriginal: Type.Optional(Type.String({ maxLength: 400 })),
 		animeDescription: Type.Optional(Type.String()),
@@ -238,7 +238,7 @@ export const ListAnimesQuerySchema = Type.Object(
 		genre: Type.Optional(StringEnum(GENRES)),
 		status: Type.Optional(StringEnum(ANIME_STATUSES)),
 		format: Type.Optional(StringEnum(ANIME_FORMATS)),
-		year: Type.Optional(Type.Integer({ minimum: 1900})),
+		year: Type.Optional(Type.Integer({ minimum: 1900, maximum: 2100 })),
 		available: Type.Optional(
 			Type.Boolean({
 				default: true,
