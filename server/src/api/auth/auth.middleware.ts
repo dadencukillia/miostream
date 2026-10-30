@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import "../../context";
+import fp from "fastify-plugin";
 
 /**
  * Represents the authenticated user's context and session details.
@@ -192,14 +193,14 @@ export const grantAuthMiddleware = (opts: GrantAuthFilters = grantAuthDefaultFil
  * @example
  * fastify.register(authPlugin);
  */
-export const authPlugin = (
+export const authPlugin = fp((
   fastify: FastifyInstance,
   _opts: {},
   done: () => void
 ) => {
   fastify.addHook("preHandler", authMiddleware);
   done();
-};
+});
 
 /**
  * Fastify plugin that registers conditional route protection via `grantAuthMiddleware`.
@@ -207,11 +208,11 @@ export const authPlugin = (
  * @example
  * fastify.register(grantAuthPlugin, { userHasRole: ["admin"] });
  */
-export const grantAuthPlugin = (
+export const grantAuthPlugin = fp((
   fastify: FastifyInstance,
   opts: GrantAuthFilters,
   done: () => void
 ) => {
   fastify.addHook("preHandler", grantAuthMiddleware(opts));
   done();
-};
+});
