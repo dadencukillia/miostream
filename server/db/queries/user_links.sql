@@ -6,10 +6,7 @@ INSERT INTO public.user_links (
     @user_id::uuid,
     @user_link_url
 )
-RETURNING 
-    "user_link_id",
-    "user_id",
-    "user_link_url";
+RETURNING *;
 
 -- name: ListUserLinksByUserId :many
 SELECT 
@@ -26,10 +23,7 @@ SET
     "user_link_url" = @user_link_url
 WHERE "user_link_id" = @user_link_id
     AND "user_id" = @user_id::uuid
-RETURNING 
-    "user_link_id",
-    "user_id",
-    "user_link_url";
+RETURNING *;
 
 -- name: DeleteUserLink :one
 DELETE FROM public.user_links
