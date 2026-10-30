@@ -174,6 +174,7 @@ export class Migrator {
   private db: Pool;
   private migrationsDirectory: string;
   private migrationFiles: Array<MigrationEntry>;
+  private schema: string;
 
   /**
    * Initializes the Migrator instance, loading and sorting all migration files from the specified directory.
@@ -181,9 +182,10 @@ export class Migrator {
    * @param db - PostgreSQL connection pool.
    * @param migrationsDirectory - Path to the directory containing `.sql` migration files.
    */
-  public constructor(db: Pool, migrationsDirectory: PathLike) {
+  public constructor(db: Pool, migrationsDirectory: PathLike, schema: string = "public") {
     this.db = db;
     this.migrationsDirectory = migrationsDirectory.toString();
+    this.schema = schema;
 
     this.migrationFiles = readdirSync(migrationsDirectory)
       .filter(dirFile => dirFile.toLowerCase().endsWith(".sql"))
@@ -197,7 +199,7 @@ export class Migrator {
    */
   public async ensureMigrationsTable() {
     await this.db.query(`
-      CREATE TABLE IF NOT EXISTS public.schema_migrations(
+      CREATE TABLE IF NOT EXISTS ${this.schema}.schema_migrations(
         operation_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
         executed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
         from_migration BIGINT NOT NULL,
@@ -214,7 +216,7 @@ export class Migrator {
    */
   public async getDatabaseMigrationState(db: Pool|Client): Promise<number|null> {
     const queryResult = await db.query(
-      `SELECT to_migration FROM public.schema_migrations ORDER BY operation_id DESC LIMIT 1;`
+      `SELECT to_migration FROM ${this.schema}.schema_migrations ORDER BY operation_id DESC LIMIT 1;`
     );
 
     if (queryResult.rows.length === 0) return null;
@@ -258,7 +260,7 @@ export class Migrator {
           );
 
           await pgWrapTransaction(client, async client => {
-            await client.query("INSERT INTO schema_migrations(from_migration, to_migration) VALUES($1, $2);", [currentMigrationStateSQL, migration.timestamp]);
+            await client.query(`INSERT INTO ${this.schema}.schema_migrations(from_migration, to_migration) VALUES($1, $2);`, [currentMigrationStateSQL, migration.timestamp]);
             await client.query(migration.parts.up);
             currentMigrationState = migration.timestamp;
             console.log(`[Migrations] ${migration.timestamp} ✔`);
@@ -303,7 +305,7 @@ export class Migrator {
         const downMigrationContent = (await downMigration.parse()).down;
 
         await pgWrapTransaction(client, async client => {
-          await client.query("INSERT INTO schema_migrations(from_migration, to_migration) VALUES($1, $2);", [currentMigrationState, prevMigration]);
+          await client.query(`INSERT INTO ${this.schema}.schema_migrations(from_migration, to_migration) VALUES($1, $2);`, [currentMigrationState, prevMigration]);
           await client.query(downMigrationContent);
           console.log(`[Migrations] rollback ${currentMigrationState} ✔`);
         }, () => console.error(`[Migrations] rollback ${currentMigrationState} ✘`));
