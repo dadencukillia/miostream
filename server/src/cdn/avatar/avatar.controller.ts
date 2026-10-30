@@ -1,14 +1,17 @@
 import { type FastifyReply, type FastifyRequest } from "fastify";
 import "../../context";
 import { getAvatar, resetUserAvatar, updateUserAvatarImage } from "./avatar.service";
-
-interface GetAvatarParams {
-  avatarId: string,
-}
+import {
+  AvatarImageSlugParam,
+  GetAvatarReturnType,
+  ResetAvatarReturnType,
+  UpdateAvatarReturnType
+} from "./avatar.schema";
+import type { Static } from "@sinclair/typebox";
 
 export const getAvatarController = async (
-  request: FastifyRequest<{ Params: GetAvatarParams }>,
-  reply: FastifyReply
+  request: FastifyRequest<{ Params: Static<typeof AvatarImageSlugParam> }>,
+  reply: FastifyReply<{ Params: Static<typeof AvatarImageSlugParam>, Reply: GetAvatarReturnType }>
 ) => {
   const { avatarId } = request.params;
 
@@ -19,20 +22,9 @@ export const getAvatarController = async (
     .send(buffer);
 };
 
-export const resetAvatarController = async (
-  request: FastifyRequest,
-  reply: FastifyReply
-) => {
-  // TODO: replace on working auth middleware context
-  const userId = "user";
-
-  await resetUserAvatar(request.server.s3, request.server.pg, request.log, userId);
-  return reply.send({ ok: true });
-};
-
 export const updateAvatarController = async (
   request: FastifyRequest<{ Body: string }>,
-  reply: FastifyReply
+  reply: FastifyReply<{ Body: string, Reply: UpdateAvatarReturnType }>
 ) => {
   // TODO: replace on working auth middleware context
   const userId = "user";
@@ -45,4 +37,15 @@ export const updateAvatarController = async (
   );
 
   return reply.send(result);
+};
+
+export const resetAvatarController = async (
+  request: FastifyRequest<{}>,
+  reply: FastifyReply<{ Reply: ResetAvatarReturnType }>
+) => {
+  // TODO: replace on working auth middleware context
+  const userId = "user";
+
+  await resetUserAvatar(request.server.s3, request.server.pg, request.log, userId);
+  return reply.send({ ok: true });
 };

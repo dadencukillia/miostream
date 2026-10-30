@@ -11,7 +11,6 @@ import {
   setAvatarIdForUser,
   setAvatarIdForUserReturningOld
 } from "./repos/userDatabase.repo";
-import type { UpdateAvatarResult } from "./avatar.schema";
 import { Pool } from "pg";
 import {
   AvatarS3Error,
@@ -21,6 +20,8 @@ import {
   AvatarAnotherRequestInProcessError,
   AvatarInvalidImageError
 } from "./avatar.errors";
+import { AvatarUpdatedResponse } from "./avatar.schema";
+import { Static } from "@sinclair/typebox";
 
 const AVATAR_WIDTH = 256;
 const AVATAR_HEIGHT = 256;
@@ -80,7 +81,7 @@ export async function updateUserAvatarImage(
   logger: FastifyBaseLogger,
   userId: string,
   imageContent: Buffer
-): Promise<UpdateAvatarResult> {
+): Promise<Static<typeof AvatarUpdatedResponse>> {
   const newAvatarId = crypto.randomUUID().replaceAll("-", "");
 
   // Process image
@@ -144,8 +145,8 @@ export async function updateUserAvatarImage(
 
   return {
     ok: true,
-    user: userId,
-    avatar: newAvatarId,
+    userId: userId,
+    avatarId: newAvatarId,
     format: "webp",
     url: `/cdn/avatar/${newAvatarId}.webp`
   };
