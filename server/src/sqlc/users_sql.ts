@@ -322,26 +322,26 @@ export async function getAvatarIdByUserId(client: Client, args: GetAvatarIdByUse
     };
 }
 
-export const safeUpdateUserAvatarQuery = `-- name: SafeUpdateUserAvatar :one
+export const safeUpdateUserAvatarReturningModificationFlagQuery = `-- name: SafeUpdateUserAvatarReturningModificationFlag :one
 UPDATE public.users
 SET avatar_url = $2::text
 WHERE user_id = $1
   AND avatar_url = $3::text
 RETURNING count(*) = 1 AS affected`;
 
-export interface SafeUpdateUserAvatarArgs {
+export interface SafeUpdateUserAvatarReturningModificationFlagArgs {
     userId: string;
     newAvatarUrl: string;
     oldAvatarUrl: string;
 }
 
-export interface SafeUpdateUserAvatarRow {
+export interface SafeUpdateUserAvatarReturningModificationFlagRow {
     affected: boolean;
 }
 
-export async function safeUpdateUserAvatar(client: Client, args: SafeUpdateUserAvatarArgs): Promise<SafeUpdateUserAvatarRow | null> {
+export async function safeUpdateUserAvatarReturningModificationFlag(client: Client, args: SafeUpdateUserAvatarReturningModificationFlagArgs): Promise<SafeUpdateUserAvatarReturningModificationFlagRow | null> {
     const result = await client.query({
-        text: safeUpdateUserAvatarQuery,
+        text: safeUpdateUserAvatarReturningModificationFlagQuery,
         values: [args.userId, args.newAvatarUrl, args.oldAvatarUrl],
         rowMode: "array"
     });
@@ -354,24 +354,24 @@ export async function safeUpdateUserAvatar(client: Client, args: SafeUpdateUserA
     };
 }
 
-export const updateUserAvatarQuery = `-- name: UpdateUserAvatar :one
+export const updateUserAvatarReturningOldQuery = `-- name: UpdateUserAvatarReturningOld :one
 UPDATE public.users
 SET avatar_url = $2::text
 WHERE user_id = $1
 RETURNING avatar_url`;
 
-export interface UpdateUserAvatarArgs {
+export interface UpdateUserAvatarReturningOldArgs {
     userId: string;
     newAvatarUrl: string;
 }
 
-export interface UpdateUserAvatarRow {
+export interface UpdateUserAvatarReturningOldRow {
     avatarUrl: string;
 }
 
-export async function updateUserAvatar(client: Client, args: UpdateUserAvatarArgs): Promise<UpdateUserAvatarRow | null> {
+export async function updateUserAvatarReturningOld(client: Client, args: UpdateUserAvatarReturningOldArgs): Promise<UpdateUserAvatarReturningOldRow | null> {
     const result = await client.query({
-        text: updateUserAvatarQuery,
+        text: updateUserAvatarReturningOldQuery,
         values: [args.userId, args.newAvatarUrl],
         rowMode: "array"
     });

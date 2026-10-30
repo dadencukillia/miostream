@@ -5,7 +5,7 @@ import {
   getAvatarById,
   removeAvatarById,
   setAvatarById
-} from "./repos/avatarBucket.repo";
+} from "./avatarBucket.repo";
 import { Pool } from "pg";
 import {
   AvatarS3Error,
@@ -17,7 +17,11 @@ import {
 } from "./avatar.errors";
 import { AvatarUpdatedResponse } from "./avatar.schema";
 import { Static } from "@sinclair/typebox";
-import { getAvatarIdByUserId, safeUpdateUserAvatar, updateUserAvatar } from "../../sqlc/users_sql";
+import {
+  getAvatarIdByUserId,
+  safeUpdateUserAvatarReturningModificationFlag,
+  updateUserAvatarReturningOld
+} from "../../sqlc/users_sql";
 
 const AVATAR_WIDTH = 256;
 const AVATAR_HEIGHT = 256;
@@ -51,7 +55,7 @@ export async function resetUserAvatar(
   // Receive avatar id from database
 
   try {
-    avatarId = (await updateUserAvatar(db, {
+    avatarId = (await updateUserAvatarReturningOld(db, {
       userId: userId,
       newAvatarUrl: ""
     }))!.avatarUrl;
@@ -121,20 +125,24 @@ export async function updateUserAvatarImage(
 
   // Update avatar in the database
 
-  try {
-    const affected = (await safeUpdateUserAvatar(db, {
-      userId: userId,
-      oldAvatarUrl: oldAvatarId,
-      newAvatarUrl: newAvatarId
-    }))!.affected;
-    if (!affected) {
+  {
+    let errorToThrow = new AvatarCouldntReachDBError("database avatar id update went wrong");
+    try {
+      const affected = (await safeUpdateUserAvatarReturningModificationFlag(db, {
+        userId: userId,
+        oldAvatarUrl: oldAvatarId!,
+        newAvatarUrl: newAvatarId
+      }))!.affected;
+      if (!affected) {
+        await removeAvatarById(s3, newAvatarId);
+        errorToThrow = new AvatarAnotherRequestInProcessError("concurrent requests conflict");
+        throw errorToThrow;
+      }
+    } catch(e) {
+      logger.error(e);
       await removeAvatarById(s3, newAvatarId);
-      throw new AvatarAnotherRequestInProcessError("concurrent requests conflict");
+      throw errorToThrow;
     }
-  } catch(e) {
-    logger.error(e);
-    await removeAvatarById(s3, newAvatarId);
-    throw new AvatarCouldntReachDBError("database avatar id update went wrong");
   }
 
   // Remove old avatar file
