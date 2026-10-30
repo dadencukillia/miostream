@@ -9,7 +9,8 @@
   ],
   "types": [
     "bun",
-    "node"
+    "node",
+    "unplugin-icons/types/react"
   ],
   "compilerOptions": {
     "composite": true,

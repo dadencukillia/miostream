@@ -1,10 +1,9 @@
 ---
-import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
-import Tv01Icon from "@hugeicons/core-free-icons/Tv01Icon";
-import Home05Icon from "@hugeicons/core-free-icons/Home05Icon";
-import MagicWand02Icon from "@hugeicons/core-free-icons/MagicWand02Icon";
-import ListVideoIcon from "@hugeicons/core-free-icons/ListVideoIcon";
-import User02Icon from "@hugeicons/core-free-icons/User02Icon";
+import TvIcon from "~icons/hugeicons/tv-01";
+import HomeIcon from "~icons/hugeicons/home-05";
+import MagicWandIcon from "~icons/hugeicons/magic-wand-02";
+import ListVideoIcon from "~icons/hugeicons/list-video";
+import UserIcon from "~icons/hugeicons/user-02";
 import SidebarLink from "./link.astro";
 import * as config from "@lib/config";
 import type { HTMLAttributes } from "astro/types";
@@ -15,21 +14,21 @@ type Props = HTMLAttributes<"div">;
 const { class: className } = Astro.props;
 
 interface Link {
-  icon: IconSvgElement,
-  title: string,
-  link: string,
-  activeRegex: RegExp
+  icon: (_props: Record<string, any>) => any;
+  title: string;
+  link: string;
+  activeRegex: RegExp;
 }
 
 const links: Link[] = [
   {
-    icon: Home05Icon,
+    icon: HomeIcon,
     title: "Головна",
     link: "/",
     activeRegex: /^\/$/g
   },
   {
-    icon: MagicWand02Icon,
+    icon: MagicWandIcon,
     title: "Досліджуй",
     link: "/discover",
     activeRegex: /^\/discover/g
@@ -41,7 +40,7 @@ const links: Link[] = [
     activeRegex: /^\/list/g
   },
   {
-    icon: User02Icon,
+    icon: UserIcon,
     title: "Профіль",
     link: "/profile",
     activeRegex: /^\/profile/g
@@ -53,19 +52,20 @@ const links: Link[] = [
   <a href="/">
     <div class="flex items-center gap-3 px-2">
       <div class="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-        <HugeiconsIcon icon={ Tv01Icon } strokeWidth={ 2 } />
+        <TvIcon class="size-5" />
       </div>
       <span class="text-xl text-foreground font-bold tracking-tight">{ config.APP_NAME }</span>
     </div>
   </a>
 
   <nav class="mt-12 flex flex-col gap-2">
-    { links.map(el => (<SidebarLink 
+    { links.map(el => (
+      <SidebarLink 
         icon={ el.icon }
         title={ el.title }
         link={ el.link }
         activeRegex={ el.activeRegex }
-      />)
-    ) }
+      />
+    )) }
   </nav>
 </aside>

@@ -1,11 +1,10 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { HugeiconsIcon } from "@hugeicons/react";
-import ViewIcon from "@hugeicons/core-free-icons/ViewIcon";
-import EyeOffIcon from "@hugeicons/core-free-icons/EyeOffIcon";
-import LockKeyholeIcon from "@hugeicons/core-free-icons/LockKeyholeIcon";
-import Mail01Icon from "@hugeicons/core-free-icons/Mail01Icon";
+import ViewIcon from "~icons/hugeicons/view";
+import ViewOffIcon from "~icons/hugeicons/view-off";
+import CircleLockIcon from "~icons/hugeicons/circle-lock-01";
+import MailIcon from "~icons/hugeicons/mail-01";
 import { useState } from "react";
 
 import { Button } from "@ui/button";
@@ -20,7 +19,7 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 interface Props {
-  onLoginSubmit: (data: LoginFormValues) => void
+  onLoginSubmit: (data: LoginFormValues) => void;
 }
 
 export default function LoginForm({
@@ -37,8 +36,8 @@ export default function LoginForm({
     <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="login-email">Email</Label>
-        <div className="relative">
-          <HugeiconsIcon icon={ Mail01Icon } className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+        <div className="relative flex items-center">
+          <MailIcon className="absolute left-3 h-4 w-4 text-muted-foreground pointer-events-none" />
           <Input
             id="login-email"
             placeholder="name@example.com"
@@ -60,8 +59,8 @@ export default function LoginForm({
             Забули пароль?
           </a>
         </div>
-        <div className="relative">
-          <HugeiconsIcon icon={ LockKeyholeIcon } className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+        <div className="relative flex items-center">
+          <CircleLockIcon className="absolute left-3 h-4 w-4 text-muted-foreground pointer-events-none" />
           <Input
             id="login-password"
             type={showPassword ? "text" : "password"}
@@ -71,9 +70,9 @@ export default function LoginForm({
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground"
+            className="absolute right-3 text-muted-foreground hover:text-foreground flex items-center"
           >
-            {showPassword ? <HugeiconsIcon icon={ EyeOffIcon } className="w-4 h-4" /> : <HugeiconsIcon icon={ ViewIcon } className="w-4 h-4" />}
+            {showPassword ? <ViewOffIcon className="w-4 h-4" /> : <ViewIcon className="w-4 h-4" />}
           </button>
         </div>
         {loginForm.formState.errors.password && (

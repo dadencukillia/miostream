@@ -1,17 +1,16 @@
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { HugeiconsIcon } from "@hugeicons/react";
-import ViewIcon from "@hugeicons/core-free-icons/ViewIcon";
-import EyeOffIcon from "@hugeicons/core-free-icons/EyeOffIcon";
-import LockKeyholeIcon from "@hugeicons/core-free-icons/LockKeyholeIcon";
-import Mail01Icon from "@hugeicons/core-free-icons/Mail01Icon";
-import User02Icon from "@hugeicons/core-free-icons/User02Icon";
+import ViewIcon from "~icons/hugeicons/view";
+import ViewOffIcon from "~icons/hugeicons/view-off";
+import CircleLockIcon from "~icons/hugeicons/circle-lock-01";
+import MailIcon from "~icons/hugeicons/mail-01";
+import UserIcon from "~icons/hugeicons/user-02";
 import { useState } from "react";
 
 import { Button } from "@ui/button";
 import { Input } from "@ui/input";
 import { Label } from "@ui/label";
-import { useForm } from "react-hook-form";
 
 const registerSchema = z
   .object({
@@ -28,7 +27,7 @@ const registerSchema = z
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
 interface Props {
-  onRegisterSubmit: (data: RegisterFormValues) => void
+  onRegisterSubmit: (data: RegisterFormValues) => void;
 }
 
 export default function RegisterForm({
@@ -45,8 +44,8 @@ export default function RegisterForm({
     <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="register-name">Ім'я</Label>
-        <div className="relative">
-          <HugeiconsIcon icon={ User02Icon } className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+        <div className="relative flex items-center">
+          <UserIcon className="absolute left-3 h-4 w-4 text-muted-foreground pointer-events-none" />
           <Input
             id="register-name"
             placeholder="Олександр"
@@ -63,8 +62,8 @@ export default function RegisterForm({
 
       <div className="space-y-2">
         <Label htmlFor="register-email">Email</Label>
-        <div className="relative">
-          <HugeiconsIcon icon={ Mail01Icon } className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+        <div className="relative flex items-center">
+          <MailIcon className="absolute left-3 h-4 w-4 text-muted-foreground pointer-events-none" />
           <Input
             id="register-email"
             placeholder="name@example.com"
@@ -81,8 +80,8 @@ export default function RegisterForm({
 
       <div className="space-y-2">
         <Label htmlFor="register-password">Пароль</Label>
-        <div className="relative">
-          <HugeiconsIcon icon={ LockKeyholeIcon } className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+        <div className="relative flex items-center">
+          <CircleLockIcon className="absolute left-3 h-4 w-4 text-muted-foreground pointer-events-none" />
           <Input
             id="register-password"
             type={showPassword ? "text" : "password"}
@@ -92,9 +91,9 @@ export default function RegisterForm({
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground"
+            className="absolute right-3 text-muted-foreground hover:text-foreground flex items-center"
           >
-            {showPassword ? <HugeiconsIcon icon={ EyeOffIcon } className="w-4 h-4" /> : <HugeiconsIcon icon={ ViewIcon } className="w-4 h-4" />}
+            {showPassword ? <ViewOffIcon className="w-4 h-4" /> : <ViewIcon className="w-4 h-4" />}
           </button>
         </div>
         {registerForm.formState.errors.password && (
@@ -106,14 +105,21 @@ export default function RegisterForm({
 
       <div className="space-y-2">
         <Label htmlFor="register-confirm-password">Підтвердження пароля</Label>
-        <div className="relative">
-          <HugeiconsIcon icon={ LockKeyholeIcon } className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+        <div className="relative flex items-center">
+          <CircleLockIcon className="absolute left-3 h-4 w-4 text-muted-foreground pointer-events-none" />
           <Input
             id="register-confirm-password"
             type={showPassword ? "text" : "password"}
-            className="pl-9"
+            className="pl-9 pr-9"
             {...registerForm.register("confirmPassword")}
           />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 text-muted-foreground hover:text-foreground flex items-center"
+          >
+            {showPassword ? <ViewOffIcon className="w-4 h-4" /> : <ViewIcon className="w-4 h-4" />}
+          </button>
         </div>
         {registerForm.formState.errors.confirmPassword && (
           <p className="text-xs font-medium text-destructive">
