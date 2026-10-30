@@ -83,12 +83,23 @@ export class AuthContext {
  */
 export async function authMiddleware(req: FastifyRequest, _resp: FastifyReply) {
   // TODO: replace onto the real auth operations
+  
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return;
+  }
+
+  const token = authHeader.split(" ")[1];
+
+  const role = token?.toLowerCase().includes("admin") ? "admin" : "user";
+
   req.auth = new AuthContext(
     Math.round(Date.now()),
     "00000000-0000-0000-0000-000000000000",
     "exampleUser", "Jack Jackson",
     "https://i.pravatar.cc/256",
-    "admin", "active"
+    role, "active"
   );
 }
 
