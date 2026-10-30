@@ -59,7 +59,7 @@ export class AuthContext {
   }
 };
 
-export function authMiddleware(req: FastifyRequest, _resp: FastifyReply, done: () => void) {
+export async function authMiddleware(req: FastifyRequest, _resp: FastifyReply) {
   // TODO: replace onto the real auth operations
   req.auth = new AuthContext(
     Math.round(Date.now()),
@@ -68,6 +68,31 @@ export function authMiddleware(req: FastifyRequest, _resp: FastifyReply, done: (
     "https://i.pravatar.cc/256",
     "admin", "active"
   );
-
-  done();
 }
+
+export const grantAuthMiddleware = (
+  receiveAuthData: boolean = true,
+  unsignedOnly: boolean = false,
+  userHasRole: string[] = [],
+  userHasStatus: string[] = ["active"],
+  fallback: (req: FastifyRequest, resp: FastifyReply) => void = (_req, resp) => {
+    resp.status(403).send({ ok: false, message: "no access" });
+  }
+) => async (req: FastifyRequest, resp: FastifyReply) => {
+  if (receiveAuthData) await authMiddleware(req, resp);
+
+  if (unsignedOnly) {
+    if (!!req.auth) return fallback(req, resp);
+    return;
+  }
+
+  if (!req.auth) return fallback(req, resp);
+
+  if (userHasRole.length > 0 && !userHasRole.includes(req.auth.role)) {
+    return fallback(req, resp);
+  }
+
+  if (userHasStatus.length > 0 && !userHasStatus.includes(req.auth.status)) {
+    return fallback(req, resp);
+  }
+};
