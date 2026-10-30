@@ -17,24 +17,8 @@ import type {
     UpdateUserLinkDto
 } from './user.schema';
 import * as userService from './user.service';
-
-const isSafeHttpUrl = (urlString: string): boolean => {
-    try {
-        const url = new URL(urlString);
-        return url.protocol === 'http:' || url.protocol === 'https:';
-    } catch {
-        return false;
-    }
-};
-
-const isValidTimezone = (timezone: string): boolean => {
-    try {
-        Intl.DateTimeFormat(undefined, { timeZone: timezone });
-        return true;
-    } catch {
-        return false;
-    }
-};
+import { isSafeHttpUrl } from '../../utils/urls';
+import { isValidTimezone } from '../../utils/timezones';
 
 export const createUser = async (
     request: FastifyRequest<{ Body: CreateUserDto }>,

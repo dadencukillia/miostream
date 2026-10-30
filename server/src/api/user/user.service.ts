@@ -15,6 +15,7 @@ import type {
     UserStatus,
     UserRole
 } from './user.schema';
+import { hashPassword, verifyPassword } from '../../utils/password';
 
 interface PostgresError extends Error {
     code?: string;
@@ -79,16 +80,6 @@ const dbError = (error: unknown): UserError => {
     }
 
     return new UserError('Database operation failed', { cause: error });
-};
-
-const hashPassword = async (password: string): Promise<string> => {
-    const hashedPassword = Bun.password.hash(password, { algorithm: "bcrypt" });
-    return hashedPassword;
-};
-
-const verifyPassword = async (password: string, hash: string): Promise<boolean> => {
-    const isMatch = await Bun.password.verify(password, hash);
-    return isMatch;
 };
 
 export const createUser = async (client: Pool, data: CreateUserDto) => {
