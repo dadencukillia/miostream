@@ -23,7 +23,7 @@ export default function AuthForm() {
           onValueChange={(v) => setActiveTab(v as "login" | "register")}
           className="w-full"
         >
-          <CardHeader className="space-y-1 pb-4Home05Icon">
+          <CardHeader className="space-y-1 pb-4">
             <CardTitle className="text-center text-2xl font-bold">
               {activeTab === "login" ? "Вітаємо знову" : "Створити акаунт"}
             </CardTitle>

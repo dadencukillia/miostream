@@ -1,10 +1,9 @@
 ---
-import Home05Icon from '@hugeicons/core-free-icons/Home05Icon';
-import ListVideoIcon from '@hugeicons/core-free-icons/ListVideoIcon';
-import MagicWand02Icon from '@hugeicons/core-free-icons/MagicWand02Icon';
-import User02Icon from '@hugeicons/core-free-icons/User02Icon';
+import HomeIcon from "~icons/hugeicons/home-05";
+import MagicWandIcon from "~icons/hugeicons/magic-wand-02";
+import ListVideoIcon from "~icons/hugeicons/list-video";
+import UserIcon from "~icons/hugeicons/user-02";
 import BottombarLink from "./link.astro";
-import type { IconSvgElement } from '@hugeicons/react';
 import type { HTMLAttributes } from 'astro/types';
 import { cn } from 'cn';
 
@@ -13,21 +12,21 @@ type Props = HTMLAttributes<"div">;
 const { class: className } = Astro.props;
 
 interface Link {
-  icon: IconSvgElement,
-  title: string,
-  link: string,
-  activeRegex: RegExp
+  icon: (_props: Record<string, any>) => any;
+  title: string;
+  link: string;
+  activeRegex: RegExp;
 }
 
 const links: Link[] = [
   {
-    icon: Home05Icon,
+    icon: HomeIcon,
     title: "Головна",
     link: "/",
     activeRegex: /^\/$/g
   },
   {
-    icon: MagicWand02Icon,
+    icon: MagicWandIcon,
     title: "Досліджуй",
     link: "/discover",
     activeRegex: /^\/discover/g
@@ -39,7 +38,7 @@ const links: Link[] = [
     activeRegex: /^\/list/g
   },
   {
-    icon: User02Icon,
+    icon: UserIcon,
     title: "Профіль",
     link: "/profile",
     activeRegex: /^\/profile/g
@@ -48,11 +47,12 @@ const links: Link[] = [
 ---
 
 <nav class={cn("flex gap-6 h-15 items-center justify-center border-b border-border bg-popover text-popover-foreground px-container backdrop-blur-xl", className)}>
-  { links.map(el => (<BottombarLink 
+  { links.map(el => (
+    <BottombarLink 
       icon={ el.icon }
       title={ el.title }
       link={ el.link }
       activeRegex={ el.activeRegex }
-    />)
-  ) }
+    />
+  )) }
 </nav>

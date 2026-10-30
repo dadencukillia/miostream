@@ -3,7 +3,8 @@ import { defineConfig } from 'astro/config';
 import node from '@astrojs/node';
 import tailwindcss from '@tailwindcss/vite';
 import { fileURLToPath, URL } from 'node:url';
-import react from "@astrojs/react";
+import react from '@astrojs/react';
+import Icons from 'unplugin-icons/vite';
 
 const resolveBase = (path) => fileURLToPath(new URL(path, import.meta.url));
 
@@ -16,7 +17,13 @@ export default defineConfig({
   }),
 
   vite: {
-    plugins: [tailwindcss()],
+    plugins: [
+      tailwindcss(),
+      Icons({
+        compiler: 'jsx',
+        jsx: 'react'
+      }),
+    ],
     resolve: {
       alias: {
         "@layouts": resolveBase("./src/layouts"),
