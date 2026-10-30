@@ -108,7 +108,7 @@ export interface GrantAuthFilters {
   /** Restricts access to users having one of these account statuses. Default is `["active"]`. */
   userHasStatus?: string[],
   /** Custom callback executed when validation checks fail. */
-  fallback?: (req: FastifyRequest, resp: FastifyReply) => void,
+  fallback?: (req: FastifyRequest, resp: FastifyReply) => void|Promise<void>|FastifyReply|Promise<FastifyReply>,
 }
 
 const grantAuthDefaultFilters: Required<GrantAuthFilters> = {
@@ -117,7 +117,7 @@ const grantAuthDefaultFilters: Required<GrantAuthFilters> = {
   userHasRole: [],
   userHasStatus: ["active"],
   fallback: (_req, resp) => {
-    resp.status(403).send({ ok: false, message: "no access" });
+    return resp.status(403).send({ ok: false, message: "no access" });
   }
 } as const;
 
@@ -147,21 +147,28 @@ export const grantAuthMiddleware = (opts: GrantAuthFilters = grantAuthDefaultFil
     fallback: opts.fallback ?? grantAuthDefaultFilters.fallback,
   };
 
+  const handleFallback = async () => {
+    await fallback(req, resp);
+    if (!resp.sent) {
+      grantAuthDefaultFilters.fallback(req, resp);
+    }
+  };
+
   if (receiveAuthData) await authMiddleware(req, resp);
 
   if (unsignedOnly) {
-    if (!!req.auth) return fallback(req, resp);
+    if (!!req.auth) return await handleFallback();
     return;
   }
 
-  if (!req.auth) return fallback(req, resp);
+  if (!req.auth) return await handleFallback();
 
   if (userHasRole.length > 0 && !userHasRole.includes(req.auth.role)) {
-    return fallback(req, resp);
+    return await handleFallback();
   }
 
   if (userHasStatus.length > 0 && !userHasStatus.includes(req.auth.status)) {
-    return fallback(req, resp);
+    return await handleFallback();
   }
 };
 
