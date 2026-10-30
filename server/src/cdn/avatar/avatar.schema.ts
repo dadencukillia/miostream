@@ -1,21 +1,11 @@
-import { Type } from "@sinclair/typebox";
-import type { Static } from "@sinclair/typebox";
+import { Type, type Static } from "@sinclair/typebox";
 import type { FastifySchema } from "fastify";
+import { ErrorResponse, ErrorResponseReturnType } from "../../utils/errorsCollection";
 
 // Primitives
 
 export const AvatarImageSlugParam = Type.Object({
   avatarId: Type.String({ description: "avatar ID" }),
-});
-
-export const AvatarErrorResponse = Type.Object({
-  ok: Type.Boolean(),
-  message: Type.String()
-}, {
-  examples: [{
-    ok: false,
-    message: "unexpected error",
-  }],
 });
 
 export const AvatarSuccessResponse = Type.Object({
@@ -34,12 +24,12 @@ export const getAvatarSchema: FastifySchema = {
   params: AvatarImageSlugParam,
   response: {
     200: AvatarBinaryContentResponse,
-    404: AvatarErrorResponse,
-    500: AvatarErrorResponse,
+    404: ErrorResponse,
+    500: ErrorResponse,
   }
 };
 
-export type GetAvatarReturnType = Static<typeof AvatarBinaryContentResponse>|Static<typeof AvatarErrorResponse>;
+export type GetAvatarReturnType = Static<typeof AvatarBinaryContentResponse>|ErrorResponseReturnType;
 
 // Update avatar
 
@@ -65,23 +55,23 @@ export const updateAvatarSchema: FastifySchema = {
   body: AvatarUpdatePayload,
   response: {
     200: AvatarUpdatedResponse,
-    400: AvatarErrorResponse,
-    409: AvatarErrorResponse,
-    500: AvatarErrorResponse,
+    400: ErrorResponse,
+    409: ErrorResponse,
+    500: ErrorResponse,
   },
 };
 
-export type UpdateAvatarReturnType = Static<typeof AvatarUpdatedResponse>|Static<typeof AvatarErrorResponse>;
+export type UpdateAvatarReturnType = Static<typeof AvatarUpdatedResponse>|ErrorResponseReturnType;
 
 // Reset avatar
 
 export const resetAvatarSchema: FastifySchema = {
   response: {
-    200: AvatarErrorResponse,
-    400: AvatarErrorResponse,
-    409: AvatarErrorResponse,
-    500: AvatarErrorResponse,
+    200: AvatarSuccessResponse,
+    400: ErrorResponse,
+    409: ErrorResponse,
+    500: ErrorResponse,
   },
 };
 
-export type ResetAvatarReturnType = Static<typeof AvatarErrorResponse>|Static<typeof AvatarSuccessResponse>;
+export type ResetAvatarReturnType = ErrorResponseReturnType|Static<typeof AvatarSuccessResponse>;

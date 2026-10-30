@@ -7,14 +7,7 @@ import {
   setAvatarById
 } from "./avatarBucket.repo";
 import { Pool } from "pg";
-import {
-  AvatarS3Error,
-  AvatarNotFoundError,
-  AvatarCouldntReachDBError,
-  AvatarAlreadyNoAvatarError,
-  AvatarAnotherRequestInProcessError,
-  AvatarInvalidImageError
-} from "./avatar.errors";
+import { AvatarErrors } from "./avatar.errors";
 import { AvatarUpdatedResponse } from "./avatar.schema";
 import { Static } from "@sinclair/typebox";
 import {
@@ -36,11 +29,10 @@ export async function getAvatar(s3: S3Client, logger: FastifyBaseLogger, avatarI
     avatar = await getAvatarById(s3, avatarId);
   } catch(e) {
     logger.error(e);
-
-    throw new AvatarS3Error("couldn't reach the file storage");
+    throw AvatarErrors.error("unreachable-s3-storage");
   }
 
-  if (!avatar) throw new AvatarNotFoundError("no avatar found");
+  if (!avatar) throw AvatarErrors.error("avatar-not-found");
   return Buffer.from(avatar);
 }
 
@@ -61,11 +53,11 @@ export async function resetUserAvatar(
     }))!.avatarUrl;
   } catch(e) {
     logger.error(e);
-    throw new AvatarCouldntReachDBError("couldn't reset user avatar");
+    throw AvatarErrors.error("update-avatar-db");
   }
 
   if (!avatarId) {
-    throw new AvatarAlreadyNoAvatarError("already no avatar");
+    throw AvatarErrors.error("already-no-avatar");
   }
 
   // Remove old avatar image file in S3
@@ -74,7 +66,7 @@ export async function resetUserAvatar(
     await removeAvatarById(s3, avatarId);
   } catch(e) {
     logger.error(e);
-    throw new AvatarS3Error("couldn't remove a file in the file storage");
+    throw AvatarErrors.error("avatar-s3-remove");
   }
 }
 
@@ -98,7 +90,7 @@ export async function updateUserAvatarImage(
       .toBuffer();
   } catch(e) {
     logger.error(e);
-    throw new AvatarInvalidImageError("invalid image");
+    throw AvatarErrors.error("invalid-image");
   }
 
   // Get old avatar id
@@ -111,7 +103,7 @@ export async function updateUserAvatarImage(
     }))!.avatarUrl;
   } catch(e) {
     logger.error(e);
-    throw new AvatarCouldntReachDBError("couldn't receive old avatar id");
+    throw AvatarErrors.error("read-avatar-db");
   }
 
   // Store new avatar file
@@ -119,14 +111,13 @@ export async function updateUserAvatarImage(
   try {
     await setAvatarById(s3, newAvatarId, webpImage);
   } catch(e) {
-    logger.error(e);
-    throw new AvatarS3Error("couldn't store new avatar");
+    throw AvatarErrors.error("new-avatar-s3-store");
   }
 
   // Update avatar in the database
 
   {
-    let errorToThrow = new AvatarCouldntReachDBError("database avatar id update went wrong");
+    let errorToThrow = AvatarErrors.error("update-avatar-db");
     try {
       const affected = (await safeUpdateUserAvatarReturningModificationFlag(db, {
         userId: userId,
@@ -135,7 +126,7 @@ export async function updateUserAvatarImage(
       }))!.affected;
       if (!affected) {
         await removeAvatarById(s3, newAvatarId);
-        errorToThrow = new AvatarAnotherRequestInProcessError("concurrent requests conflict");
+        errorToThrow = AvatarErrors.error("another-request-in-process");
         throw errorToThrow;
       }
     } catch(e) {
@@ -152,7 +143,7 @@ export async function updateUserAvatarImage(
       await removeAvatarById(s3, oldAvatarId);
     } catch(e) {
       logger.error(e);
-      throw new AvatarS3Error("couldn't remove old avatar in the file storage")
+      throw AvatarErrors.error("avatar-s3-remove");
     }
   }
 
