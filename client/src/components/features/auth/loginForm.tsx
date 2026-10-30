@@ -22,9 +22,7 @@ interface Props {
   onLoginSubmit: (data: LoginFormValues) => void;
 }
 
-export default function LoginForm({
-  onLoginSubmit
-}: Props) {
+export default function LoginForm({ onLoginSubmit }: Props) {
   const [showPassword, setShowPassword] = useState(false);
 
   const loginForm = useForm<LoginFormValues>({
@@ -32,22 +30,27 @@ export default function LoginForm({
     defaultValues: { email: "", password: "" },
   });
 
+  const { errors, isSubmitting } = loginForm.formState;
+
   return (
-    <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
+    <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4" noValidate>
       <div className="space-y-2">
         <Label htmlFor="login-email">Email</Label>
         <div className="relative flex items-center">
           <MailIcon className="absolute left-3 h-4 w-4 text-muted-foreground pointer-events-none" />
           <Input
             id="login-email"
+            type="email"
             placeholder="name@example.com"
             className="pl-9"
+            aria-invalid={!!errors.email}
+            aria-describedby={errors.email ? "login-email-error" : undefined}
             {...loginForm.register("email")}
           />
         </div>
-        {loginForm.formState.errors.email && (
-          <p className="text-xs font-medium text-destructive">
-            {loginForm.formState.errors.email.message}
+        {errors.email && (
+          <p id="login-email-error" className="text-xs font-medium text-destructive" role="alert">
+            {errors.email.message}
           </p>
         )}
       </div>
@@ -65,19 +68,23 @@ export default function LoginForm({
             id="login-password"
             type={showPassword ? "text" : "password"}
             className="pl-9 pr-9"
+            aria-invalid={!!errors.password}
+            aria-describedby={errors.password ? "login-password-error" : undefined}
             {...loginForm.register("password")}
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
+            aria-label={showPassword ? "Сховати пароль" : "Показати пароль"}
+            aria-pressed={showPassword}
             className="absolute right-3 text-muted-foreground hover:text-foreground flex items-center"
           >
             {showPassword ? <ViewOffIcon className="w-4 h-4" /> : <ViewIcon className="w-4 h-4" />}
           </button>
         </div>
-        {loginForm.formState.errors.password && (
-          <p className="text-xs font-medium text-destructive">
-            {loginForm.formState.errors.password.message}
+        {errors.password && (
+          <p id="login-password-error" className="text-xs font-medium text-destructive" role="alert">
+            {errors.password.message}
           </p>
         )}
       </div>
@@ -85,9 +92,10 @@ export default function LoginForm({
       <Button
         type="submit"
         className="w-full mt-2"
-        disabled={loginForm.formState.isSubmitting}
+        disabled={isSubmitting}
+        aria-busy={isSubmitting}
       >
-        {loginForm.formState.isSubmitting ? "Вхід..." : "Увійти"}
+        {isSubmitting ? "Вхід..." : "Увійти"}
       </Button>
     </form>
   );

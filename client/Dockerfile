@@ -18,6 +18,8 @@ RUN bun run build
 FROM base AS release
 WORKDIR /app
 ENV NODE_ENV=production HOST=0.0.0.0 PORT=8080
+USER bun
+
 COPY --from=install /temp/prod/node_modules ./node_modules
 COPY --from=prerelease /app/dist ./dist
 COPY --from=prerelease /app/package.json .

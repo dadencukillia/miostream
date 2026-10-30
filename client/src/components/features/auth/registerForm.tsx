@@ -30,9 +30,7 @@ interface Props {
   onRegisterSubmit: (data: RegisterFormValues) => void;
 }
 
-export default function RegisterForm({
-  onRegisterSubmit
-}: Props) {
+export default function RegisterForm({ onRegisterSubmit }: Props) {
   const [showPassword, setShowPassword] = useState(false);
 
   const registerForm = useForm<RegisterFormValues>({
@@ -40,8 +38,10 @@ export default function RegisterForm({
     defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
   });
 
+  const { errors, isSubmitting } = registerForm.formState;
+
   return (
-    <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
+    <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4" noValidate>
       <div className="space-y-2">
         <Label htmlFor="register-name">Ім'я</Label>
         <div className="relative flex items-center">
@@ -50,12 +50,14 @@ export default function RegisterForm({
             id="register-name"
             placeholder="Олександр"
             className="pl-9"
+            aria-invalid={!!errors.name}
+            aria-describedby={errors.name ? "register-name-error" : undefined}
             {...registerForm.register("name")}
           />
         </div>
-        {registerForm.formState.errors.name && (
-          <p className="text-xs font-medium text-destructive">
-            {registerForm.formState.errors.name.message}
+        {errors.name && (
+          <p id="register-name-error" className="text-xs font-medium text-destructive" role="alert">
+            {errors.name.message}
           </p>
         )}
       </div>
@@ -66,14 +68,17 @@ export default function RegisterForm({
           <MailIcon className="absolute left-3 h-4 w-4 text-muted-foreground pointer-events-none" />
           <Input
             id="register-email"
+            type="email"
             placeholder="name@example.com"
             className="pl-9"
+            aria-invalid={!!errors.email}
+            aria-describedby={errors.email ? "register-email-error" : undefined}
             {...registerForm.register("email")}
           />
         </div>
-        {registerForm.formState.errors.email && (
-          <p className="text-xs font-medium text-destructive">
-            {registerForm.formState.errors.email.message}
+        {errors.email && (
+          <p id="register-email-error" className="text-xs font-medium text-destructive" role="alert">
+            {errors.email.message}
           </p>
         )}
       </div>
@@ -86,19 +91,23 @@ export default function RegisterForm({
             id="register-password"
             type={showPassword ? "text" : "password"}
             className="pl-9 pr-9"
+            aria-invalid={!!errors.password}
+            aria-describedby={errors.password ? "register-password-error" : undefined}
             {...registerForm.register("password")}
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
+            aria-label={showPassword ? "Сховати пароль" : "Показати пароль"}
+            aria-pressed={showPassword}
             className="absolute right-3 text-muted-foreground hover:text-foreground flex items-center"
           >
             {showPassword ? <ViewOffIcon className="w-4 h-4" /> : <ViewIcon className="w-4 h-4" />}
           </button>
         </div>
-        {registerForm.formState.errors.password && (
-          <p className="text-xs font-medium text-destructive">
-            {registerForm.formState.errors.password.message}
+        {errors.password && (
+          <p id="register-password-error" className="text-xs font-medium text-destructive" role="alert">
+            {errors.password.message}
           </p>
         )}
       </div>
@@ -111,19 +120,23 @@ export default function RegisterForm({
             id="register-confirm-password"
             type={showPassword ? "text" : "password"}
             className="pl-9 pr-9"
+            aria-invalid={!!errors.confirmPassword}
+            aria-describedby={errors.confirmPassword ? "register-confirm-password-error" : undefined}
             {...registerForm.register("confirmPassword")}
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
+            aria-label={showPassword ? "Сховати пароль" : "Показати пароль"}
+            aria-pressed={showPassword}
             className="absolute right-3 text-muted-foreground hover:text-foreground flex items-center"
           >
             {showPassword ? <ViewOffIcon className="w-4 h-4" /> : <ViewIcon className="w-4 h-4" />}
           </button>
         </div>
-        {registerForm.formState.errors.confirmPassword && (
-          <p className="text-xs font-medium text-destructive">
-            {registerForm.formState.errors.confirmPassword.message}
+        {errors.confirmPassword && (
+          <p id="register-confirm-password-error" className="text-xs font-medium text-destructive" role="alert">
+            {errors.confirmPassword.message}
           </p>
         )}
       </div>
@@ -131,9 +144,10 @@ export default function RegisterForm({
       <Button
         type="submit"
         className="w-full mt-2"
-        disabled={registerForm.formState.isSubmitting}
+        disabled={isSubmitting}
+        aria-busy={isSubmitting}
       >
-        {registerForm.formState.isSubmitting ? "Створення..." : "Зареєструватися"}
+        {isSubmitting ? "Створення..." : "Зареєструватися"}
       </Button>
     </form>
   );
