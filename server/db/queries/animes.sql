@@ -72,7 +72,7 @@ SELECT
         FROM public.genres g
         WHERE g.anime_id = a.anime_id
         ORDER BY g.genre_type
-    )::genre_type_enum[] AS genres
+    )::text[] AS genres
 FROM public.animes a
 WHERE
     (sqlc.narg('search')::text IS NULL OR
@@ -144,7 +144,7 @@ SELECT
         FROM public.genres g
         WHERE g.anime_id = a.anime_id
         ORDER BY g.genre_type
-    )::genre_type_enum[] AS genres
+    )::text[] AS genres
 FROM public.animes a
 WHERE a.anime_id = @anime_id::uuid;
 
@@ -174,7 +174,7 @@ SELECT
         FROM public.genres g
         WHERE g.anime_id = a.anime_id
         ORDER BY g.genre_type
-    )::genre_type_enum[] AS genres
+    )::text[] AS genres
 FROM public.animes a
 WHERE a.slug = @slug::text;
 
