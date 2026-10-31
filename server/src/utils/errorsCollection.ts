@@ -148,8 +148,13 @@ class CustomError extends Error {
  * TypeBox schema definition for standardized API error responses.
  */
 export const ErrorResponse = Type.Object({
-  ok: Type.Boolean(),
-  message: Type.String()
+  ok: Type.Literal(false),
+  message: Type.String({ description: "error message" })
+}, {
+  examples: [{
+    ok: false,
+    message: "unexpected error",
+  }],
 });
 
 /**
@@ -216,9 +221,10 @@ export class ErrorsCollection {
     ) => {
       const collectionIds = safeCollections.map(c => c.id);
 
-      request.log.error(error);
 
       if (error instanceof CustomError) {
+        request.log.error(error.toLog());
+
         if (
           collectionIds.length > 0 && 
           collectionIds.includes(error.collection.id)
@@ -230,6 +236,8 @@ export class ErrorsCollection {
               message: error.message
             } as ErrorResponseReturnType);
         }
+      } else {
+        request.log.error(error);
       }
 
       return reply
@@ -285,3 +293,4 @@ export class ErrorsSet<T extends {[Key: string]: [number, string]}> extends Erro
     return super.createError(error.statusCode, error.message);
   }
 }
+
