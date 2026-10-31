@@ -148,8 +148,13 @@ class CustomError extends Error {
  * TypeBox schema definition for standardized API error responses.
  */
 export const ErrorResponse = Type.Object({
-  ok: Type.Boolean(),
-  message: Type.String()
+  ok: Type.Literal(false),
+  message: Type.String({ description: "error message" })
+}, {
+  examples: [{
+    ok: false,
+    message: "unexpected error",
+  }],
 });
 
 /**
