@@ -85,13 +85,14 @@ export class AuthContext {
 export async function authMiddleware(req: FastifyRequest, _resp: FastifyReply) {
   // TODO: replace onto the real auth operations
   
-  const authHeader = req.headers.authorization;
+  const authHeader = req.headers.authorization?.trim();
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return;
   }
 
-  const token = authHeader.split(" ")[1];
+  const split = authHeader.split(" ");
+  const token = split[split.length - 1];
 
   const role = token?.toLowerCase().includes("admin") ? "admin" : "user";
 
@@ -120,7 +121,7 @@ export interface GrantAuthFilters {
   /** Restricts access to users having one of these account statuses. Default is `["active"]`. */
   userHasStatus?: string[],
   /** Custom callback executed when validation checks fail. */
-  fallback?: (req: FastifyRequest, resp: FastifyReply) => void|Promise<void>|FastifyReply|Promise<FastifyReply>,
+  fallback?: (req: FastifyRequest, resp: FastifyReply) => void|Promise<void>,
 }
 
 const grantAuthDefaultFilters: Required<GrantAuthFilters> = {
@@ -129,9 +130,9 @@ const grantAuthDefaultFilters: Required<GrantAuthFilters> = {
   userHasRole: [],
   userHasStatus: ["active"],
   fallback: (_req, resp) => {
-    return resp.status(403).send({ ok: false, message: "no access" });
+    resp.status(403).send({ ok: false, message: "no access" });
   }
-} as const;
+};
 
 /**
  * Creates a customizable route middleware generator to enforce fine-grained authentication and authorization filters.
@@ -160,7 +161,9 @@ export const grantAuthMiddleware = (opts: GrantAuthFilters = grantAuthDefaultFil
   };
 
   const handleFallback = async () => {
-    await fallback(req, resp);
+    const result: unknown = fallback(req, resp);
+    if (result !== resp) await result;
+
     if (!resp.sent) {
       grantAuthDefaultFilters.fallback(req, resp);
     }
