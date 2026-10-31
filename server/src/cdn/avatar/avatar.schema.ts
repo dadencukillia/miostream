@@ -8,7 +8,7 @@ export const AvatarImageSlugParam = Type.Object({
 });
 
 export const AvatarErrorResponse = Type.Object({
-  ok: Type.Boolean(),
+  ok: Type.Literal(false),
   message: Type.String()
 }, {
   examples: [{
@@ -18,7 +18,7 @@ export const AvatarErrorResponse = Type.Object({
 });
 
 export const AvatarSuccessResponse = Type.Object({
-  ok: Type.Boolean()
+  ok: Type.Literal(true)
 }, {
   examples: [{
     ok: false,
@@ -45,7 +45,7 @@ export type GetAvatarReturnType = Static<typeof AvatarBinaryContentResponse>|Sta
 export const AvatarUpdatePayload = Type.String({ description: "base64 image content" });
 
 export const AvatarUpdatedResponse = Type.Object({
-  ok: Type.Boolean(),
+  ok: Type.Literal(true),
   userId: Type.String(),
   avatarId: Type.String(),
   format: Type.String(),
