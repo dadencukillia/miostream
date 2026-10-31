@@ -15,7 +15,7 @@ export const getAvatarController = async (
 ) => {
   const { avatarId } = request.params;
 
-  const buffer = await getAvatar(request.server.s3, request.log, avatarId);
+  const buffer = await getAvatar(request.server.s3, avatarId);
   return reply
     .header("content-type", "image/webp")
     .header("cache-control", "public, max-age=31536000, immutable")
@@ -31,7 +31,6 @@ export const updateAvatarController = async (
 
   const result = await updateUserAvatarImage(
     request.server.s3, request.server.pg, 
-    request.log, 
     userId, 
     Buffer.from(request.body, "base64")
   );
@@ -46,6 +45,6 @@ export const resetAvatarController = async (
   // TODO: replace on working auth middleware context
   const userId = "844bb852-bd3a-46d8-8062-a4e43b34f454";
 
-  await resetUserAvatar(request.server.s3, request.server.pg, request.log, userId);
+  await resetUserAvatar(request.server.s3, request.server.pg, userId);
   return reply.send({ ok: true });
 };

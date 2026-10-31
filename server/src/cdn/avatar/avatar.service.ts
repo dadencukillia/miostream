@@ -1,5 +1,4 @@
 import sharp from "sharp";
-import type { FastifyBaseLogger } from "fastify";
 import type { S3Client } from "@aws-sdk/client-s3";
 import {
   getAvatarById,
@@ -22,14 +21,13 @@ const WEBP_QUALITY = 80;
 
 // Services
 
-export async function getAvatar(s3: S3Client, logger: FastifyBaseLogger, avatarId: string): Promise<Buffer> {
+export async function getAvatar(s3: S3Client, avatarId: string): Promise<Buffer> {
   let avatar: Uint8Array|null;
 
   try {
     avatar = await getAvatarById(s3, avatarId);
   } catch(e) {
-    logger.error(e);
-    throw AvatarErrors.error("unreachable-s3-storage");
+    throw AvatarErrors.error("unreachable-s3-storage").withDetails(e);
   }
 
   if (!avatar) throw AvatarErrors.error("avatar-not-found");
@@ -39,7 +37,6 @@ export async function getAvatar(s3: S3Client, logger: FastifyBaseLogger, avatarI
 export async function resetUserAvatar(
   s3: S3Client, 
   db: Pool,
-  logger: FastifyBaseLogger,
   userId: string
 ) {
   let avatarId: string|null;
@@ -52,8 +49,7 @@ export async function resetUserAvatar(
       newAvatarUrl: ""
     }))!.avatarUrl;
   } catch(e) {
-    logger.error(e);
-    throw AvatarErrors.error("update-avatar-db");
+    throw AvatarErrors.error("update-avatar-db").withDetails(e);
   }
 
   if (!avatarId) {
@@ -65,15 +61,13 @@ export async function resetUserAvatar(
   try {
     await removeAvatarById(s3, avatarId);
   } catch(e) {
-    logger.error(e);
-    throw AvatarErrors.error("avatar-s3-remove");
+    throw AvatarErrors.error("avatar-s3-remove").withDetails(e);
   }
 }
 
 export async function updateUserAvatarImage(
   s3: S3Client, 
   db: Pool,
-  logger: FastifyBaseLogger,
   userId: string,
   imageContent: Buffer
 ): Promise<Static<typeof AvatarUpdatedResponse>> {
@@ -89,8 +83,7 @@ export async function updateUserAvatarImage(
       .webp({ quality: WEBP_QUALITY })
       .toBuffer();
   } catch(e) {
-    logger.error(e);
-    throw AvatarErrors.error("invalid-image");
+    throw AvatarErrors.error("invalid-image").withDetails(e);
   }
 
   // Get old avatar id
@@ -102,8 +95,7 @@ export async function updateUserAvatarImage(
       userId: userId,
     }))!.avatarUrl;
   } catch(e) {
-    logger.error(e);
-    throw AvatarErrors.error("read-avatar-db");
+    throw AvatarErrors.error("read-avatar-db").withDetails(e);
   }
 
   // Store new avatar file
@@ -111,7 +103,7 @@ export async function updateUserAvatarImage(
   try {
     await setAvatarById(s3, newAvatarId, webpImage);
   } catch(e) {
-    throw AvatarErrors.error("new-avatar-s3-store");
+    throw AvatarErrors.error("new-avatar-s3-store").withDetails(e);
   }
 
   // Update avatar in the database
@@ -130,9 +122,8 @@ export async function updateUserAvatarImage(
         throw errorToThrow;
       }
     } catch(e) {
-      logger.error(e);
       await removeAvatarById(s3, newAvatarId);
-      throw errorToThrow;
+      throw errorToThrow.withDetails(e);
     }
   }
 
@@ -142,8 +133,7 @@ export async function updateUserAvatarImage(
     try {
       await removeAvatarById(s3, oldAvatarId);
     } catch(e) {
-      logger.error(e);
-      throw AvatarErrors.error("avatar-s3-remove");
+      throw AvatarErrors.error("avatar-s3-remove").withDetails(e);
     }
   }
 
