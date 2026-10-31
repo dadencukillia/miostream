@@ -1,4 +1,6 @@
 import Fastify from "fastify";
+import swagger from '@fastify/swagger';
+import swaggerUi from '@fastify/swagger-ui';
 import connector from "./utils/connector";
 import { S3Connection } from "./connections/s3";
 import api from "./api/plugin";
@@ -16,7 +18,7 @@ const fastify = Fastify({
   },
 });
 
-fastify.register(connector, {
+await fastify.register(connector, {
   retries: 3,
   interval: 15 * 1000, // 15 seconds
   connections: [
@@ -25,12 +27,56 @@ fastify.register(connector, {
   ],
 });
 
-fastify.get('/healthcheck', async (_request, reply) => {
+await fastify.register(swagger, {
+  openapi: {
+    info: {
+      title: 'MioStream API',
+      description: 'Fastify endpoints documentation',
+      version: '1.0.0',
+    },
+    servers: [
+      {
+        url: 'http://localhost:8080',
+        description: 'Local Server',
+      },
+    ],
+    components: {
+      securitySchemes: {
+        apiKeyAuth: {
+          type: 'apiKey',
+          name: 'Authorization',
+          in: 'header',
+        },
+      },
+    },
+  },
+});
+
+await fastify.register(swaggerUi, {
+  routePrefix: '/docs',
+  uiConfig: {
+    docExpansion: 'list',
+    deepLinking: false,
+  },
+});
+
+fastify.get('/healthcheck', {
+  schema: {
+    tags: ['System'],
+    summary: 'Health status',
+    response: {
+      200: {
+        type: 'object',
+        properties: { health: { type: 'boolean' } },
+      },
+    },
+  },
+}, async (_request, reply) => {
   return reply.send({ health: true });
 });
 
-fastify.register(api, { prefix: "/api" });
-fastify.register(cdn, { prefix: "/cdn" });
+await fastify.register(api, { prefix: "/api" });
+await fastify.register(cdn, { prefix: "/cdn" });
 
 const start = async () => {
   try {
