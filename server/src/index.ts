@@ -4,9 +4,15 @@ import { S3Connection } from "./connections/s3";
 import api from "./api/plugin";
 import cdn from "./cdn/plugin";
 import { PostgresConnection } from "./connections/pg";
+import { fastifyErrSerializer } from "./utils/errorsCollection";
 
 const fastify = Fastify({
-  logger: true,
+  logger: {
+    enabled: true,
+    serializers: {
+      err: fastifyErrSerializer
+    }
+  },
   pluginTimeout: 0,
   ajv: {
     customOptions: {
