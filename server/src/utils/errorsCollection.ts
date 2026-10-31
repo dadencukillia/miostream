@@ -1,5 +1,37 @@
 import { Static, Type } from "@sinclair/typebox";
-import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { FastifyError, FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import pino from "pino";
+
+/** An err serializer for Fastify tailored to custom errors from this module
+  *
+  * @example
+  * ```ts
+  * const fastify = Fastify({
+  *   logger: {
+  *     enabled: true,
+  *     serializers: {
+  *       err: fastifyErrSerializer
+  *     }
+  *   }
+  * });
+  * ```
+  */
+export function fastifyErrSerializer(e: FastifyError): {
+    type: string;
+    message: string;
+    stack: string;
+    [key: string]: unknown;
+} {
+  return e instanceof CustomError ? e.toLog() : pino.stdSerializers.err(e);
+}
+
+const serializeDetail = (d: unknown): unknown =>
+  d instanceof Error ? {
+    type: d.constructor.name,
+    message: d.message,
+    stack: d.stack ?? "",
+    ...(d.cause ? { cause: serializeDetail(d.cause) } : {}),
+  } : d;
 
 /**
  * Represents a custom domain error with status code, error collection context,
@@ -55,6 +87,7 @@ class CustomError extends Error {
   public withStatusCode(statusCode: number) {
     const error = new CustomError(this._collection, statusCode, this.message);
     const details = Object.freeze([...this._details]);
+    error.stack = this.stack;
     error._details = details;
     return error;
   }
@@ -67,6 +100,7 @@ class CustomError extends Error {
   public withMessage(message: string) {
     const error = new CustomError(this._collection, this._statusCode, message);
     const details = Object.freeze([...this._details]);
+    error.stack = this.stack;
     error._details = details;
     return error;
   }
@@ -79,8 +113,20 @@ class CustomError extends Error {
   public withDetails(...details: any[]) {
     const error = new CustomError(this._collection, this._statusCode, this.message);
     const detailValues = Object.freeze([...this._details, ...details]);
+    error.stack = this.stack;
     error._details = detailValues;
     return error;
+  }
+
+  public toLog() {
+    return {
+      type: "CustomError",
+      message: this.message,
+      statusCode: this._statusCode,
+      collection: this._collection.name,
+      details: this._details.map(serializeDetail),
+      stack: this.stack ?? "",
+    };
   }
 
   /**
