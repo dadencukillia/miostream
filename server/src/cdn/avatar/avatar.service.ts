@@ -1,22 +1,31 @@
+import sharp from "sharp";
 import type { FastifyBaseLogger } from "fastify";
 import type { S3Client } from "@aws-sdk/client-s3";
-import { getAvatarById, removeAvatarById, setAvatarById } from "./repos/avatarBucket.repo";
-import type { PostgresClient } from "@prisma/orm-postgres/runtime";
-import { getAvatarIdByUserId, setAvatarIdForUser, setAvatarIdForUserReturningOld } from "./repos/userDatabase.repo";
-import { processImage } from "./repos/image.repo";
-import type { UpdateAvatarResult } from "./dto";
+import {
+  getAvatarById,
+  removeAvatarById,
+  setAvatarById
+} from "./avatarBucket.repo";
 import { Pool } from "pg";
+import {
+  AvatarS3Error,
+  AvatarNotFoundError,
+  AvatarCouldntReachDBError,
+  AvatarAlreadyNoAvatarError,
+  AvatarAnotherRequestInProcessError,
+  AvatarInvalidImageError
+} from "./avatar.errors";
+import { AvatarUpdatedResponse } from "./avatar.schema";
+import { Static } from "@sinclair/typebox";
+import {
+  getAvatarIdByUserId,
+  safeUpdateUserAvatarReturningModificationFlag,
+  updateUserAvatarReturningOld
+} from "../../sqlc/users_sql";
 
-// Errors
-
-export class AvatarError extends Error { status = 500; }
-
-export class AvatarS3Error extends AvatarError { override status = 500; }
-export class AvatarNotFoundError extends AvatarError { override status = 404; }
-export class AvatarCouldntReachDBError extends AvatarError { override status = 500; }
-export class AvatarAlreadyNoAvatarError extends AvatarError { override status = 409; }
-export class AvatarAnotherRequestInProcessError extends AvatarError { override status = 409; }
-export class AvatarInvalidImageError extends AvatarError { override status = 400; }
+const AVATAR_WIDTH = 256;
+const AVATAR_HEIGHT = 256;
+const WEBP_QUALITY = 80;
 
 // Services
 
@@ -46,7 +55,10 @@ export async function resetUserAvatar(
   // Receive avatar id from database
 
   try {
-    avatarId = await setAvatarIdForUserReturningOld(db, userId, null);
+    avatarId = (await updateUserAvatarReturningOld(db, {
+      userId: userId,
+      newAvatarUrl: ""
+    }))!.avatarUrl;
   } catch(e) {
     logger.error(e);
     throw new AvatarCouldntReachDBError("couldn't reset user avatar");
@@ -72,7 +84,7 @@ export async function updateUserAvatarImage(
   logger: FastifyBaseLogger,
   userId: string,
   imageContent: Buffer
-): Promise<UpdateAvatarResult> {
+): Promise<Static<typeof AvatarUpdatedResponse>> {
   const newAvatarId = crypto.randomUUID().replaceAll("-", "");
 
   // Process image
@@ -80,7 +92,10 @@ export async function updateUserAvatarImage(
   let webpImage: Buffer;
 
   try {
-    webpImage = await processImage(imageContent);
+    webpImage = await sharp(imageContent)
+      .resize(AVATAR_WIDTH, AVATAR_HEIGHT, { fit: "cover" })
+      .webp({ quality: WEBP_QUALITY })
+      .toBuffer();
   } catch(e) {
     logger.error(e);
     throw new AvatarInvalidImageError("invalid image");
@@ -91,7 +106,9 @@ export async function updateUserAvatarImage(
   let oldAvatarId: string|null;
 
   try {
-    oldAvatarId = await getAvatarIdByUserId(db, userId);
+    oldAvatarId = (await getAvatarIdByUserId(db, {
+      userId: userId,
+    }))!.avatarUrl;
   } catch(e) {
     logger.error(e);
     throw new AvatarCouldntReachDBError("couldn't receive old avatar id");
@@ -108,16 +125,24 @@ export async function updateUserAvatarImage(
 
   // Update avatar in the database
 
-  try {
-    const updated = await setAvatarIdForUser(db, userId, oldAvatarId, newAvatarId);
-    if (!updated) {
+  {
+    let errorToThrow = new AvatarCouldntReachDBError("database avatar id update went wrong");
+    try {
+      const affected = (await safeUpdateUserAvatarReturningModificationFlag(db, {
+        userId: userId,
+        oldAvatarUrl: oldAvatarId!,
+        newAvatarUrl: newAvatarId
+      }))!.affected;
+      if (!affected) {
+        await removeAvatarById(s3, newAvatarId);
+        errorToThrow = new AvatarAnotherRequestInProcessError("concurrent requests conflict");
+        throw errorToThrow;
+      }
+    } catch(e) {
+      logger.error(e);
       await removeAvatarById(s3, newAvatarId);
-      throw new AvatarAnotherRequestInProcessError("concurrent requests conflict");
+      throw errorToThrow;
     }
-  } catch(e) {
-    logger.error(e);
-    await removeAvatarById(s3, newAvatarId);
-    throw new AvatarCouldntReachDBError("database avatar id update went wrong");
   }
 
   // Remove old avatar file
@@ -133,8 +158,8 @@ export async function updateUserAvatarImage(
 
   return {
     ok: true,
-    user: userId,
-    avatar: newAvatarId,
+    userId: userId,
+    avatarId: newAvatarId,
     format: "webp",
     url: `/cdn/avatar/${newAvatarId}.webp`
   };

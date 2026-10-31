@@ -294,3 +294,93 @@ export async function selectUserById(client: Client, args: SelectUserByIdArgs): 
     };
 }
 
+export const getAvatarIdByUserIdQuery = `-- name: GetAvatarIdByUserId :one
+SELECT avatar_url
+FROM public.users
+WHERE user_id = $1`;
+
+export interface GetAvatarIdByUserIdArgs {
+    userId: string;
+}
+
+export interface GetAvatarIdByUserIdRow {
+    avatarUrl: string;
+}
+
+export async function getAvatarIdByUserId(client: Client, args: GetAvatarIdByUserIdArgs): Promise<GetAvatarIdByUserIdRow | null> {
+    const result = await client.query({
+        text: getAvatarIdByUserIdQuery,
+        values: [args.userId],
+        rowMode: "array"
+    });
+    if (result.rows.length !== 1) {
+        return null;
+    }
+    const row = result.rows[0];
+    return {
+        avatarUrl: row[0]
+    };
+}
+
+export const safeUpdateUserAvatarReturningModificationFlagQuery = `-- name: SafeUpdateUserAvatarReturningModificationFlag :one
+UPDATE public.users
+SET avatar_url = $2::text
+WHERE user_id = $1
+  AND avatar_url = $3::text
+RETURNING count(*) = 1 AS affected`;
+
+export interface SafeUpdateUserAvatarReturningModificationFlagArgs {
+    userId: string;
+    newAvatarUrl: string;
+    oldAvatarUrl: string;
+}
+
+export interface SafeUpdateUserAvatarReturningModificationFlagRow {
+    affected: boolean;
+}
+
+export async function safeUpdateUserAvatarReturningModificationFlag(client: Client, args: SafeUpdateUserAvatarReturningModificationFlagArgs): Promise<SafeUpdateUserAvatarReturningModificationFlagRow | null> {
+    const result = await client.query({
+        text: safeUpdateUserAvatarReturningModificationFlagQuery,
+        values: [args.userId, args.newAvatarUrl, args.oldAvatarUrl],
+        rowMode: "array"
+    });
+    if (result.rows.length !== 1) {
+        return null;
+    }
+    const row = result.rows[0];
+    return {
+        affected: row[0]
+    };
+}
+
+export const updateUserAvatarReturningOldQuery = `-- name: UpdateUserAvatarReturningOld :one
+UPDATE public.users
+SET avatar_url = $2::text
+WHERE user_id = $1
+RETURNING avatar_url`;
+
+export interface UpdateUserAvatarReturningOldArgs {
+    userId: string;
+    newAvatarUrl: string;
+}
+
+export interface UpdateUserAvatarReturningOldRow {
+    avatarUrl: string;
+}
+
+export async function updateUserAvatarReturningOld(client: Client, args: UpdateUserAvatarReturningOldArgs): Promise<UpdateUserAvatarReturningOldRow | null> {
+    const result = await client.query({
+        text: updateUserAvatarReturningOldQuery,
+        values: [args.userId, args.newAvatarUrl],
+        rowMode: "array"
+    });
+    if (result.rows.length !== 1) {
+        return null;
+    }
+    const row = result.rows[0];
+    return {
+        avatarUrl: row[0]
+    };
+}
+

@@ -1,8 +1,7 @@
 import { test, beforeAll, expect, describe, afterEach } from "bun:test";
 import { S3Client, CreateBucketCommand } from "@aws-sdk/client-s3";
 import sharp from "sharp";
-import { processImage } from "../../src/cdn/avatar/repos/image.repo";
-import { setAvatarById, getAvatarById, removeAvatarById } from "../../src/cdn/avatar/repos/avatarBucket.repo";
+import { setAvatarById, getAvatarById, removeAvatarById } from "../../src/cdn/avatar/avatarBucket.repo";
 import * as config from "../../src/config";
 
 const BUCKET_NAME = "avatars";
@@ -30,30 +29,17 @@ describe("Avatar S3 & Image Service Integration Tests", () => {
   async function createSampleImageBuffer(): Promise<Buffer> {
     return await sharp({
       create: {
-        width: 500,
-        height: 500,
+        width: 256,
+        height: 256,
         channels: 4,
         background: { r: 255, g: 0, b: 0, alpha: 1 },
       },
     })
-      .png()
+      .webp()
       .toBuffer();
   }
 
   // Tests
-
-  describe("processImage()", () => {
-    test("webp convertation", async () => {
-      const rawImage = await createSampleImageBuffer();
-
-      const processed = await processImage(rawImage);
-      const metadata = await sharp(processed).metadata();
-
-      expect(metadata.format).toBe("webp");
-      expect(metadata.width).toBe(256);
-      expect(metadata.height).toBe(256);
-    });
-  });
 
   describe("Avatar CRUD Operations", () => {
     const testAvatarId = "user-123-test";
@@ -64,9 +50,8 @@ describe("Avatar S3 & Image Service Integration Tests", () => {
 
     test("setAvatarById(), getAvatarById() sequence", async () => {
       const sampleImage = await createSampleImageBuffer();
-      const processedImage = await processImage(sampleImage);
 
-      await setAvatarById(s3Client, testAvatarId, processedImage);
+      await setAvatarById(s3Client, testAvatarId, sampleImage);
 
       const downloadedAvatar = await getAvatarById(s3Client, testAvatarId);
 
@@ -96,5 +81,5 @@ describe("Avatar S3 & Image Service Integration Tests", () => {
     });
   });
 
-  // TODO: tests for services when `src/cdn/avatar/repos/userDatabase.repo.ts` will be finished
+  // TODO: tests for database interactions
 });

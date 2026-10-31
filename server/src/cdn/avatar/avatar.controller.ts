@@ -1,14 +1,17 @@
-import { FastifyInstance, type FastifyReply, type FastifyRequest } from "fastify";
+import { type FastifyReply, type FastifyRequest } from "fastify";
 import "../../context";
 import { getAvatar, resetUserAvatar, updateUserAvatarImage } from "./avatar.service";
-
-interface GetAvatarParams {
-  avatarId: string,
-}
+import {
+  AvatarImageSlugParam,
+  GetAvatarReturnType,
+  ResetAvatarReturnType,
+  UpdateAvatarReturnType
+} from "./avatar.schema";
+import type { Static } from "@sinclair/typebox";
 
 export const getAvatarController = async (
-  request: FastifyRequest<{ Params: GetAvatarParams }>,
-  reply: FastifyReply
+  request: FastifyRequest<{ Params: Static<typeof AvatarImageSlugParam> }>,
+  reply: FastifyReply<{ Params: Static<typeof AvatarImageSlugParam>, Reply: GetAvatarReturnType }>
 ) => {
   const { avatarId } = request.params;
 
@@ -19,23 +22,12 @@ export const getAvatarController = async (
     .send(buffer);
 };
 
-export const resetAvatarController = async (
-  request: FastifyRequest,
-  reply: FastifyReply
-) => {
-  // TODO: replace on working auth middleware context
-  const userId = "user";
-
-  await resetUserAvatar(request.server.s3, request.server.pg, request.log, userId);
-  return reply.send({ ok: true });
-};
-
 export const updateAvatarController = async (
   request: FastifyRequest<{ Body: string }>,
-  reply: FastifyReply
+  reply: FastifyReply<{ Body: string, Reply: UpdateAvatarReturnType }>
 ) => {
   // TODO: replace on working auth middleware context
-  const userId = "user";
+  const userId = "844bb852-bd3a-46d8-8062-a4e43b34f454";
 
   const result = await updateUserAvatarImage(
     request.server.s3, request.server.pg, 
@@ -45,4 +37,15 @@ export const updateAvatarController = async (
   );
 
   return reply.send(result);
+};
+
+export const resetAvatarController = async (
+  request: FastifyRequest<{}>,
+  reply: FastifyReply<{ Reply: ResetAvatarReturnType }>
+) => {
+  // TODO: replace on working auth middleware context
+  const userId = "844bb852-bd3a-46d8-8062-a4e43b34f454";
+
+  await resetUserAvatar(request.server.s3, request.server.pg, request.log, userId);
+  return reply.send({ ok: true });
 };
