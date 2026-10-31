@@ -279,6 +279,8 @@ export const ErrorResponseSchema = Type.Object(
 // Route schemas passed directly to Fastify.
 
 export const listAnimesRouteSchema = {
+	tags: ["Anime"],
+	summary: "List animes",
 	querystring: ListAnimesQuerySchema,
 	response: {
 		200: AnimeListResponseSchema,
@@ -288,6 +290,8 @@ export const listAnimesRouteSchema = {
 } as const;
 
 export const getAnimeRouteSchema = {
+	tags: ["Anime"],
+	summary: "Get anime by id",
 	params: AnimeIdParamsSchema,
 	response: {
 		200: AnimeSchema,
@@ -298,6 +302,8 @@ export const getAnimeRouteSchema = {
 } as const;
 
 export const getAnimeBySlugRouteSchema = {
+	tags: ["Anime"],
+	summary: "Get anime by slug",
 	params: AnimeSlugParamsSchema,
 	response: {
 		200: AnimeSchema,
@@ -308,6 +314,8 @@ export const getAnimeBySlugRouteSchema = {
 } as const;
 
 export const createAnimeRouteSchema = {
+	tags: ["Anime"],
+	summary: "Create anime",
 	body: CreateAnimeBodySchema,
 	response: {
 		201: AnimeSchema,
@@ -318,6 +326,8 @@ export const createAnimeRouteSchema = {
 } as const;
 
 export const updateAnimeRouteSchema = {
+	tags: ["Anime"],
+	summary: "Update anime",
 	params: AnimeIdParamsSchema,
 	body: UpdateAnimeBodySchema,
 	response: {
@@ -330,6 +340,8 @@ export const updateAnimeRouteSchema = {
 } as const;
 
 export const deleteAnimeRouteSchema = {
+	tags: ["Anime"],
+	summary: "Delete anime",
 	params: AnimeIdParamsSchema,
 	response: {
 		204: Type.Null(),
