@@ -1,5 +1,5 @@
 -- name: CreateUserLink :one
-INSERT INTO public.user_links (
+INSERT INTO public.user_links(
     "user_id",
     "user_link_url"
 ) VALUES (

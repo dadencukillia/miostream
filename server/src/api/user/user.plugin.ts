@@ -9,7 +9,7 @@ const plugin: FastifyPluginAsync = async (fastify, _opts) => {
 
     fastify.setErrorHandler<FastifyError>((error, request, reply) => {
         if (reply.sent) return;
-        
+
         if (error.validation) {
             return reply.status(400).send({
                 ok: false,
@@ -24,7 +24,7 @@ const plugin: FastifyPluginAsync = async (fastify, _opts) => {
             return reply.status(error.status).send({ ok: false, message: error.message });
         }
 
-        if (error.statusCode && error.statusCode >= 400 && error.statusCode < 500) {
+        if (error.statusCode && error.statusCode >= 400 && !Number.isNaN(error.statusCode)) {
             return reply.status(error.statusCode).send({ ok: false, message: error.message });
         }
 

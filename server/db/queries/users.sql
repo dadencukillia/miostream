@@ -1,5 +1,5 @@
 -- name: CreateUser :one
-INSERT INTO public.users (
+INSERT INTO public.users(
     "nickname",
     "full_name",
     "email",
@@ -12,7 +12,7 @@ INSERT INTO public.users (
     @email, 
     sqlc.narg('password_hash'),
     sqlc.narg('google_id'),
-    COALESCE(sqlc.narg('timezone'), 'Europe/Kyiv')
+    coalesce(sqlc.narg('timezone'), 'Europe/Kyiv')
 )
 RETURNING 
     "user_id",
@@ -111,7 +111,7 @@ SET
     "full_name"  = @full_name,
     "bio"        = @bio,
     "timezone"   = @timezone,
-    "updated_at" = NOW()
+    "updated_at" = now()
 WHERE "user_id" = @user_id::uuid
 RETURNING 
     "user_id",
@@ -135,7 +135,7 @@ RETURNING
 UPDATE public.users
 SET
     "avatar_url" = @avatar_url,
-    "updated_at" = NOW()
+    "updated_at" = now()
 WHERE "user_id" = @user_id::uuid
 RETURNING 
     "user_id",
@@ -166,7 +166,7 @@ SET
         WHEN @set_background::boolean
         THEN sqlc.narg('profile_background_url')::text
         ELSE profile_background_url END,
-    "updated_at" = NOW()
+    "updated_at" = now()
 WHERE "user_id" = @user_id::uuid
 RETURNING 
     "user_id",
@@ -190,7 +190,7 @@ RETURNING
 UPDATE public.users
 SET 
     "password_hash" = @password_hash,
-    "updated_at"    = NOW()
+    "updated_at"    = now()
 WHERE "user_id" = @user_id::uuid
 RETURNING "user_id";
 
@@ -200,7 +200,7 @@ SET
     "max_streak"        = @max_streak,
     "streak_start_date" = sqlc.narg('streak_start_date'),
     "last_watch_date"   = sqlc.narg('last_watch_date'),
-    "updated_at"        = NOW()
+    "updated_at"        = now()
 WHERE "user_id" = @user_id::uuid
 RETURNING 
     "user_id",
@@ -224,7 +224,7 @@ RETURNING
 UPDATE public.users
 SET
     "user_status" = @user_status,
-    "updated_at"  = NOW()
+    "updated_at"  = now()
 WHERE "user_id" = @user_id::uuid
 RETURNING 
     "user_id",
@@ -248,7 +248,7 @@ RETURNING
 UPDATE public.users
 SET 
     "user_role"   = @user_role,
-    "updated_at"  = NOW()
+    "updated_at"  = now()
 WHERE "user_id" = @user_id::uuid
 RETURNING 
     "user_id",
