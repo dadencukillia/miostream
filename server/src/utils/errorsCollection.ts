@@ -2,20 +2,20 @@ import { Static, Type } from "@sinclair/typebox";
 import { FastifyError, FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import pino from "pino";
 
-/** An err serializer for Fastify tailored to custom errors from this module
-  *
-  * @example
-  * ```ts
-  * const fastify = Fastify({
-  *   logger: {
-  *     enabled: true,
-  *     serializers: {
-  *       err: fastifyErrSerializer
-  *     }
-  *   }
-  * });
-  * ```
-  */
+/**
+ * An err serializer for Fastify tailored to custom errors from this module
+ * @example
+ * ```ts
+ * const fastify = Fastify({
+ *   logger: {
+ *     enabled: true,
+ *     serializers: {
+ *       err: fastifyErrSerializer
+ *     }
+ *   }
+ * });
+ * ```
+ */
 export function fastifyErrSerializer(e: FastifyError): {
     type: string;
     message: string;
