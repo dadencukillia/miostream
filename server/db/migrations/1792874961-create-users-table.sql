@@ -30,9 +30,6 @@ CREATE UNIQUE INDEX idx_users_unique_lower_nickname ON public.users(lower(nickna
 CREATE UNIQUE INDEX idx_users_unique_lower_email ON public.users(lower(email));
 
 -- migrate:down
-DROP INDEX IF EXISTS public.idx_users_unique_lower_email;
-DROP INDEX IF EXISTS public.idx_users_unique_lower_nickname;
-DROP INDEX IF EXISTS public.idx_users_status;
 DROP TABLE IF EXISTS public.users;
 DROP TYPE IF EXISTS public.user_role_enum;
 DROP TYPE IF EXISTS public.user_status_enum;
