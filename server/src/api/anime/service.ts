@@ -520,7 +520,7 @@ async function repoUpdateAnime(
 			productionStudio: merged.productionStudio ?? existing.productionStudio,
 			malId: merged.malId === undefined ? existing.malId : (merged.malId === null ? null : String(merged.malId)),
 			anilistId: merged.anilistId === undefined ? existing.anilistId : (merged.anilistId === null ? null : String(merged.anilistId)),
-			hikkaId: merged.hikkaId ?? existing.hikkaId,
+			hikkaId: merged.hikkaId === undefined ? existing.hikkaId : (merged.hikkaId === null ? null : merged.hikkaId),
 			imdbId: merged.imdbId ?? existing.imdbId,
 			yearReleased: merged.yearReleased ?? existing.yearReleased,
 			avgEpisodeDuration: merged.avgEpisodeDuration ?? existing.avgEpisodeDuration,
@@ -533,6 +533,7 @@ async function repoUpdateAnime(
 		});
 		if (!updated) return null;
 		if (genres !== undefined) {
+			await client.query("DELETE FROM genres WHERE anime_id = $1", [animeId]);
 			if (genres.length > 0) {
 				await createAnimeGenres(client, { animeId, genres });
 			}
@@ -542,5 +543,6 @@ async function repoUpdateAnime(
 }
 
 async function repoDeleteAnime(db: Pool, animeId: string): Promise<boolean> {
-	return false;
+	const result = await db.query("DELETE FROM animes WHERE anime_id = $1 RETURNING anime_id", [animeId]);
+	return (result.rowCount ?? 0) > 0;
 }
