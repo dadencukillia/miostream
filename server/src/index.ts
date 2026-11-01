@@ -36,8 +36,8 @@ await fastify.register(swagger, {
     },
     servers: [
       {
-        url: 'http://localhost:8080',
-        description: 'Local Server',
+        url: '/',
+        description: 'Your current server',
       },
     ],
     components: {
