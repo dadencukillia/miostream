@@ -10,13 +10,13 @@ import type {
 	CreateAnimeRequest,
 	Genre,
 	UpdateAnimeRequest,
-} from "./dto";
+} from "./anime.dto";
 import {
 	AnimeAlreadyExistsError,
 	AnimeError,
 	AnimeInvalidError,
 	AnimeNotFoundError,
-} from "./errors";
+} from "./anime.errors";
 import {
 	countAnimes,
 	createAnime as createAnimeQuery,
@@ -32,7 +32,7 @@ import {
 	getOngoingAnimes,
 	getAvailableAnimesByCurrentYear,
 } from "../../sqlc/animes_sql";
-import { ANIME_FORMATS, ANIME_STATUSES, GENRES, MPAA_RATINGS } from "./schema";
+import { ANIME_FORMATS, ANIME_STATUSES, GENRES, MPAA_RATINGS } from "./anime.schema";
 
 const UUID_RE =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

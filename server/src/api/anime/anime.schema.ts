@@ -188,18 +188,18 @@ export const AnimeSchema = Type.Object(
 export const CreateAnimeBodySchema = Type.Object(
 	{
 		slug: slugSchema,
-		titleUa: Type.Optional(Type.String({ minLength: 1, maxLength: 400 })),
-		titleEn: Type.Optional(Type.String({ maxLength: 400 })),
-		titleOriginal: Type.Optional(Type.String({ maxLength: 400 })),
+		titleUa: Type.Optional(Type.String({ minLength: 1 })),
+		titleEn: Type.Optional(Type.String({ minLength: 1 })),
+		titleOriginal: Type.Optional(Type.String({ minLength: 1 })),
 		animeDescription: Type.Optional(Type.String()),
-		coverUrl: Type.Optional(Type.String({ maxLength: 2048 })),
-		productionStudio: Type.Optional(Type.String({ maxLength: 255 })),
+		coverUrl: Type.Optional(Type.String()),
+		productionStudio: Type.Optional(Type.String()),
 		malId: Type.Optional(Nullable(Type.Integer({ minimum: 1 }))),
 		anilistId: Type.Optional(Nullable(Type.Integer({ minimum: 1 }))),
-		hikkaId: Type.Optional(Nullable(Type.String({ maxLength: 64 }))),
-		imdbId: Type.Optional(Nullable(Type.String({ maxLength: 32 }))),
+		hikkaId: Type.Optional(Nullable(Type.String({ minLength: 1}))),
+		imdbId: Type.Optional(Nullable(Type.String({ minLength: 1, maxLength: 32 }))),
 		yearReleased: Type.Optional(
-			Nullable(Type.Integer({ minimum: 1900})),
+			Nullable(Type.Integer({ minimum: 1900 })),
 		),
 		avgEpisodeDuration: Type.Optional(
 			Type.Integer({ minimum: 0}),

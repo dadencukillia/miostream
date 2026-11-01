@@ -13,7 +13,7 @@ import type {
 	MPAA_RATINGS,
 	PaginationSchema,
 	UpdateAnimeBodySchema,
-} from "./schema";
+} from "./anime.schema";
 
 export type Anime = Type.Static<typeof AnimeSchema>;
 export type CreateAnimeRequest = Type.Static<typeof CreateAnimeBodySchema>;

@@ -5,8 +5,8 @@ import type {
 	AnimeSlugParams,
 	CreateAnimeRequest,
 	UpdateAnimeRequest,
-} from "./dto";
-import * as animeService from "./service";
+} from "./anime.dto";
+import * as animeService from "./anime.service";
 
 export async function listAnimes(
 	request: FastifyRequest<{ Querystring: AnimeListQuery }>,
