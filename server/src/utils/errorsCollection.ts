@@ -1,4 +1,4 @@
-import { Static, Type } from "@sinclair/typebox";
+import { Static, Type } from "typebox";
 import { FastifyError, FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import pino from "pino";
 
@@ -23,6 +23,14 @@ export function fastifyErrSerializer(e: FastifyError): {
     [key: string]: unknown;
 } {
   return e instanceof CustomError ? e.toLog() : pino.stdSerializers.err(e);
+}
+
+function isFastifyValidationError(error: unknown): error is FastifyError {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    Array.isArray((error as FastifyError).validation)
+  );
 }
 
 const serializeDetail = (d: unknown): unknown =>
@@ -212,7 +220,8 @@ export class ErrorsCollection {
    */
   public setupErrorHandler(
     fastify: FastifyInstance,
-    safeCollections: ErrorsCollection[] = [this]
+    safeCollections: ErrorsCollection[] = [this],
+    passValidationErrors: boolean = true
   ) {
     fastify.setErrorHandler((
       error: unknown,
@@ -238,6 +247,17 @@ export class ErrorsCollection {
         }
       } else {
         request.log.error(error);
+      }
+
+      if (passValidationErrors) {
+        if (isFastifyValidationError(error) && error.validation) {
+          return reply
+            .status(400)
+            .send({
+              ok: false,
+              message: error.message
+            } as ErrorResponseReturnType);
+        }
       }
 
       return reply
