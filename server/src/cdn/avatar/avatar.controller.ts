@@ -7,7 +7,7 @@ import {
   ResetAvatarReturnType,
   UpdateAvatarReturnType
 } from "./avatar.schema";
-import type { Static } from "@sinclair/typebox";
+import type { Static } from "typebox";
 
 export const getAvatarController = async (
   request: FastifyRequest<{ Params: Static<typeof AvatarImageSlugParam> }>,
