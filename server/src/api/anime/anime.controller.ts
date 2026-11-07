@@ -8,116 +8,116 @@ import type {
 } from "./anime.dto";
 import * as animeService from "./anime.service";
 
-export async function listAnimes(
+export const listAnimes = async (
 	request: FastifyRequest<{ Querystring: AnimeListQuery }>,
 	reply: FastifyReply,
-) {
+) => {
 	const result = await animeService.listAnimes(
 		request.server.pg,
 		request.query,
 	);
 	return reply.status(200).send(result);
-}
+};
 
-export async function getAnime(
+export const getAnime = async (
 	request: FastifyRequest<{ Params: AnimeIdParams }>,
 	reply: FastifyReply,
-) {
+) => {
 	const anime = await animeService.getAnime(
 		request.server.pg,
 		request.params.id,
 	);
 	return reply.status(200).send(anime);
-}
+};
 
-export async function getAnimeBySlug(
+export const getAnimeBySlug = async (
 	request: FastifyRequest<{ Params: AnimeSlugParams }>,
 	reply: FastifyReply,
-) {
+) => {
 	const anime = await animeService.getAnimeBySlug(
 		request.server.pg,
 		request.params.slug,
 	);
 	return reply.status(200).send(anime);
-}
+};
 
-export async function createAnime(
+export const createAnime = async (
 	request: FastifyRequest<{ Body: CreateAnimeRequest }>,
 	reply: FastifyReply,
-) {
+) => {
 	const anime = await animeService.createAnime(request.server.pg, request.body);
 	return reply.status(201).send(anime);
-}
+};
 
-export async function updateAnime(
+export const updateAnime = async (
 	request: FastifyRequest<{
 		Params: AnimeIdParams;
 		Body: UpdateAnimeRequest;
 	}>,
 	reply: FastifyReply,
-) {
+) => {
 	const anime = await animeService.updateAnime(
 		request.server.pg,
 		request.params.id,
 		request.body,
 	);
 	return reply.status(200).send(anime);
-}
+};
 
-export async function deleteAnime(
+export const deleteAnime = async (
 	request: FastifyRequest<{ Params: AnimeIdParams }>,
 	reply: FastifyReply,
-) {
+) => {
 	await animeService.deleteAnime(request.server.pg, request.params.id);
 	return reply.status(204).send();
-}
+};
 
-export async function countByStatus(
+export const countByStatus = async (
 	request: FastifyRequest,
 	reply: FastifyReply,
-) {
+) => {
 	const result = await animeService.getAnimesCountByStatus(request.server.pg);
 	return reply.status(200).send(result);
-}
+};
 
-export async function studioStats(
+export const studioStats = async (
 	request: FastifyRequest,
 	reply: FastifyReply,
-) {
+) => {
 	const result = await animeService.getStudioStats(request.server.pg);
 	return reply.status(200).send(result);
-}
+};
 
-export async function formatStats(
+export const formatStats = async (
 	request: FastifyRequest,
 	reply: FastifyReply,
-) {
+) => {
 	const result = await animeService.getFormatStats(request.server.pg);
 	return reply.status(200).send(result);
-}
+};
 
-export async function studiosAboveAverage(
+export const studiosAboveAverage = async (
 	request: FastifyRequest,
 	reply: FastifyReply,
-) {
+) => {
 	const result = await animeService.getStudiosAboveAverage(request.server.pg);
 	return reply.status(200).send(result);
-}
+};
 
-export async function aboveAverageEpisodes(
+export const aboveAverageEpisodes = async (
 	request: FastifyRequest,
 	reply: FastifyReply,
-) {
+) => {
 	const result = await animeService.getAnimesAboveAverageEpisodes(
 		request.server.pg,
 	);
 	return reply.status(200).send(result);
-}
+};
 
-export async function maxEpisodes(
+export const maxEpisodes = async (
 	request: FastifyRequest,
 	reply: FastifyReply,
-) {
+) => {
 	const result = await animeService.getAnimesWithMaxEpisodes(request.server.pg);
 	return reply.status(200).send(result);
-}
+};

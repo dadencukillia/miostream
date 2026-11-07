@@ -1,12 +1,12 @@
-import type { Pool } from 'pg';
-import * as usersSqlc from '../../sqlc/users_sql';
-import * as userLinksSqlc from '../../sqlc/user_links_sql';
+import type { Pool } from "pg";
+import * as usersSqlc from "../../sqlc/users_sql";
+import * as userLinksSqlc from "../../sqlc/user_links_sql";
 import {
     UserError,
     UserInvalidError,
     UserNotFoundError,
     UserAlreadyExistsError
-} from './user.errors';
+} from "./user.errors";
 import type {
     CreateUserDto,
     UpdateUserProfileDto,
@@ -14,8 +14,8 @@ import type {
     UpdateUserPasswordDto,
     UserStatus,
     UserRole
-} from './user.schema';
-import { hashPassword, verifyPassword } from '../../utils/password';
+} from "./user.schema";
+import { hashPassword, verifyPassword } from "../../utils/password";
 
 interface PostgresError extends Error {
     code?: string;

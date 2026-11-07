@@ -1,4 +1,4 @@
-import { Type, type Static, type TSchema, type TSchemaOptions } from 'typebox';
+import { Type, type Static, type TSchema, type TSchemaOptions } from "typebox";
 
 // Enums
 

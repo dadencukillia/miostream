@@ -1,5 +1,5 @@
-import type { FastifyRequest, FastifyReply } from 'fastify';
-import { UserInvalidError } from './user.errors';
+import type { FastifyRequest, FastifyReply } from "fastify";
+import { UserInvalidError } from "./user.errors";
 import type {
     UserIdParamDto,
     UserLinkParamDto,
@@ -16,9 +16,9 @@ import type {
     CreateUserLinkDto,
     UpdateUserLinkDto
 } from './user.schema';
-import * as userService from './user.service';
-import { isSafeHttpUrl } from '../../utils/urls';
-import { isValidTimezone } from '../../utils/timezones';
+import * as services from "./user.service";
+import { isSafeHttpUrl } from "../../utils/urls";
+import { isValidTimezone } from "../../utils/timezones";
 
 export const createUser = async (
     request: FastifyRequest<{ Body: CreateUserDto }>,
@@ -35,7 +35,7 @@ export const createUser = async (
         throw new UserInvalidError(`Invalid IANA timezone: '${timezone}'`);
     }
 
-    const user = await userService.createUser(request.server.pg, request.body);
+    const user = await services.createUser(request.server.pg, request.body);
     return reply.status(201).send(user);
 };
 
@@ -43,7 +43,7 @@ export const getUserById = async (
     request: FastifyRequest<{ Params: UserIdParamDto }>,
     reply: FastifyReply<{ Params: UserIdParamDto; Reply: UserResponseDto }>
 ) => {
-    const user = await userService.getUserById(request.server.pg, request.params.userId);
+    const user = await services.getUserById(request.server.pg, request.params.userId);
     return reply.status(200).send(user);
 };
 
@@ -53,7 +53,7 @@ export const deleteUser = async (
 ) => {
     // TODO(auth): revoke user sessions after deletion.
     // TODO(admin): forbid deleting the last admin.
-    await userService.deleteUserById(request.server.pg, request.params.userId);
+    await services.deleteUserById(request.server.pg, request.params.userId);
     return reply.status(204).send();
 };
 
@@ -71,7 +71,7 @@ export const updateUserProfile = async (
         throw new UserInvalidError('Nickname and full name cannot consist only of whitespace');
     }
 
-    const user = await userService.updateUserProfile(
+    const user = await services.updateUserProfile(
         request.server.pg,
         request.params.userId,
         request.body
@@ -89,7 +89,7 @@ export const updateUserAvatar = async (
         throw new UserInvalidError('Avatar URL must use http or https protocol');
     }
 
-    const user = await userService.updateUserAvatar(
+    const user = await services.updateUserAvatar(
         request.server.pg,
         request.params.userId,
         avatarUrl
@@ -115,7 +115,7 @@ export const updateUserCustomization = async (
         throw new UserInvalidError('Profile background URL must use http or https protocol');
     }
 
-    const user = await userService.updateUserCustomization(
+    const user = await services.updateUserCustomization(
         request.server.pg,
         request.params.userId,
         request.body
@@ -134,7 +134,7 @@ export const updateUserPassword = async (
         throw new UserInvalidError('New password must be different from the old password');
     }
 
-    await userService.updateUserPassword(
+    await services.updateUserPassword(
         request.server.pg,
         request.params.userId,
         request.body
@@ -147,7 +147,7 @@ export const updateUserStatus = async (
     reply: FastifyReply<{ Params: UserIdParamDto; Body: UpdateUserStatusDto; Reply: UserResponseDto }>
 ) => {
     // TODO(admin): forbid self-ban; revoke sessions on ban/deactivation;
-    const user = await userService.updateUserStatus(
+    const user = await services.updateUserStatus(
         request.server.pg,
         request.params.userId,
         request.body.userStatus
@@ -160,7 +160,7 @@ export const updateUserRole = async (
     reply: FastifyReply<{ Params: UserIdParamDto; Body: UpdateUserRoleDto; Reply: UserResponseDto }>
 ) => {
     // TODO(admin): forbid self-demotion and removing the last admin;
-    const user = await userService.updateUserRole(
+    const user = await services.updateUserRole(
         request.server.pg,
         request.params.userId,
         request.body.userRole
@@ -178,7 +178,7 @@ export const createUserLink = async (
         throw new UserInvalidError('Link URL must use http or https protocol');
     }
 
-    const link = await userService.createUserLink(
+    const link = await services.createUserLink(
         request.server.pg,
         request.params.userId,
         userLinkUrl
@@ -190,7 +190,7 @@ export const listUserLinks = async (
     request: FastifyRequest<{ Params: UserIdParamDto }>,
     reply: FastifyReply<{ Params: UserIdParamDto; Reply: UserLinkListResponseDto }>
 ) => {
-    const links = await userService.listUserLinksByUserId(request.server.pg, request.params.userId);
+    const links = await services.listUserLinksByUserId(request.server.pg, request.params.userId);
     return reply.status(200).send(links);
 };
 
@@ -204,7 +204,7 @@ export const updateUserLink = async (
         throw new UserInvalidError('Link URL must use http or https protocol');
     }
 
-    const link = await userService.updateUserLink(
+    const link = await services.updateUserLink(
         request.server.pg,
         request.params.userId,
         request.params.userLinkId,
@@ -217,7 +217,7 @@ export const deleteUserLink = async (
     request: FastifyRequest<{ Params: UserLinkParamDto }>,
     reply: FastifyReply<{ Params: UserLinkParamDto; Reply: void }>
 ) => {
-    await userService.deleteUserLinkById(
+    await services.deleteUserLinkById(
         request.server.pg,
         request.params.userId,
         request.params.userLinkId

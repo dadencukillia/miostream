@@ -16,7 +16,7 @@ import {
   AvatarInvalidImageError
 } from "./avatar.errors";
 import { AvatarUpdatedResponse } from "./avatar.schema";
-import { Static } from "@sinclair/typebox";
+import { Static } from "typebox";
 import {
   getAvatarIdByUserId,
   safeUpdateUserAvatarReturningModificationFlag,

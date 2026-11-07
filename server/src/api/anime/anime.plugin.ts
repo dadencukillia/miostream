@@ -1,9 +1,9 @@
-import type { FastifyPluginAsync, FastifyError } from "fastify";
+import type { FastifyPluginAsync, FastifyError, FastifyInstance } from "fastify";
 import { AnimeError } from "./anime.errors";
-import * as animeSchema from "./anime.schema";
-import * as animeController from "./anime.controller";
+import * as schemas from "./anime.schema";
+import * as controllers from "./anime.controller";
 
-const plugin: FastifyPluginAsync = async (fastify, _opts) => {
+const modulePlugin: FastifyPluginAsync = async (fastify: FastifyInstance, _opts: {}) => {
   fastify.setErrorHandler<FastifyError>((error, request, reply) => {
     if (reply.sent) return;
 
@@ -40,51 +40,20 @@ const plugin: FastifyPluginAsync = async (fastify, _opts) => {
     });
   });
 
-  fastify.get(
-    "/",
-    { schema: animeSchema.listAnimesRouteSchema },
-    animeController.listAnimes,
-  );
-//TODO: summ slug + id
-  fastify.get(
-    "/slug/:slug",
-    { schema: animeSchema.getAnimeBySlugRouteSchema },
-    animeController.getAnimeBySlug,
-  );
-  fastify.get(
-    "/:id",
-    { schema: animeSchema.getAnimeRouteSchema },
-    animeController.getAnime,
-  );
-//
-  fastify.post(
-    "/",
-    { schema: animeSchema.createAnimeRouteSchema },
-    animeController.createAnime,
-  );
-  fastify.patch(
-    "/:id",
-    { schema: animeSchema.updateAnimeRouteSchema },
-    animeController.updateAnime,
-  );
-  fastify.delete(
-    "/:id",
-    { schema: animeSchema.deleteAnimeRouteSchema },
-    animeController.deleteAnime,
-  );
+  fastify.get("/", { schema: schemas.listAnimesRouteSchema }, controllers.listAnimes);
+  //TODO: summ slug + id
+  fastify.get("/slug/:slug", { schema: schemas.getAnimeBySlugRouteSchema }, controllers.getAnimeBySlug);
+  fastify.get("/:id", { schema: schemas.getAnimeRouteSchema }, controllers.getAnime);
+  fastify.post("/", { schema: schemas.createAnimeRouteSchema }, controllers.createAnime);
+  fastify.patch("/:id", { schema: schemas.updateAnimeRouteSchema }, controllers.updateAnime);
+  fastify.delete("/:id", { schema: schemas.deleteAnimeRouteSchema }, controllers.deleteAnime);
 
-  fastify.get("/stats/by-status", animeController.countByStatus);
-  fastify.get("/stats/by-studio", animeController.studioStats);
-  fastify.get("/stats/by-format", animeController.formatStats);
-  fastify.get(
-    "/stats/studios-above-average",
-    animeController.studiosAboveAverage,
-  );
-  fastify.get(
-    "/stats/above-average-episodes",
-    animeController.aboveAverageEpisodes,
-  );
-  fastify.get("/stats/max-episodes", animeController.maxEpisodes);
+  fastify.get("/stats/by-status", controllers.countByStatus);
+  fastify.get("/stats/by-studio", controllers.studioStats);
+  fastify.get("/stats/by-format", controllers.formatStats);
+  fastify.get("/stats/studios-above-average", controllers.studiosAboveAverage);
+  fastify.get("/stats/above-average-episodes", controllers.aboveAverageEpisodes);
+  fastify.get("/stats/max-episodes", controllers.maxEpisodes);
 };
 
-export default plugin;
+export default modulePlugin;
