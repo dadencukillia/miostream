@@ -3,7 +3,7 @@ import type { FastifySchema } from "fastify";
 
 // Primitives
 
-export const AvatarImageSlugParam = Type.Object({
+export const AvatarIdParam = Type.Object({
   avatarId: Type.String({ description: "avatar ID" }),
 });
 
@@ -30,7 +30,7 @@ export const AvatarSuccessResponse = Type.Object({
 export const AvatarBinaryContentResponse = Type.Any({ description: "binary format of image/webp" });
 
 export const getAvatarSchema: FastifySchema = {
-  params: AvatarImageSlugParam,
+  params: AvatarIdParam,
   response: {
     200: AvatarBinaryContentResponse,
     404: AvatarErrorResponse,

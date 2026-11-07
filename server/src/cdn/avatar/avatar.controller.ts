@@ -2,7 +2,7 @@ import { type FastifyReply, type FastifyRequest } from "fastify";
 import "../../context";
 import { getAvatar, resetUserAvatar, updateUserAvatarImage } from "./avatar.service";
 import {
-  AvatarImageSlugParam,
+  AvatarIdParam,
   GetAvatarReturnType,
   ResetAvatarReturnType,
   UpdateAvatarReturnType
@@ -10,8 +10,8 @@ import {
 import type { Static } from "typebox";
 
 export const getAvatarController = async (
-  request: FastifyRequest<{ Params: Static<typeof AvatarImageSlugParam> }>,
-  reply: FastifyReply<{ Params: Static<typeof AvatarImageSlugParam>, Reply: GetAvatarReturnType }>
+  request: FastifyRequest<{ Params: Static<typeof AvatarIdParam> }>,
+  reply: FastifyReply<{ Params: Static<typeof AvatarIdParam>, Reply: GetAvatarReturnType }>
 ) => {
   const { avatarId } = request.params;
 
