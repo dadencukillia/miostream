@@ -7,7 +7,7 @@ import {
   ErrorsCollection,
   ErrorsSet,
   fastifyErrSerializer,
-} from "../../src/utils/errorsCollection";
+} from "@utils/errorsCollection";
 
 describe("ErrorsCollection", () => {
   test("identifies collections by instance even when their names match", () => {

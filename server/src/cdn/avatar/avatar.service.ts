@@ -6,7 +6,7 @@ import {
   removeAvatarById,
   setAvatarById
 } from "./avatarBucket.repo";
-import { Pool } from "pg";
+import type { Pool } from "pg";
 import {
   AvatarS3Error,
   AvatarNotFoundError,
@@ -15,13 +15,13 @@ import {
   AvatarAnotherRequestInProcessError,
   AvatarInvalidImageError
 } from "./avatar.errors";
-import { AvatarUpdatedResponse } from "./avatar.schema";
-import { Static } from "@sinclair/typebox";
+import type { AvatarUpdatedResponse } from "./avatar.schema";
+import type { Static } from "typebox";
 import {
   getAvatarIdByUserId,
   safeUpdateUserAvatarReturningModificationFlag,
   updateUserAvatarReturningOld
-} from "../../sqlc/users_sql";
+} from "@sqlc/users_sql";
 
 const AVATAR_WIDTH = 256;
 const AVATAR_HEIGHT = 256;

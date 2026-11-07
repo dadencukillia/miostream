@@ -1,17 +1,12 @@
-import { type FastifyReply, type FastifyRequest } from "fastify";
-import "../../context";
+import type { FastifyReply, FastifyRequest } from "fastify";
+import "@context";
 import { getAvatar, resetUserAvatar, updateUserAvatarImage } from "./avatar.service";
-import {
-  AvatarIdParam,
-  GetAvatarReturnType,
-  ResetAvatarReturnType,
-  UpdateAvatarReturnType
-} from "./avatar.schema";
+import type * as schemas from "./avatar.schema";
 import type { Static } from "typebox";
 
 export const getAvatarController = async (
-  request: FastifyRequest<{ Params: Static<typeof AvatarIdParam> }>,
-  reply: FastifyReply<{ Params: Static<typeof AvatarIdParam>, Reply: GetAvatarReturnType }>
+  request: FastifyRequest<{ Params: Static<typeof schemas.AvatarIdParam> }>,
+  reply: FastifyReply<{ Params: Static<typeof schemas.AvatarIdParam>, Reply: schemas.GetAvatarReturnType }>
 ) => {
   const { avatarId } = request.params;
 
@@ -24,7 +19,7 @@ export const getAvatarController = async (
 
 export const updateAvatarController = async (
   request: FastifyRequest<{ Body: string }>,
-  reply: FastifyReply<{ Body: string, Reply: UpdateAvatarReturnType }>
+  reply: FastifyReply<{ Body: string, Reply: schemas.UpdateAvatarReturnType }>
 ) => {
   // TODO: replace on working auth middleware context
   const userId = "844bb852-bd3a-46d8-8062-a4e43b34f454";
@@ -41,7 +36,7 @@ export const updateAvatarController = async (
 
 export const resetAvatarController = async (
   request: FastifyRequest<{}>,
-  reply: FastifyReply<{ Reply: ResetAvatarReturnType }>
+  reply: FastifyReply<{ Reply: schemas.ResetAvatarReturnType }>
 ) => {
   // TODO: replace on working auth middleware context
   const userId = "844bb852-bd3a-46d8-8062-a4e43b34f454";

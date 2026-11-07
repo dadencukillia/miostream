@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { Pool } from "pg";
-import * as service from "../../src/api/anime/anime.service";
-import { AnimeAlreadyExistsError, AnimeInvalidError, AnimeNotFoundError } from "../../src/api/anime/anime.errors";
+import * as service from "@/api/anime/anime.service";
+import { AnimeAlreadyExistsError, AnimeInvalidError, AnimeNotFoundError } from "@/api/anime/anime.errors";
 
 const id = "018f23ab-1234-7123-8123-123456789abc";
 const row = [id, "sample-anime", "Назва", "Title", "Original", "Description", "cover", "Studio", "123", "456", "hikka", "tt123", 2020, 24, 12, "pg13", "ongoing", "tv", true, ["action", "drama"]];

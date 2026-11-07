@@ -1,5 +1,5 @@
-import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import "../../context";
+import type { FastifyInstance, FastifyPluginOptions, FastifyReply, FastifyRequest } from "fastify";
+import "@context";
 import fp from "fastify-plugin";
 
 /**
@@ -62,7 +62,7 @@ export class AuthContext {
    * @param req - The Fastify request object.
    * @param resp - The Fastify reply object.
    */
-  public logout(req: FastifyRequest, resp: FastifyReply) {
+  public logout(request: FastifyRequest, reply: FastifyReply) {
     // TODO: real session deletion, cookies cleaning
   }
 }
@@ -82,12 +82,12 @@ export class AuthContext {
  * });
  * ```
  */
-export async function authMiddleware(req: FastifyRequest, _resp: FastifyReply) {
+export async function authMiddleware(request: FastifyRequest, _reply: FastifyReply) {
   // TODO: replace onto the real auth operations
   
-  const authHeader = req.headers.authorization?.trim();
+  const authHeader = request.headers.authorization?.trim();
 
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  if (!authHeader?.startsWith("Bearer ")) {
     return;
   }
 
@@ -96,7 +96,7 @@ export async function authMiddleware(req: FastifyRequest, _resp: FastifyReply) {
 
   const role = token?.toLowerCase().includes("admin") ? "admin" : "user";
 
-  req.auth = new AuthContext(
+  request.auth = new AuthContext(
     Math.round(Date.now()),
     "00000000-0000-0000-0000-000000000000",
     "exampleUser", "Jack Jackson",
@@ -121,7 +121,7 @@ export interface GrantAuthFilters {
   /** Restricts access to users having one of these account statuses. Default is `["active"]`. */
   userHasStatus?: string[],
   /** Custom callback executed when validation checks fail. */
-  fallback?: (req: FastifyRequest, resp: FastifyReply) => void|Promise<void>,
+  fallback?: (request: FastifyRequest, reply: FastifyReply) => void|Promise<void>,
 }
 
 const grantAuthDefaultFilters: Required<GrantAuthFilters> = {
@@ -148,7 +148,7 @@ const grantAuthDefaultFilters: Required<GrantAuthFilters> = {
  *   return { message: `Welcome ${req.auth!.fullName}` };
  * });
  */
-export const grantAuthMiddleware = (opts: GrantAuthFilters = grantAuthDefaultFilters) => async (req: FastifyRequest, resp: FastifyReply) => {
+export const grantAuthMiddleware = (opts: GrantAuthFilters = grantAuthDefaultFilters) => async (request: FastifyRequest, reply: FastifyReply) => {
   const {
     receiveAuthData, unsignedOnly, userHasRole, userHasStatus, fallback
   } = { 
@@ -161,28 +161,28 @@ export const grantAuthMiddleware = (opts: GrantAuthFilters = grantAuthDefaultFil
   };
 
   const handleFallback = async () => {
-    const result: unknown = fallback(req, resp);
-    if (result !== resp) await result;
+    const result: unknown = fallback(request, reply);
+    if (result !== reply) await result;
 
-    if (!resp.sent) {
-      grantAuthDefaultFilters.fallback(req, resp);
+    if (!reply.sent) {
+      grantAuthDefaultFilters.fallback(request, reply);
     }
   };
 
-  if (receiveAuthData) await authMiddleware(req, resp);
+  if (receiveAuthData) await authMiddleware(request, reply);
 
   if (unsignedOnly) {
-    if (!!req.auth) return await handleFallback();
+    if (request.auth != null) return await handleFallback();
     return;
   }
 
-  if (!req.auth) return await handleFallback();
+  if (!request.auth) return await handleFallback();
 
-  if (userHasRole.length > 0 && !userHasRole.includes(req.auth.role)) {
+  if (userHasRole.length > 0 && !userHasRole.includes(request.auth.role)) {
     return await handleFallback();
   }
 
-  if (userHasStatus.length > 0 && !userHasStatus.includes(req.auth.status)) {
+  if (userHasStatus.length > 0 && !userHasStatus.includes(request.auth.status)) {
     return await handleFallback();
   }
 };
@@ -198,7 +198,7 @@ export const grantAuthMiddleware = (opts: GrantAuthFilters = grantAuthDefaultFil
  */
 export const authPlugin = fp((
   fastify: FastifyInstance,
-  _opts: {},
+  _opts: FastifyPluginOptions,
   done: () => void
 ) => {
   fastify.addHook("preHandler", authMiddleware);

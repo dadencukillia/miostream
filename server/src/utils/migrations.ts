@@ -1,6 +1,6 @@
-import { PathLike, readdirSync } from "node:fs";
+import { type PathLike, readdirSync } from "node:fs";
 import path from "node:path";
-import { Client, Pool } from "pg";
+import type { Client, Pool } from "pg";
 
 const UPGRADE_PART_LINE = "-- migrate:up";
 const DOWNGRADE_PART_LINE = "-- migrate:down";
@@ -75,7 +75,7 @@ class MigrationEntry {
     const [timestampPart, ..._] = split;
     this._timestamp = Number(timestampPart);
 
-    if (isNaN(this.timestamp)) throw new MigrationError("migration file name must have a timestamp");
+    if (Number.isNaN(this.timestamp)) throw new MigrationError("migration file name must have a timestamp");
   }
 
   /**
@@ -91,15 +91,15 @@ class MigrationEntry {
   } {
     let upPartFlag = false;
     let downPartFlag = false;
-    let upPartContentLines = [];
-    let downPartContentLines = [];
+    const upPartContentLines = [];
+    const downPartContentLines = [];
 
     for (const line of content.split("\n")) {
       const trim = line.trim();
       if (trim === UPGRADE_PART_LINE) {
         upPartFlag = true;
         downPartFlag = false;
-      } else if (trim == DOWNGRADE_PART_LINE) {
+      } else if (trim === DOWNGRADE_PART_LINE) {
         upPartFlag = false;
         downPartFlag = true;
       }
@@ -223,7 +223,7 @@ export class Migrator {
     const lastMigrationEntry = queryResult.rows[0];
 
     const toMigration = Number(lastMigrationEntry["to_migration"]);
-    if (toMigration === -1 || isNaN(toMigration)) return null;
+    if (toMigration === -1 || Number.isNaN(toMigration)) return null;
     return toMigration;
   }
 
@@ -255,7 +255,7 @@ export class Migrator {
         for (const migration of upMigrations) {
           const currentMigrationStateSQL = (
             currentMigrationState === null ? "-1" :
-            isNaN(currentMigrationState) ? "-1" :
+            Number.isNaN(currentMigrationState) ? "-1" :
             currentMigrationState.toString()
           );
 

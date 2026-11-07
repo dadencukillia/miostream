@@ -1,9 +1,9 @@
-import type { FastifyInstance } from "fastify";
-import { getAvatarSchema, updateAvatarSchema, resetAvatarSchema } from "./avatar.schema";
-import { getAvatarController, resetAvatarController, updateAvatarController } from "./avatar.controller";
+import type { FastifyInstance, FastifyPluginAsync, FastifyPluginOptions } from "fastify";
+import * as schemas from "./avatar.schema";
+import * as controllers from "./avatar.controller";
 import { AvatarError } from "./avatar.errors";
 
-export default function(fastify: FastifyInstance, _opts: {}, done: () => void) {
+const modulePlugin: FastifyPluginAsync = async (fastify: FastifyInstance, _opts: FastifyPluginOptions) => {
   fastify.setErrorHandler<Error>((error, request, reply) => {
     if (error instanceof AvatarError) {
       return reply
@@ -23,13 +23,13 @@ export default function(fastify: FastifyInstance, _opts: {}, done: () => void) {
       });
   });
 
-  fastify.get('/:avatarId(^[a-zA-Z0-9]{32}).webp', { schema: getAvatarSchema }, getAvatarController);
+  fastify.get('/:avatarId(^[a-zA-Z0-9]{32}).webp', { schema: schemas.getAvatarSchema }, controllers.getAvatarController);
 
   // TODO: wrap auth middleware
-  fastify.put('/', { schema: updateAvatarSchema }, updateAvatarController);
+  fastify.put('/', { schema: schemas.updateAvatarSchema }, controllers.updateAvatarController);
 
   // TODO: wrap auth middleware
-  fastify.delete('/', { schema: resetAvatarSchema }, resetAvatarController);
+  fastify.delete('/', { schema: schemas.resetAvatarSchema }, controllers.resetAvatarController);
+};
 
-  done();
-}
+export default modulePlugin;

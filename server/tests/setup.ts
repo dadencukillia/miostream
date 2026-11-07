@@ -1,6 +1,6 @@
 import fastify from "fastify";
-import connector from "../src/utils/connector";
-import { PostgresConnection } from "../src/connections/pg";
+import connector from "@utils/connector";
+import { PostgresConnection } from "@/connections/pg";
 import { beforeAll } from "bun:test";
 
 // Migrates database before testing

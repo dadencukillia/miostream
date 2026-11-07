@@ -1,9 +1,9 @@
-import type { FastifyPluginAsync, FastifyError } from 'fastify';
+import type { FastifyPluginAsync, FastifyError, FastifyInstance, FastifyPluginOptions } from 'fastify';
 import { UserError } from './user.errors';
-import * as userSchema from './user.schema';
-import * as userController from './user.controller';
+import * as schemas from './user.schema';
+import * as controllers from './user.controller';
 
-const plugin: FastifyPluginAsync = async (fastify, _opts) => {
+const modulePlugin: FastifyPluginAsync = async (fastify: FastifyInstance, _opts: FastifyPluginOptions) => {
     // TODO(auth): add authentication hook (401) and reject banned/deactivated users.
     // TODO(auth): add module augmentation for request.user ({ id, role, status }).
 
@@ -36,31 +36,31 @@ const plugin: FastifyPluginAsync = async (fastify, _opts) => {
     });
 
     // TODO(auth): public registration; add rate limit.
-    fastify.post('/', { schema: userSchema.createUserRouteSchema }, userController.createUser);
+    fastify.post('/', { schema: schemas.createUserRouteSchema }, controllers.createUser);
 
     // TODO(auth): self or admin; decide whether profile is public (then split response schema).
-    fastify.get('/:userId', { schema: userSchema.getUserByIdRouteSchema }, userController.getUserById);
+    fastify.get('/:userId', { schema: schemas.getUserByIdRouteSchema }, controllers.getUserById);
 
     // TODO(auth): self only for profile, avatar, customization and password.
     // TODO(auth): rate limit password route.
-    fastify.patch('/:userId/profile', { schema: userSchema.updateUserProfileRouteSchema }, userController.updateUserProfile);
-    fastify.patch('/:userId/avatar', { schema: userSchema.updateUserAvatarRouteSchema }, userController.updateUserAvatar);
-    fastify.patch('/:userId/customization', { schema: userSchema.updateUserCustomizationRouteSchema }, userController.updateUserCustomization);
-    fastify.patch('/:userId/password', { schema: userSchema.updateUserPasswordRouteSchema }, userController.updateUserPassword);
+    fastify.patch('/:userId/profile', { schema: schemas.updateUserProfileRouteSchema }, controllers.updateUserProfile);
+    fastify.patch('/:userId/avatar', { schema: schemas.updateUserAvatarRouteSchema }, controllers.updateUserAvatar);
+    fastify.patch('/:userId/customization', { schema: schemas.updateUserCustomizationRouteSchema }, controllers.updateUserCustomization);
+    fastify.patch('/:userId/password', { schema: schemas.updateUserPasswordRouteSchema }, controllers.updateUserPassword);
     // TODO(admin): admin only for status and role.
-    fastify.patch('/:userId/status', { schema: userSchema.updateUserStatusRouteSchema }, userController.updateUserStatus);
-    fastify.patch('/:userId/role', { schema: userSchema.updateUserRoleRouteSchema }, userController.updateUserRole);
+    fastify.patch('/:userId/status', { schema: schemas.updateUserStatusRouteSchema }, controllers.updateUserStatus);
+    fastify.patch('/:userId/role', { schema: schemas.updateUserRoleRouteSchema }, controllers.updateUserRole);
 
     // TODO(auth): self or admin.
-    fastify.delete('/:userId', { schema: userSchema.deleteUserRouteSchema }, userController.deleteUser);
+    fastify.delete('/:userId', { schema: schemas.deleteUserRouteSchema }, controllers.deleteUser);
 
     // TODO(auth): self only for create/update/delete; GET depends on profile visibility.
-    fastify.post('/:userId/links', { schema: userSchema.createUserLinkRouteSchema }, userController.createUserLink);
-    fastify.get('/:userId/links', { schema: userSchema.listUserLinksRouteSchema }, userController.listUserLinks);
-    fastify.put('/:userId/links/:userLinkId', { schema: userSchema.updateUserLinkRouteSchema }, userController.updateUserLink);
-    fastify.delete('/:userId/links/:userLinkId', { schema: userSchema.deleteUserLinkRouteSchema }, userController.deleteUserLink);
+    fastify.post('/:userId/links', { schema: schemas.createUserLinkRouteSchema }, controllers.createUserLink);
+    fastify.get('/:userId/links', { schema: schemas.listUserLinksRouteSchema }, controllers.listUserLinks);
+    fastify.put('/:userId/links/:userLinkId', { schema: schemas.updateUserLinkRouteSchema }, controllers.updateUserLink);
+    fastify.delete('/:userId/links/:userLinkId', { schema: schemas.deleteUserLinkRouteSchema }, controllers.deleteUserLink);
 
     // TODO(admin): add admin-only GET / (user list) with pagination and filters.
 };
 
-export default plugin;
+export default modulePlugin;

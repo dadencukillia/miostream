@@ -1,6 +1,6 @@
-import { S3Client } from "@aws-sdk/client-s3";
-import { Pool } from 'pg';
-import { AuthContext } from "./api/auth/auth.middleware";
+import type { S3Client } from "@aws-sdk/client-s3";
+import type { Pool } from 'pg';
+import type { AuthContext } from "./api/auth/auth.middleware";
 
 declare module 'fastify' {
   interface FastifyInstance {

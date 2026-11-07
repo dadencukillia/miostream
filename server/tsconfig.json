@@ -12,6 +12,15 @@
       "node"
     ],
 
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@utils/*": ["./src/utils/*"],
+      "@sqlc/*": ["./src/sqlc/*"],
+      "@context": ["./src/context.ts"],
+      "@config": ["./src/config.ts"]
+    },
+
     // Bundler mode
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
