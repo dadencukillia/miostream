@@ -1,7 +1,6 @@
 ---
 import { buttonVariants } from "@ui/button";
-import { HugeiconsIcon } from '@hugeicons/react';
-import GoogleIcon from '@hugeicons/core-free-icons/GoogleIcon';
+import GoogleIcon from "~icons/hugeicons/google";
 import type { HTMLAttributes } from "astro/types";
 import { cn } from "cn";
 
@@ -14,6 +13,6 @@ const { class: className, ...buttonAttribs } = Astro.props;
   buttonVariants({ variant: "secondary", size: "lg" }),
   className ?? ""
 )} { ...buttonAttribs }>
-  <HugeiconsIcon icon={ GoogleIcon } />
+  <GoogleIcon />
   <span>Продовжити через Google</span>
 </button>

@@ -1,9 +1,10 @@
 import type { FastifyPluginCallback } from "fastify";
-// import user from "./user/plugin";
+import anime from "./anime/anime.plugin"
+import user from "./user/user.plugin";
 
 const plugin: FastifyPluginCallback = (fastify, _opts, done) => {
-  // TODO: rewrite user to the new model and SQLc
-  // fastify.register(user, { prefix: "/user" });
+  fastify.register(user, { prefix: "/users" });
+  fastify.register(anime, { prefix: "/anime" });
 
   done();
 };
