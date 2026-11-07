@@ -3,8 +3,8 @@ import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import connector from "./utils/connector";
 import { S3Connection } from "./connections/s3";
-import api from "./api/plugin";
-import cdn from "./cdn/plugin";
+import api from "./api/api.plugin";
+import cdn from "./cdn/cdn.plugin";
 import { PostgresConnection } from "./connections/pg";
 
 const fastify = Fastify({
