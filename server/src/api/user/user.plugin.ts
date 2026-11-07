@@ -1,9 +1,9 @@
-import type { FastifyPluginAsync, FastifyError, FastifyInstance } from 'fastify';
+import type { FastifyPluginAsync, FastifyError, FastifyInstance, FastifyPluginOptions } from 'fastify';
 import { UserError } from './user.errors';
 import * as schemas from './user.schema';
 import * as controllers from './user.controller';
 
-const modulePlugin: FastifyPluginAsync = async (fastify: FastifyInstance, _opts: {}) => {
+const modulePlugin: FastifyPluginAsync = async (fastify: FastifyInstance, _opts: FastifyPluginOptions) => {
     // TODO(auth): add authentication hook (401) and reject banned/deactivated users.
     // TODO(auth): add module augmentation for request.user ({ id, role, status }).
 

@@ -1,9 +1,9 @@
-import type { FastifyPluginAsync, FastifyError, FastifyInstance } from "fastify";
+import type { FastifyPluginAsync, FastifyError, FastifyInstance, FastifyPluginOptions } from "fastify";
 import { AnimeError } from "./anime.errors";
 import * as schemas from "./anime.schema";
 import * as controllers from "./anime.controller";
 
-const modulePlugin: FastifyPluginAsync = async (fastify: FastifyInstance, _opts: {}) => {
+const modulePlugin: FastifyPluginAsync = async (fastify: FastifyInstance, _opts: FastifyPluginOptions) => {
   fastify.setErrorHandler<FastifyError>((error, request, reply) => {
     if (reply.sent) return;
 

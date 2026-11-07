@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyInstance, FastifyPluginOptions, FastifyReply, FastifyRequest } from "fastify";
 import "../../context";
 import fp from "fastify-plugin";
 
@@ -87,7 +87,7 @@ export async function authMiddleware(request: FastifyRequest, _reply: FastifyRep
   
   const authHeader = request.headers.authorization?.trim();
 
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  if (!authHeader?.startsWith("Bearer ")) {
     return;
   }
 
@@ -172,7 +172,7 @@ export const grantAuthMiddleware = (opts: GrantAuthFilters = grantAuthDefaultFil
   if (receiveAuthData) await authMiddleware(request, reply);
 
   if (unsignedOnly) {
-    if (!!request.auth) return await handleFallback();
+    if (request.auth != null) return await handleFallback();
     return;
   }
 
@@ -198,7 +198,7 @@ export const grantAuthMiddleware = (opts: GrantAuthFilters = grantAuthDefaultFil
  */
 export const authPlugin = fp((
   fastify: FastifyInstance,
-  _opts: {},
+  _opts: FastifyPluginOptions,
   done: () => void
 ) => {
   fastify.addHook("preHandler", authMiddleware);

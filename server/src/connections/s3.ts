@@ -1,5 +1,5 @@
 import { CreateBucketCommand, HeadBucketCommand, NoSuchBucket, NotFound, S3Client } from "@aws-sdk/client-s3";
-import { Connection } from "../utils/connector";
+import type { Connection } from "../utils/connector";
 import * as config from "../config";
 
 /**

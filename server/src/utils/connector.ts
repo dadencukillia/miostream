@@ -21,7 +21,7 @@ export interface Connection<T> {
  */
 export interface ConnectorPluginOptions {
   /** List of connection adapters to initialize in parallel. */
-  connections: Connection<any>[];
+  connections: Connection<unknown>[];
 
   /**
    * Maximum number of initialization retry attempts per connection.

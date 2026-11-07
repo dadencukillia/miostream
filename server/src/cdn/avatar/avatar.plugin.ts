@@ -1,9 +1,9 @@
-import type { FastifyInstance, FastifyPluginAsync } from "fastify";
+import type { FastifyInstance, FastifyPluginAsync, FastifyPluginOptions } from "fastify";
 import * as schemas from "./avatar.schema";
 import * as controllers from "./avatar.controller";
 import { AvatarError } from "./avatar.errors";
 
-const modulePlugin: FastifyPluginAsync = async (fastify: FastifyInstance, _opts: {}) => {
+const modulePlugin: FastifyPluginAsync = async (fastify: FastifyInstance, _opts: FastifyPluginOptions) => {
   fastify.setErrorHandler<Error>((error, request, reply) => {
     if (error instanceof AvatarError) {
       return reply

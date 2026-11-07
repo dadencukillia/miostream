@@ -49,7 +49,7 @@ export const getUserById = async (
 
 export const deleteUser = async (
     request: FastifyRequest<{ Params: UserIdParamDto }>,
-    reply: FastifyReply<{ Params: UserIdParamDto; Reply: void }>
+    reply: FastifyReply<{ Params: UserIdParamDto; Reply: undefined }>
 ) => {
     // TODO(auth): revoke user sessions after deletion.
     // TODO(admin): forbid deleting the last admin.
@@ -125,7 +125,7 @@ export const updateUserCustomization = async (
 
 export const updateUserPassword = async (
     request: FastifyRequest<{ Params: UserIdParamDto; Body: UpdateUserPasswordDto }>,
-    reply: FastifyReply<{ Params: UserIdParamDto; Body: UpdateUserPasswordDto; Reply: void }>
+    reply: FastifyReply<{ Params: UserIdParamDto; Body: UpdateUserPasswordDto; Reply: undefined }>
 ) => {
     const { oldPassword, newPassword } = request.body;
     // TODO(auth): revoke all other sessions/tokens after password change.
@@ -215,7 +215,7 @@ export const updateUserLink = async (
 
 export const deleteUserLink = async (
     request: FastifyRequest<{ Params: UserLinkParamDto }>,
-    reply: FastifyReply<{ Params: UserLinkParamDto; Reply: void }>
+    reply: FastifyReply<{ Params: UserLinkParamDto; Reply: undefined }>
 ) => {
     await services.deleteUserLinkById(
         request.server.pg,

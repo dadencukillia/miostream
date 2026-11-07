@@ -6,7 +6,7 @@ import {
   removeAvatarById,
   setAvatarById
 } from "./avatarBucket.repo";
-import { Pool } from "pg";
+import type { Pool } from "pg";
 import {
   AvatarS3Error,
   AvatarNotFoundError,
@@ -15,8 +15,8 @@ import {
   AvatarAnotherRequestInProcessError,
   AvatarInvalidImageError
 } from "./avatar.errors";
-import { AvatarUpdatedResponse } from "./avatar.schema";
-import { Static } from "typebox";
+import type { AvatarUpdatedResponse } from "./avatar.schema";
+import type { Static } from "typebox";
 import {
   getAvatarIdByUserId,
   safeUpdateUserAvatarReturningModificationFlag,

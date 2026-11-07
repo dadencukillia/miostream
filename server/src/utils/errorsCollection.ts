@@ -1,5 +1,5 @@
-import { Static, Type } from "typebox";
-import { FastifyError, FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { type Static, Type } from "typebox";
+import type { FastifyError, FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import pino from "pino";
 
 /** An err serializer for Fastify tailored to custom errors from this module
@@ -48,7 +48,7 @@ const serializeDetail = (d: unknown): unknown =>
 class CustomError extends Error {
   private _collection: ErrorsCollection;
   private _statusCode: number;
-  private _details: readonly any[] = [];
+  private _details: readonly unknown[] = [];
   
   /**
    * Creates an instance of CustomError.
@@ -83,7 +83,7 @@ class CustomError extends Error {
   /**
    * Gets immutable structured details attached to the error for logging purposes.
    */
-  public get details(): readonly any[] {
+  public get details(): readonly unknown[] {
     return this._details;
   }
 
@@ -118,7 +118,7 @@ class CustomError extends Error {
    * 
    * @param details - Additional details or metadata payload.
    */
-  public withDetails(...details: any[]) {
+  public withDetails(...details: unknown[]) {
     const error = new CustomError(this._collection, this._statusCode, this.message);
     const detailValues = Object.freeze([...this._details, ...details]);
     error.stack = this.stack;
