@@ -4,8 +4,7 @@ import AuthCard from "@components/features/auth/authCard.tsx";
 import GoogleAuthButton from "@components/features/auth/googleAuthButton.astro";
 import { cn } from "cn";
 import { buttonVariants } from "@components/ui/button";
-import { HugeiconsIcon } from "@hugeicons/react";
-import ArrowLeft01Icon from "@hugeicons/core-free-icons/ArrowLeft01Icon";
+import ArrowLeftIcon from "~icons/hugeicons/arrow-left-01";
 ---
 
 <HtmlLayout title="Авторизація">
@@ -14,7 +13,7 @@ import ArrowLeft01Icon from "@hugeicons/core-free-icons/ArrowLeft01Icon";
       buttonVariants({ variant: "link", size: "lg" }),
       "text-muted-foreground py-12"
     )}>
-      <HugeiconsIcon icon={ ArrowLeft01Icon } />
+      <ArrowLeftIcon className="size-5" />
       <span>Повернутися на головну</span>
     </a>
     <AuthCard client:load />

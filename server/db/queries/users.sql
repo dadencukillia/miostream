@@ -1,57 +1,274 @@
--- name: DeleteUserById :one
-DELETE FROM public.users
-WHERE "id" = @user_id::uuid
-RETURNING *;
-
--- name: InsertNewUser :one
-INSERT INTO public.users (
+-- name: CreateUser :one
+INSERT INTO public.users(
     "nickname",
     "full_name",
     "email",
-    "password_hash"
+    "password_hash",
+    "google_id",
+    "timezone"
 ) VALUES (
-    @nickname, @full_name, @email, @password_hash
+    @nickname, 
+    @full_name, 
+    @email, 
+    sqlc.narg('password_hash'),
+    sqlc.narg('google_id'),
+    coalesce(sqlc.narg('timezone'), 'Europe/Kyiv')
 )
-RETURNING *;
+RETURNING 
+    "user_id",
+    "nickname",
+    "full_name",
+    "email",
+    "bio",
+    "avatar_url",
+    "max_streak",
+    "timezone",
+    "streak_start_date",
+    "last_watch_date",
+    "profile_frame_url",
+    "profile_background_url",
+    "user_role",
+    "user_status",
+    "created_at",
+    "updated_at";
 
--- name: PatchUserById :one
+-- name: GetUserById :one
+SELECT 
+    "user_id",
+    "nickname",
+    "full_name",
+    "email",
+    "bio",
+    "avatar_url",
+    "max_streak",
+    "timezone",
+    "streak_start_date",
+    "last_watch_date",
+    "profile_frame_url",
+    "profile_background_url",
+    "user_role",
+    "user_status",
+    "created_at",
+    "updated_at"
+FROM public.users
+WHERE "user_id" = @user_id::uuid
+LIMIT 1;
+
+-- name: GetUserByEmail :one
+SELECT 
+    "user_id",
+    "nickname",
+    "full_name",
+    "email",
+    "bio",
+    "avatar_url",
+    "max_streak",
+    "timezone",
+    "streak_start_date",
+    "last_watch_date",
+    "profile_frame_url",
+    "profile_background_url",
+    "user_role",
+    "user_status",
+    "created_at",
+    "updated_at"
+FROM public.users
+WHERE lower("email") = lower(@email)
+LIMIT 1;
+
+-- name: GetUserByGoogleId :one
+SELECT 
+    "user_id",
+    "nickname",
+    "full_name",
+    "email",
+    "bio",
+    "avatar_url",
+    "max_streak",
+    "timezone",
+    "streak_start_date",
+    "last_watch_date",
+    "profile_frame_url",
+    "profile_background_url",
+    "user_role",
+    "user_status",
+    "created_at",
+    "updated_at"
+FROM public.users
+WHERE "google_id" = @google_id
+LIMIT 1;
+
+-- name: GetPasswordHashById :one
+SELECT "password_hash"
+FROM public.users
+WHERE "user_id" = @user_id::uuid
+LIMIT 1;
+
+-- name: UpdateUserProfile :one
 UPDATE public.users
 SET 
-    -- Update only if key exists and is not null
-    "nickname"          = COALESCE((@patch_data::jsonb)->>'nickname', "nickname"),
-    "full_name"         = COALESCE((@patch_data::jsonb)->>'full_name', "full_name"),
-    "email"             = COALESCE((@patch_data::jsonb)->>'email', "email"),
-    "timezone"          = COALESCE((@patch_data::jsonb)->>'timezone', "timezone"),
-    
-    -- Update only if key exists in the object (allows setting to NULL)
-    "bio"               = CASE WHEN (@patch_data::jsonb) ? 'bio' THEN (@patch_data::jsonb)->>'bio' ELSE "bio" END,
-    "avatar_url"        = CASE WHEN (@patch_data::jsonb) ? 'avatar_url' THEN (@patch_data::jsonb)->>'avatar_url' ELSE "avatar_url" END,
-    "social_networks" = CASE 
-        WHEN NOT ((@patch_data::jsonb) ? 'social_networks') THEN "social_networks"
-        WHEN ((@patch_data::jsonb)->>'social_networks') IS NULL THEN NULL
-        ELSE ARRAY(SELECT jsonb_array_elements_text((@patch_data::jsonb)->'social_networks'))
-    END,
+    "nickname"   = @nickname,
+    "full_name"  = @full_name,
+    "bio"        = @bio,
+    "timezone"   = @timezone,
+    "updated_at" = now()
+WHERE "user_id" = @user_id::uuid
+RETURNING 
+    "user_id",
+    "nickname",
+    "full_name",
+    "email",
+    "bio",
+    "avatar_url",
+    "max_streak",
+    "timezone",
+    "streak_start_date",
+    "last_watch_date",
+    "profile_frame_url",
+    "profile_background_url",
+    "user_role",
+    "user_status",
+    "created_at",
+    "updated_at";
 
-    -- Update only if exists; apply DEFAULT enum if null
-    "profile_frame" = CASE 
-        WHEN NOT ((@patch_data::jsonb) ? 'profile_frame') THEN "profile_frame"
-        WHEN ((@patch_data::jsonb)->>'profile_frame') IS NULL THEN 'DEFAULT'::"ProfileFrame"
-        ELSE ((@patch_data::jsonb)->>'profile_frame')::"ProfileFrame"
-    END,
-    "profile_background" = CASE 
-        WHEN NOT ((@patch_data::jsonb) ? 'profile_background') THEN "profile_background"
-        WHEN ((@patch_data::jsonb)->>'profile_background') IS NULL THEN 'DEFAULT'::"ProfileBackground"
-        ELSE ((@patch_data::jsonb)->>'profile_background')::"ProfileBackground"
-    END,
+-- name: UpdateUserAvatar :one
+UPDATE public.users
+SET
+    "avatar_url" = @avatar_url,
+    "updated_at" = now()
+WHERE "user_id" = @user_id::uuid
+RETURNING 
+    "user_id",
+    "nickname",
+    "full_name",
+    "email",
+    "bio",
+    "avatar_url",
+    "max_streak",
+    "timezone",
+    "streak_start_date",
+    "last_watch_date",
+    "profile_frame_url",
+    "profile_background_url",
+    "user_role",
+    "user_status",
+    "created_at",
+    "updated_at";
 
-    -- Always bump timestamp
-    "updated_at" = NOW()
+-- name: UpdateUserCustomization :one
+UPDATE public.users 
+SET 
+    "profile_frame_url" = CASE 
+        WHEN @set_frame::boolean
+        THEN sqlc.narg('profile_frame_url')::text
+        ELSE profile_frame_url END,
+    "profile_background_url" = CASE 
+        WHEN @set_background::boolean
+        THEN sqlc.narg('profile_background_url')::text
+        ELSE profile_background_url END,
+    "updated_at" = now()
+WHERE "user_id" = @user_id::uuid
+RETURNING 
+    "user_id",
+    "nickname",
+    "full_name",
+    "email",
+    "bio",
+    "avatar_url",
+    "max_streak",
+    "timezone",
+    "streak_start_date",
+    "last_watch_date",
+    "profile_frame_url",
+    "profile_background_url",
+    "user_role",
+    "user_status",
+    "created_at",
+    "updated_at";
 
-WHERE "id" = @user_id::uuid
-RETURNING *;
+-- name: UpdateUserPassword :one
+UPDATE public.users
+SET 
+    "password_hash" = @password_hash,
+    "updated_at"    = now()
+WHERE "user_id" = @user_id::uuid
+RETURNING "user_id";
 
--- name: SelectUserById :one
-SELECT *
-FROM public.users
-WHERE "id" = @user_id::uuid
-LIMIT 1;
+-- name: UpdateUserStreak :one
+UPDATE public.users
+SET 
+    "max_streak"        = @max_streak,
+    "streak_start_date" = sqlc.narg('streak_start_date'),
+    "last_watch_date"   = sqlc.narg('last_watch_date'),
+    "updated_at"        = now()
+WHERE "user_id" = @user_id::uuid
+RETURNING 
+    "user_id",
+    "nickname",
+    "full_name",
+    "email",
+    "bio",
+    "avatar_url",
+    "max_streak",
+    "timezone",
+    "streak_start_date",
+    "last_watch_date",
+    "profile_frame_url",
+    "profile_background_url",
+    "user_role",
+    "user_status",
+    "created_at",
+    "updated_at";
+
+-- name: UpdateUserStatus :one
+UPDATE public.users
+SET
+    "user_status" = @user_status,
+    "updated_at"  = now()
+WHERE "user_id" = @user_id::uuid
+RETURNING 
+    "user_id",
+    "nickname",
+    "full_name",
+    "email",
+    "bio",
+    "avatar_url",
+    "max_streak",
+    "timezone",
+    "streak_start_date",
+    "last_watch_date",
+    "profile_frame_url",
+    "profile_background_url",
+    "user_role",
+    "user_status",
+    "created_at",
+    "updated_at";
+
+-- name: UpdateUserRole :one
+UPDATE public.users
+SET 
+    "user_role"   = @user_role,
+    "updated_at"  = now()
+WHERE "user_id" = @user_id::uuid
+RETURNING 
+    "user_id",
+    "nickname",
+    "full_name",
+    "email",
+    "bio",
+    "avatar_url",
+    "max_streak",
+    "timezone",
+    "streak_start_date",
+    "last_watch_date",
+    "profile_frame_url",
+    "profile_background_url",
+    "user_role",
+    "user_status",
+    "created_at",
+    "updated_at";
+
+-- name: DeleteUserById :one
+DELETE FROM public.users
+WHERE "user_id" = @user_id::uuid
+RETURNING "user_id";

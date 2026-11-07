@@ -7,10 +7,6 @@
   "exclude": [
     "dist"
   ],
-  "types": [
-    "bun",
-    "node"
-  ],
   "compilerOptions": {
     "composite": true,
     "baseUrl": ".",
@@ -24,6 +20,11 @@
       "@utils": [ "./src/lib/utils" ],
       "@utils/*": [ "./src/lib/utils/*" ]
     },
+    "types": [
+      "bun",
+      "node",
+      "unplugin-icons/types/react"
+    ],
     "jsx": "react-jsx",
     "jsxImportSource": "react",
     "lib": [
