@@ -272,3 +272,27 @@ RETURNING
 DELETE FROM public.users
 WHERE "user_id" = @user_id::uuid
 RETURNING "user_id";
+
+-- name: SelectUserById :one
+SELECT *
+FROM public.users
+WHERE "id" = @user_id::uuid
+LIMIT 1;
+
+-- name: GetAvatarIdByUserId :one
+SELECT avatar_url
+FROM public.users
+WHERE user_id = $1;
+
+-- name: SafeUpdateUserAvatarReturningModificationFlag :one
+UPDATE public.users
+SET avatar_url = @new_avatar_url::text
+WHERE user_id = $1
+  AND avatar_url = @old_avatar_url::text
+RETURNING count(*) = 1 AS affected;
+
+-- name: UpdateUserAvatarReturningOld :one
+UPDATE public.users
+SET avatar_url = @new_avatar_url::text
+WHERE user_id = $1
+RETURNING avatar_url;
