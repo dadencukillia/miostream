@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import Fastify from "fastify";
-import userPlugin from "../../src/api/user/user.plugin";
-import { hashPassword, verifyPassword } from "../../src/utils/password";
+import userPlugin from "@/api/user/user.plugin";
+import { hashPassword, verifyPassword } from "@utils/password";
 
 const id = "a7b3fd74-00ab-4d5c-949e-07c135475bd1";
 const base = `/users/${id}`;

@@ -1,8 +1,8 @@
 import { test, beforeAll, expect, describe, afterEach } from "bun:test";
 import { S3Client, CreateBucketCommand } from "@aws-sdk/client-s3";
 import sharp from "sharp";
-import { setAvatarById, getAvatarById, removeAvatarById } from "../../src/cdn/avatar/avatarBucket.repo";
-import * as config from "../../src/config";
+import { setAvatarById, getAvatarById, removeAvatarById } from "@/cdn/avatar/avatarBucket.repo";
+import * as config from "@config";
 
 const BUCKET_NAME = "avatars";
 

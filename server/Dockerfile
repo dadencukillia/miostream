@@ -7,6 +7,7 @@ RUN bun install --frozen-lockfile --production
 
 FROM base AS release
 COPY --from=install /app/node_modules ./node_modules
+COPY tsconfig.json ./
 COPY package.json ./
 COPY src/ ./src/
 COPY db/migrations ./db/migrations/

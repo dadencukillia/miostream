@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import type { Pool } from "pg";
-import * as service from "../../src/api/user/user.service";
-import { UserAlreadyExistsError, UserError, UserInvalidError, UserNotFoundError } from "../../src/api/user/user.errors";
-import { hashPassword, verifyPassword } from "../../src/utils/password";
-import { isValidTimezone } from "../../src/utils/timezones";
-import { isSafeHttpUrl } from "../../src/utils/urls";
+import * as service from "@/api/user/user.service";
+import { UserAlreadyExistsError, UserError, UserInvalidError, UserNotFoundError } from "@/api/user/user.errors";
+import { hashPassword, verifyPassword } from "@utils/password";
+import { isValidTimezone } from "@utils/timezones";
+import { isSafeHttpUrl } from "@utils/urls";
 
 const id = "a7b3fd74-00ab-4d5c-949e-07c135475bd1";
 const now = new Date("2026-01-01T00:00:00Z");

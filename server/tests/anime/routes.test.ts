@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import Fastify from "fastify";
-import api from "../../src/api/plugin";
+import api from "@/api/api.plugin";
 
 const id = "018f23ab-1234-7123-8123-123456789abc";
 const row = [id, "sample-anime", "Назва", "Title", "Original", "Description", "cover", "Studio", "123", null, null, null, 2020, 24, 12, "pg13", "ongoing", "tv", true, ["action"]];

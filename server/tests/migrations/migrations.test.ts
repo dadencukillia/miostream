@@ -3,8 +3,8 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { Pool } from "pg";
-import * as config from "../../src/config";
-import { Migrator } from "../../src/utils/migrations";
+import * as config from "@config";
+import { Migrator } from "@utils/migrations";
 
 const SCHEMA = "test";
 const pool = new Pool({ connectionString: config.DB_URL });
