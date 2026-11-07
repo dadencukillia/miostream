@@ -21,7 +21,7 @@ import {
   getAvatarIdByUserId,
   safeUpdateUserAvatarReturningModificationFlag,
   updateUserAvatarReturningOld
-} from "../../sqlc/users_sql";
+} from "@sqlc/users_sql";
 
 const AVATAR_WIDTH = 256;
 const AVATAR_HEIGHT = 256;

@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyPluginOptions, FastifyReply, FastifyRequest } from "fastify";
-import "../../context";
+import "@context";
 import fp from "fastify-plugin";
 
 /**

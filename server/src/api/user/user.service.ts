@@ -1,6 +1,6 @@
 import type { Pool } from "pg";
-import * as usersSqlc from "../../sqlc/users_sql";
-import * as userLinksSqlc from "../../sqlc/user_links_sql";
+import * as usersSqlc from "@sqlc/users_sql";
+import * as userLinksSqlc from "@sqlc/user_links_sql";
 import {
     UserError,
     UserInvalidError,
@@ -15,7 +15,7 @@ import type {
     UserStatus,
     UserRole
 } from "./user.schema";
-import { hashPassword, verifyPassword } from "../../utils/password";
+import { hashPassword, verifyPassword } from "@utils/password";
 
 interface PostgresError extends Error {
     code?: string;

@@ -1,5 +1,5 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
-import "../../context";
+import "@context";
 import { getAvatar, resetUserAvatar, updateUserAvatarImage } from "./avatar.service";
 import type * as schemas from "./avatar.schema";
 import type { Static } from "typebox";

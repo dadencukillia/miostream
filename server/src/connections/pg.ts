@@ -1,8 +1,8 @@
 import { Pool } from "pg";
-import type { Connection } from "../utils/connector";
-import * as config from "../config";
+import type { Connection } from "@utils/connector";
+import * as config from "@config";
 import assert from "node:assert";
-import { Migrator } from "../utils/migrations";
+import { Migrator } from "@utils/migrations";
 
 async function migrateDB(db: Pool) {
   const migrator = new Migrator(db, "./db/migrations");

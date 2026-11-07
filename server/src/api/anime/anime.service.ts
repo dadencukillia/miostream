@@ -31,7 +31,7 @@ import {
 	getStudiosAboveAverageEpisodes,
 	getOngoingAnimes,
 	getAvailableAnimesByCurrentYear,
-} from "../../sqlc/animes_sql";
+} from "@sqlc/animes_sql";
 import { ANIME_FORMATS, ANIME_STATUSES, GENRES, MPAA_RATINGS } from "./anime.schema";
 
 const UUID_RE =

@@ -17,8 +17,8 @@ import type {
     UpdateUserLinkDto
 } from './user.schema';
 import * as services from "./user.service";
-import { isSafeHttpUrl } from "../../utils/urls";
-import { isValidTimezone } from "../../utils/timezones";
+import { isSafeHttpUrl } from "@utils/urls";
+import { isValidTimezone } from "@utils/timezones";
 
 export const createUser = async (
     request: FastifyRequest<{ Body: CreateUserDto }>,
