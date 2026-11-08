@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import "@context";
-import { getAvatar, resetUserAvatar, updateUserAvatarImage } from "./avatar.service";
+import { getAvatar } from "./avatar.service";
 import type * as schemas from "./avatar.schema";
 import type { Static } from "typebox";
 
@@ -15,32 +15,4 @@ export const getAvatarController = async (
     .header("content-type", "image/webp")
     .header("cache-control", "public, max-age=31536000, immutable")
     .send(buffer);
-};
-
-export const updateAvatarController = async (
-  request: FastifyRequest<{ Body: string }>,
-  reply: FastifyReply<{ Body: string, Reply: schemas.UpdateAvatarReturnType }>
-) => {
-  // TODO: replace on working auth middleware context
-  const userId = "844bb852-bd3a-46d8-8062-a4e43b34f454";
-
-  const result = await updateUserAvatarImage(
-    request.server.s3, request.server.pg, 
-    request.log, 
-    userId, 
-    Buffer.from(request.body, "base64")
-  );
-
-  return reply.send(result);
-};
-
-export const resetAvatarController = async (
-  request: FastifyRequest<{}>,
-  reply: FastifyReply<{ Reply: schemas.ResetAvatarReturnType }>
-) => {
-  // TODO: replace on working auth middleware context
-  const userId = "844bb852-bd3a-46d8-8062-a4e43b34f454";
-
-  await resetUserAvatar(request.server.s3, request.server.pg, request.log, userId);
-  return reply.send({ ok: true });
 };
