@@ -268,7 +268,7 @@ WITH old_vals AS (
   WHERE "user_id" = @user_id::uuid
 ) UPDATE public.users u
 SET
-  "avatar_id" = @new_avatar_id::uuid,
+  "avatar_id" = sqlc.narg('new_avatar_id')::uuid,
   "updated_at" = now()
 FROM old_vals o
 WHERE "user_id" = o.user_id

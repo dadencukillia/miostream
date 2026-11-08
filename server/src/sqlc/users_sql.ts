@@ -943,7 +943,7 @@ RETURNING
     u."updated_at"`;
 
 export interface UpdateUserAvatarReturningOldArgs {
-    newAvatarId: string;
+    newAvatarId: string | null;
     userId: string;
 }
 
