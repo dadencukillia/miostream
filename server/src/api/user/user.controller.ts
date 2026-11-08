@@ -16,7 +16,8 @@ import type {
     CreateUserLinkDto,
     UpdateUserLinkDto
 } from './user.schema';
-import * as services from "./user.service";
+import * as services from "./services/user.service";
+import * as avatarServices from "./services/avatar.service";
 import { isSafeHttpUrl } from "@utils/urls";
 import { isValidTimezone } from "@utils/timezones";
 
@@ -83,16 +84,23 @@ export const updateUserAvatar = async (
     request: FastifyRequest<{ Params: UserIdParamDto; Body: UpdateUserAvatarDto }>,
     reply: FastifyReply<{ Params: UserIdParamDto; Body: UpdateUserAvatarDto; Reply: UserResponseDto }>
 ) => {
-    const { avatarId } = request.body;
-
-    if (!isSafeHttpUrl(avatarId)) {
-        throw new UserInvalidError('Avatar URL must use http or https protocol');
-    }
-
-    const user = await services.updateUserAvatar(
-        request.server.pg,
+    const user = await avatarServices.updateUserAvatarImage(
+        request.server.s3, request.server.pg,
+        request.log,
         request.params.userId,
-        avatarId
+        Buffer.from(request.body, "base64")
+    );
+    return reply.status(200).send(user);
+};
+
+export const deleteUserAvatar = async (
+    request: FastifyRequest<{ Params: UserIdParamDto; Body: UpdateUserAvatarDto }>,
+    reply: FastifyReply<{ Params: UserIdParamDto; Body: UpdateUserAvatarDto; Reply: UserResponseDto }>
+) => {
+    const user = await avatarServices.resetUserAvatar(
+        request.server.s3, request.server.pg,
+        request.log,
+        request.params.userId
     );
     return reply.status(200).send(user);
 };

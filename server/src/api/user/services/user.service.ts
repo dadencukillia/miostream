@@ -6,7 +6,7 @@ import {
     UserInvalidError,
     UserNotFoundError,
     UserAlreadyExistsError
-} from "./user.errors";
+} from "../user.errors";
 import type {
     CreateUserDto,
     UpdateUserProfileDto,
@@ -14,7 +14,7 @@ import type {
     UpdateUserPasswordDto,
     UserStatus,
     UserRole
-} from "./user.schema";
+} from "../user.schema";
 import { hashPassword, verifyPassword } from "@utils/password";
 
 interface PostgresError extends Error {
@@ -161,21 +161,6 @@ export const updateUserProfile = async (client: Pool, userId: string, data: Upda
             fullName: data.fullName,
             bio: data.bio,
             timezone: data.timezone
-        });
-        if (!user) {
-            throw new UserNotFoundError(`User with id '${userId}' not found`);
-        }
-        return user;
-    } catch (error) {
-        throw dbError(error);
-    }
-};
-
-export const updateUserAvatar = async (client: Pool, userId: string, avatarId: string) => {
-    try {
-        const user = await usersSqlc.updateUserAvatar(client, {
-            userId: userId,
-            avatarId: avatarId
         });
         if (!user) {
             throw new UserNotFoundError(`User with id '${userId}' not found`);
