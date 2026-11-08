@@ -59,10 +59,13 @@ export async function updateUserAvatarImage(
     let dbResponse;
     {
         try {
-            dbResponse = (await updateUserAvatarReturningOld(db, {
+            dbResponse = await updateUserAvatarReturningOld(db, {
                 userId: userId,
                 newAvatarId: newAvatarId
-            }))!;
+            });
+            if (dbResponse == null) {
+              throw new Error("database user not found");
+            }
         } catch (e) {
             logger.error(e);
             await removeAvatarById(s3, newAvatarId);
@@ -90,31 +93,37 @@ export async function resetUserAvatar(
     db: Pool,
     logger: FastifyBaseLogger,
     userId: string
-) {
-    let avatarId: string | null;
-
+): Promise<UserResponseDto> {
     // Update avatar id in database, return old
 
+    let dbResponse;
+
     try {
-        avatarId = (await updateUserAvatarReturningOld(db, {
+        dbResponse = await updateUserAvatarReturningOld(db, {
             userId: userId,
             newAvatarId: null
-        }))!.avatarId;
+        });
+        if (dbResponse == null) {
+          throw new Error("database user not found");
+        }
     } catch (e) {
         logger.error(e);
         throw new AvatarCouldntReachDBError("couldn't reset user avatar");
     }
 
-    if (!avatarId) {
+    if (dbResponse.avatarId == null) {
         throw new AvatarAlreadyNoAvatarError("already no avatar");
     }
 
     // Remove old avatar image file in S3
 
     try {
-        await removeAvatarById(s3, avatarId);
+        await removeAvatarById(s3, dbResponse.avatarId);
     } catch (e) {
         logger.error(e);
         throw new AvatarS3Error("couldn't remove a file in the file storage");
     }
+
+    const { oldAvatarId, ...toReturn } = dbResponse;
+    return toReturn;
 }
