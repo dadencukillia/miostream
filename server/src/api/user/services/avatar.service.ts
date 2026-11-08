@@ -1,14 +1,11 @@
 import sharp from "sharp";
 import type { Pool } from "pg";
-import type { Static } from "typebox";
 import type { FastifyBaseLogger } from "fastify";
 import type { S3Client } from "@aws-sdk/client-s3";
 import {
     AvatarS3Error,
-    AvatarNotFoundError,
     AvatarCouldntReachDBError,
     AvatarAlreadyNoAvatarError,
-    AvatarAnotherRequestInProcessError,
     AvatarInvalidImageError
 } from "../user.errors";
 import {
@@ -16,7 +13,6 @@ import {
     setAvatarById
 } from "@/cdn/avatar/avatar.shared";
 import {
-    getAvatarIdByUserId,
     updateUserAvatarReturningOld
 } from "@sqlc/users_sql";
 import type { UserResponseDto } from "../user.schema";
@@ -49,19 +45,6 @@ export async function updateUserAvatarImage(
         throw new AvatarInvalidImageError("invalid image");
     }
 
-    // Get old avatar id
-
-    let oldAvatarId: string | null;
-
-    try {
-        oldAvatarId = (await getAvatarIdByUserId(db, {
-            userId: userId,
-        }))!.avatarId;
-    } catch (e) {
-        logger.error(e);
-        throw new AvatarCouldntReachDBError("couldn't receive old avatar id");
-    }
-
     // Store new avatar file
 
     try {
@@ -73,44 +56,33 @@ export async function updateUserAvatarImage(
 
     // Update avatar in the database
 
+    let dbResponse;
     {
-        let errorToThrow = new AvatarCouldntReachDBError("database avatar id update went wrong");
         try {
-            const affected = (await updateUserAvatarReturningOld(db, {
+            dbResponse = (await updateUserAvatarReturningOld(db, {
                 userId: userId,
-                oldAvatarUrl: oldAvatarId!,
-                newAvatarUrl: newAvatarId
-            }))!.affected;
-            if (!affected) {
-                await removeAvatarById(s3, newAvatarId);
-                errorToThrow = new AvatarAnotherRequestInProcessError("concurrent requests conflict");
-                throw errorToThrow;
-            }
+                newAvatarId: newAvatarId
+            }))!;
         } catch (e) {
             logger.error(e);
             await removeAvatarById(s3, newAvatarId);
-            throw errorToThrow;
+            throw new AvatarCouldntReachDBError("database avatar id update went wrong");
         }
     }
 
     // Remove old avatar file
 
-    if (oldAvatarId) {
+    if (dbResponse.oldAvatarId) {
         try {
-            await removeAvatarById(s3, oldAvatarId);
+            await removeAvatarById(s3, dbResponse.oldAvatarId);
         } catch (e) {
             logger.error(e);
             throw new AvatarS3Error("couldn't remove old avatar in the file storage")
         }
     }
 
-    return {
-        ok: true,
-        userId: userId,
-        avatarId: newAvatarId,
-        format: "webp",
-        url: `/cdn/avatar/${newAvatarId}.webp`
-    };
+    const { oldAvatarId, ...toReturn } = dbResponse;
+    return toReturn;
 }
 
 export async function resetUserAvatar(
@@ -121,12 +93,12 @@ export async function resetUserAvatar(
 ) {
     let avatarId: string | null;
 
-    // Receive avatar id from database
+    // Update avatar id in database, return old
 
     try {
         avatarId = (await updateUserAvatarReturningOld(db, {
             userId: userId,
-            newAvatarUrl: ""
+            newAvatarId: null
         }))!.avatarId;
     } catch (e) {
         logger.error(e);
