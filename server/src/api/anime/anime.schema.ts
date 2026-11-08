@@ -1,4 +1,6 @@
 import Type, { type TSchema, type TSchemaOptions } from "typebox";
+import { AnimeIdParamsSchema } from "./anime.shared";
+export { AnimeIdParamsSchema } from "./anime.shared";
 
 export const ANIME_FORMATS = [
 	"tv",
@@ -141,15 +143,7 @@ const genresSchema = Type.Array(StringEnum(GENRES), {
 	description: "Anime genres (in the `genres` table)",
 });
 
-export const AnimeIdParamsSchema = Type.Object(
-	{
-		id: Type.String({ format: "uuid", description: "Anime UUID" }),
-	},
-	{
-		additionalProperties: false,
-		examples: [{ id: "018f23ab-1234-7123-8123-123456789abc" }],
-	},
-);
+
 
 export const AnimeSlugParamsSchema = Type.Object(
 	{
