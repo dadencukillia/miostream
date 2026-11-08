@@ -145,7 +145,10 @@ export const AnimeIdParamsSchema = Type.Object(
 	{
 		id: Type.String({ format: "uuid", description: "Anime UUID" }),
 	},
-	{ additionalProperties: false },
+	{
+		additionalProperties: false,
+		examples: [{ id: "018f23ab-1234-7123-8123-123456789abc" }],
+	},
 );
 
 export const AnimeSlugParamsSchema = Type.Object(
@@ -154,46 +157,77 @@ export const AnimeSlugParamsSchema = Type.Object(
 			minLength: 1,
 			maxLength: 200,
 			pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+			description: "URL-friendly anime slug",
 		}),
 	},
-	{ additionalProperties: false },
+	{
+		additionalProperties: false,
+		examples: [{ slug: "sample-anime" }],
+	},
 );
 
 export const AnimeSchema = Type.Object(
 	{
-		animeId: Type.String({ format: "uuid" }),
-		slug: Type.String(),
-		titleUa: Type.String(),
-		titleEn: Type.String(),
-		titleOriginal: Type.String(),
-		animeDescription: Type.String(),
-		coverUrl: Type.String(),
-		productionStudio: Type.String(),
-		malId: Nullable(Type.Integer()),
-		anilistId: Nullable(Type.Integer()),
-		hikkaId: Nullable(Type.String()),
-		imdbId: Nullable(Type.String()),
-		yearReleased: Nullable(Type.Integer()),
-		avgEpisodeDuration: Type.Integer({ minimum: 0 }),
-		episodesCount: Type.Integer({ minimum: 0 }),
-		ageRestriction: Nullable(StringEnum(MPAA_RATINGS)),
-		animeStatus: Nullable(StringEnum(ANIME_STATUSES)),
-		animeFormat: StringEnum(ANIME_FORMATS),
-		available: Type.Boolean(),
+		animeId: Type.String({ format: "uuid", description: "Unique anime identifier (UUID)" }),
+		slug: Type.String({ description: "URL-friendly unique anime slug" }),
+		titleUa: Type.String({ description: "Anime title in Ukrainian" }),
+		titleEn: Type.String({ description: "Anime title in English" }),
+		titleOriginal: Type.String({ description: "Original anime title" }),
+		animeDescription: Type.String({ description: "Anime synopsis/description" }),
+		coverUrl: Type.String({ description: "URL to anime cover image" }),
+		productionStudio: Type.String({ description: "Production studio name" }),
+		malId: Nullable(Type.Integer({ description: "MyAnimeList ID" })),
+		anilistId: Nullable(Type.Integer({ description: "AniList ID" })),
+		hikkaId: Nullable(Type.String({ description: "Hikka ID" })),
+		imdbId: Nullable(Type.String({ description: "IMDb ID" })),
+		yearReleased: Nullable(Type.Integer({ description: "Year of release" })),
+		avgEpisodeDuration: Type.Integer({ minimum: 0, description: "Average episode duration in minutes" }),
+		episodesCount: Type.Integer({ minimum: 0, description: "Total number of episodes" }),
+		ageRestriction: Nullable(StringEnum(MPAA_RATINGS, { description: "MPAA age rating" })),
+		animeStatus: Nullable(StringEnum(ANIME_STATUSES, { description: "Anime release status" })),
+		animeFormat: StringEnum(ANIME_FORMATS, { description: "Anime format" }),
+		available: Type.Boolean({ description: "Whether anime is visible/available" }),
 		genres: genresSchema,
 	},
-	{ additionalProperties: false },
+	{
+		additionalProperties: false,
+		description: "Anime catalog entry",
+		examples: [
+			{
+				animeId: "018f23ab-1234-7123-8123-123456789abc",
+				slug: "sample-anime",
+				titleUa: "Назва",
+				titleEn: "Title",
+				titleOriginal: "Original",
+				animeDescription: "Description",
+				coverUrl: "cover",
+				productionStudio: "Studio",
+				malId: 123,
+				anilistId: null,
+				hikkaId: null,
+				imdbId: null,
+				yearReleased: 2020,
+				avgEpisodeDuration: 24,
+				episodesCount: 12,
+				ageRestriction: "pg13",
+				animeStatus: "ongoing",
+				animeFormat: "tv",
+				available: true,
+				genres: ["action"],
+			},
+		],
+	},
 );
 
 export const CreateAnimeBodySchema = Type.Object(
 	{
 		slug: slugSchema,
-		titleUa: Type.Optional(Type.String({ minLength: 1 })),
-		titleEn: Type.Optional(Type.String({ minLength: 1 })),
-		titleOriginal: Type.Optional(Type.String({ minLength: 1 })),
-		animeDescription: Type.Optional(Type.String()),
-		coverUrl: Type.Optional(Type.String()),
-		productionStudio: Type.Optional(Type.String()),
+		titleUa: Type.Optional(Type.String({ minLength: 1, description: "Anime title in Ukrainian" })),
+		titleEn: Type.Optional(Type.String({ minLength: 1, description: "Anime title in English" })),
+		titleOriginal: Type.Optional(Type.String({ minLength: 1, description: "Original anime title" })),
+		animeDescription: Type.Optional(Type.String({ description: "Anime synopsis/description" })),
+		coverUrl: Type.Optional(Type.String({ description: "URL to anime cover image" })),
+		productionStudio: Type.Optional(Type.String({ description: "Production studio name" })),
 		malId: Type.Optional(Nullable(Type.Integer({ minimum: 1 }))),
 		anilistId: Type.Optional(Nullable(Type.Integer({ minimum: 1 }))),
 		hikkaId: Type.Optional(Nullable(Type.String({ minLength: 1}))),
@@ -211,7 +245,19 @@ export const CreateAnimeBodySchema = Type.Object(
 		available: Type.Optional(Type.Boolean()),
 		genres: Type.Optional(genresSchema),
 	},
-	{ additionalProperties: false },
+	{
+		additionalProperties: false,
+		description: "Payload for creating a new anime entry",
+		examples: [
+			{
+				slug: "sample-anime",
+				titleEn: "Title",
+				animeFormat: "tv",
+				available: true,
+				genres: ["action"],
+			},
+		],
+	},
 );
 
 /**
@@ -224,9 +270,9 @@ export const UpdateAnimeBodySchema = Type.Partial(CreateAnimeBodySchema, {
 
 export const ListAnimesQuerySchema = Type.Object(
 	{
-		page: Type.Optional(Type.Integer({ minimum: 1, default: 1 })),
+		page: Type.Optional(Type.Integer({ minimum: 1, default: 1, description: "Page number (1-based)" })),
 		limit: Type.Optional(
-			Type.Integer({ minimum: 1, maximum: 100, default: 20 }),
+			Type.Integer({ minimum: 1, maximum: 100, default: 20, description: "Number of items per page" }),
 		),
 		search: Type.Optional(
 			Type.String({
@@ -235,45 +281,66 @@ export const ListAnimesQuerySchema = Type.Object(
 				description: "Case-insensitive search by slug or any title",
 			}),
 		),
-		genre: Type.Optional(StringEnum(GENRES)),
-		status: Type.Optional(StringEnum(ANIME_STATUSES)),
-		format: Type.Optional(StringEnum(ANIME_FORMATS)),
-		year: Type.Optional(Type.Integer({ minimum: 1900, maximum: 2100 })),
+		genre: Type.Optional(StringEnum(GENRES, { description: "Filter by genre" })),
+		status: Type.Optional(StringEnum(ANIME_STATUSES, { description: "Filter by anime status" })),
+		format: Type.Optional(StringEnum(ANIME_FORMATS, { description: "Filter by anime format" })),
+		year: Type.Optional(Type.Integer({ minimum: 1900, maximum: 2100, description: "Filter by release year" })),
 		available: Type.Optional(
 			Type.Boolean({
 				default: true,
 				description: "Defaults to `true`; pass `false` to show hidden animes",
 			}),
 		),
-		sort: Type.Optional(StringEnum(ANIME_SORTS, { default: "newest" })),
+		sort: Type.Optional(StringEnum(ANIME_SORTS, { default: "newest", description: "Sort order" })),
 	},
-	{ additionalProperties: false },
+	{
+		additionalProperties: false,
+		description: "Query parameters for listing animes",
+		examples: [{ page: 1, limit: 20, search: "frieren", sort: "newest" }],
+	},
 );
 
 export const PaginationSchema = Type.Object(
 	{
-		page: Type.Integer({ minimum: 1 }),
-		limit: Type.Integer({ minimum: 1 }),
-		total: Type.Integer({ minimum: 0 }),
-		total_pages: Type.Integer({ minimum: 0 }),
+		page: Type.Integer({ minimum: 1, description: "Current page number" }),
+		limit: Type.Integer({ minimum: 1, description: "Items per page" }),
+		total: Type.Integer({ minimum: 0, description: "Total number of items" }),
+		total_pages: Type.Integer({ minimum: 0, description: "Total number of pages" }),
 	},
-	{ additionalProperties: false },
+	{
+		additionalProperties: false,
+		description: "Pagination metadata",
+		examples: [{ page: 1, limit: 20, total: 1, total_pages: 1 }],
+	},
 );
 
 export const AnimeListResponseSchema = Type.Object(
 	{
-		items: Type.Array(AnimeSchema),
+		items: Type.Array(AnimeSchema, { description: "List of anime entries" }),
 		pagination: PaginationSchema,
 	},
-	{ additionalProperties: false },
+	{
+		additionalProperties: false,
+		description: "Paginated anime list response",
+		examples: [
+			{
+				items: [],
+				pagination: { page: 1, limit: 20, total: 0, total_pages: 0 },
+			},
+		],
+	},
 );
 
 export const ErrorResponseSchema = Type.Object(
 	{
-		ok: Type.Literal(false),
-		message: Type.String(),
+		ok: Type.Literal(false, { description: "Indicates an unsuccessful operation" }),
+		message: Type.String({ description: "Human-readable error details" }),
 	},
-	{ additionalProperties: false },
+	{
+		additionalProperties: false,
+		description: "Standard error response payload",
+		examples: [{ ok: false, message: "Anime not found" }],
+	},
 );
 
 // Route schemas passed directly to Fastify.
@@ -281,6 +348,7 @@ export const ErrorResponseSchema = Type.Object(
 export const listAnimesRouteSchema = {
 	tags: ["Anime"],
 	summary: "List animes",
+	description: "Returns a paginated list of animes with optional filtering, search and sorting.",
 	querystring: ListAnimesQuerySchema,
 	response: {
 		200: AnimeListResponseSchema,
@@ -292,6 +360,7 @@ export const listAnimesRouteSchema = {
 export const getAnimeRouteSchema = {
 	tags: ["Anime"],
 	summary: "Get anime by id",
+	description: "Fetches a single anime by its UUID.",
 	params: AnimeIdParamsSchema,
 	response: {
 		200: AnimeSchema,
@@ -304,6 +373,7 @@ export const getAnimeRouteSchema = {
 export const getAnimeBySlugRouteSchema = {
 	tags: ["Anime"],
 	summary: "Get anime by slug",
+	description: "Fetches a single anime by its URL-friendly slug.",
 	params: AnimeSlugParamsSchema,
 	response: {
 		200: AnimeSchema,
@@ -316,6 +386,7 @@ export const getAnimeBySlugRouteSchema = {
 export const createAnimeRouteSchema = {
 	tags: ["Anime"],
 	summary: "Create anime",
+	description: "Creates a new anime entry with the provided data.",
 	body: CreateAnimeBodySchema,
 	response: {
 		201: AnimeSchema,
@@ -328,6 +399,7 @@ export const createAnimeRouteSchema = {
 export const updateAnimeRouteSchema = {
 	tags: ["Anime"],
 	summary: "Update anime",
+	description: "Updates an existing anime by its UUID.",
 	params: AnimeIdParamsSchema,
 	body: UpdateAnimeBodySchema,
 	response: {
@@ -342,6 +414,7 @@ export const updateAnimeRouteSchema = {
 export const deleteAnimeRouteSchema = {
 	tags: ["Anime"],
 	summary: "Delete anime",
+	description: "Permanently removes an anime by its UUID.",
 	params: AnimeIdParamsSchema,
 	response: {
 		204: Type.Null(),
