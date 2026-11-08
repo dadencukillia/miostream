@@ -23,13 +23,7 @@ const modulePlugin: FastifyPluginAsync = async (fastify: FastifyInstance, _opts:
       });
   });
 
-  fastify.get('/:avatarId(^[a-zA-Z0-9]{32}).webp', { schema: schemas.getAvatarSchema }, controllers.getAvatarController);
-
-  // TODO: wrap auth middleware
-  fastify.put('/', { schema: schemas.updateAvatarSchema }, controllers.updateAvatarController);
-
-  // TODO: wrap auth middleware
-  fastify.delete('/', { schema: schemas.resetAvatarSchema }, controllers.resetAvatarController);
+  fastify.get('/:avatarId.webp', { schema: schemas.getAvatarSchema }, controllers.getAvatarController);
 };
 
 export default modulePlugin;

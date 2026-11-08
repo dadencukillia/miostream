@@ -20,7 +20,7 @@ RETURNING
     "full_name",
     "email",
     "bio",
-    "avatar_url",
+    "avatar_id",
     "max_streak",
     "timezone",
     "streak_start_date",
@@ -39,7 +39,7 @@ SELECT
     "full_name",
     "email",
     "bio",
-    "avatar_url",
+    "avatar_id",
     "max_streak",
     "timezone",
     "streak_start_date",
@@ -61,7 +61,7 @@ SELECT
     "full_name",
     "email",
     "bio",
-    "avatar_url",
+    "avatar_id",
     "max_streak",
     "timezone",
     "streak_start_date",
@@ -83,7 +83,7 @@ SELECT
     "full_name",
     "email",
     "bio",
-    "avatar_url",
+    "avatar_id",
     "max_streak",
     "timezone",
     "streak_start_date",
@@ -119,31 +119,7 @@ RETURNING
     "full_name",
     "email",
     "bio",
-    "avatar_url",
-    "max_streak",
-    "timezone",
-    "streak_start_date",
-    "last_watch_date",
-    "profile_frame_url",
-    "profile_background_url",
-    "user_role",
-    "user_status",
-    "created_at",
-    "updated_at";
-
--- name: UpdateUserAvatar :one
-UPDATE public.users
-SET
-    "avatar_url" = @avatar_url,
-    "updated_at" = now()
-WHERE "user_id" = @user_id::uuid
-RETURNING 
-    "user_id",
-    "nickname",
-    "full_name",
-    "email",
-    "bio",
-    "avatar_url",
+    "avatar_id",
     "max_streak",
     "timezone",
     "streak_start_date",
@@ -174,7 +150,7 @@ RETURNING
     "full_name",
     "email",
     "bio",
-    "avatar_url",
+    "avatar_id",
     "max_streak",
     "timezone",
     "streak_start_date",
@@ -208,7 +184,7 @@ RETURNING
     "full_name",
     "email",
     "bio",
-    "avatar_url",
+    "avatar_id",
     "max_streak",
     "timezone",
     "streak_start_date",
@@ -232,7 +208,7 @@ RETURNING
     "full_name",
     "email",
     "bio",
-    "avatar_url",
+    "avatar_id",
     "max_streak",
     "timezone",
     "streak_start_date",
@@ -256,7 +232,7 @@ RETURNING
     "full_name",
     "email",
     "bio",
-    "avatar_url",
+    "avatar_id",
     "max_streak",
     "timezone",
     "streak_start_date",
@@ -280,19 +256,38 @@ WHERE "id" = @user_id::uuid
 LIMIT 1;
 
 -- name: GetAvatarIdByUserId :one
-SELECT avatar_url
+SELECT avatar_id
 FROM public.users
-WHERE user_id = $1;
-
--- name: SafeUpdateUserAvatarReturningModificationFlag :one
-UPDATE public.users
-SET avatar_url = @new_avatar_url::text
 WHERE user_id = $1
-  AND avatar_url = @old_avatar_url::text
-RETURNING count(*) = 1 AS affected;
+LIMIT 1;
 
 -- name: UpdateUserAvatarReturningOld :one
-UPDATE public.users
-SET avatar_url = @new_avatar_url::text
-WHERE user_id = $1
-RETURNING avatar_url;
+WITH old_vals AS (
+  SELECT avatar_id, user_id 
+  FROM public.users
+  WHERE "user_id" = @user_id::uuid
+  FOR UPDATE
+) UPDATE public.users u
+SET
+  "avatar_id" = sqlc.narg('new_avatar_id')::uuid,
+  "updated_at" = now()
+FROM old_vals o
+WHERE u.user_id = o.user_id
+RETURNING
+    o."user_id",
+    u."nickname",
+    u."full_name",
+    u."email",
+    u."bio",
+    u."avatar_id",
+    o."avatar_id" AS old_avatar_id,
+    u."max_streak",
+    u."timezone",
+    u."streak_start_date",
+    u."last_watch_date",
+    u."profile_frame_url",
+    u."profile_background_url",
+    u."user_role",
+    u."user_status",
+    u."created_at",
+    u."updated_at";

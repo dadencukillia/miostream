@@ -11,16 +11,16 @@ export class AuthContext {
   private _userId: string;
   private _nickname: string;
   private _fullName: string;
-  private _avatarUrl: string;
+  private _avatarId: string;
   private _role: string;
   private _status: string;
 
-  public constructor(sessionId: number, userId: string, nickname: string, fullName: string, avatarUrl: string, role: string, status: string) {
+  public constructor(sessionId: number, userId: string, nickname: string, fullName: string, avatarId: string, role: string, status: string) {
     this._sessionId = sessionId;
     this._userId = userId.trim().toLowerCase();
     this._nickname = nickname.trim();
     this._fullName = fullName.trim();
-    this._avatarUrl = avatarUrl.trim();
+    this._avatarId = avatarId.trim();
     this._role = role.trim().toLowerCase();
     this._status = status.trim().toLowerCase();
   }
@@ -37,8 +37,8 @@ export class AuthContext {
     return this._fullName;
   }
 
-  public get avatarUrl(): string {
-    return this._avatarUrl;
+  public get avatarId(): string {
+    return this._avatarId;
   }
 
   public get role(): string {
@@ -84,7 +84,7 @@ export class AuthContext {
  */
 export async function authMiddleware(request: FastifyRequest, _reply: FastifyReply) {
   // TODO: replace onto the real auth operations
-  
+
   const authHeader = request.headers.authorization?.trim();
 
   if (!authHeader?.startsWith("Bearer ")) {
@@ -121,7 +121,7 @@ export interface GrantAuthFilters {
   /** Restricts access to users having one of these account statuses. Default is `["active"]`. */
   userHasStatus?: string[],
   /** Custom callback executed when validation checks fail. */
-  fallback?: (request: FastifyRequest, reply: FastifyReply) => void|Promise<void>,
+  fallback?: (request: FastifyRequest, reply: FastifyReply) => void | Promise<void>,
 }
 
 const grantAuthDefaultFilters: Required<GrantAuthFilters> = {
@@ -151,7 +151,7 @@ const grantAuthDefaultFilters: Required<GrantAuthFilters> = {
 export const grantAuthMiddleware = (opts: GrantAuthFilters = grantAuthDefaultFilters) => async (request: FastifyRequest, reply: FastifyReply) => {
   const {
     receiveAuthData, unsignedOnly, userHasRole, userHasStatus, fallback
-  } = { 
+  } = {
     ...grantAuthDefaultFilters, ...opts,
     receiveAuthData: opts.receiveAuthData ?? grantAuthDefaultFilters.receiveAuthData,
     unsignedOnly: opts.unsignedOnly ?? grantAuthDefaultFilters.unsignedOnly,
