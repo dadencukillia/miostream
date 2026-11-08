@@ -5,17 +5,14 @@ interface Client {
 }
 
 export const createUserLinkQuery = `-- name: CreateUserLink :one
-INSERT INTO public.user_links (
+INSERT INTO public.user_links(
     "user_id",
     "user_link_url"
 ) VALUES (
     $1::uuid,
     $2
 )
-RETURNING 
-    "user_link_id",
-    "user_id",
-    "user_link_url"`;
+RETURNING user_link_id, user_id, user_link_url`;
 
 export interface CreateUserLinkArgs {
     userId: string;
@@ -85,10 +82,7 @@ SET
     "user_link_url" = $1
 WHERE "user_link_id" = $2
     AND "user_id" = $3::uuid
-RETURNING 
-    "user_link_id",
-    "user_id",
-    "user_link_url"`;
+RETURNING user_link_id, user_id, user_link_url`;
 
 export interface UpdateUserLinkArgs {
     userLinkUrl: string;

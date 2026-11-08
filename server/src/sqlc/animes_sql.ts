@@ -11,7 +11,7 @@ INSERT INTO public.animes (
     title_en,
     title_original,
     anime_description,
-    cover_url,
+    cover_id,
     production_studio,
     mal_id,
     anilist_id,
@@ -52,7 +52,7 @@ export interface CreateAnimeArgs {
     titleEn: string;
     titleOriginal: string;
     animeDescription: string;
-    coverUrl: string;
+    coverId: string;
     productionStudio: string;
     malId: string | null;
     anilistId: string | null;
@@ -74,7 +74,7 @@ export interface CreateAnimeRow {
 export async function createAnime(client: Client, args: CreateAnimeArgs): Promise<CreateAnimeRow | null> {
     const result = await client.query({
         text: createAnimeQuery,
-        values: [args.slug, args.titleUa, args.titleEn, args.titleOriginal, args.animeDescription, args.coverUrl, args.productionStudio, args.malId, args.anilistId, args.hikkaId, args.imdbId, args.yearReleased, args.avgEpisodeDuration, args.episodesCount, args.ageRestriction, args.animeStatus, args.animeFormat, args.available],
+        values: [args.slug, args.titleUa, args.titleEn, args.titleOriginal, args.animeDescription, args.coverId, args.productionStudio, args.malId, args.anilistId, args.hikkaId, args.imdbId, args.yearReleased, args.avgEpisodeDuration, args.episodesCount, args.ageRestriction, args.animeStatus, args.animeFormat, args.available],
         rowMode: "array"
     });
     if (result.rows.length !== 1) {
@@ -114,7 +114,7 @@ SELECT
     a.title_en,
     a.title_original,
     a.anime_description,
-    a.cover_url,
+    a.cover_id,
     a.production_studio,
     a.mal_id,
     a.anilist_id,
@@ -177,7 +177,7 @@ export interface ListAnimesRow {
     titleEn: string;
     titleOriginal: string;
     animeDescription: string;
-    coverUrl: string;
+    coverId: string | null;
     productionStudio: string;
     malId: string | null;
     anilistId: string | null;
@@ -207,7 +207,7 @@ export async function listAnimes(client: Client, args: ListAnimesArgs): Promise<
             titleEn: row[3],
             titleOriginal: row[4],
             animeDescription: row[5],
-            coverUrl: row[6],
+            coverId: row[6],
             productionStudio: row[7],
             malId: row[8],
             anilistId: row[9],
@@ -281,7 +281,7 @@ SELECT
     a.title_en,
     a.title_original,
     a.anime_description,
-    a.cover_url,
+    a.cover_id,
     a.production_studio,
     a.mal_id,
     a.anilist_id,
@@ -314,7 +314,7 @@ export interface GetAnimeByIdRow {
     titleEn: string;
     titleOriginal: string;
     animeDescription: string;
-    coverUrl: string;
+    coverId: string | null;
     productionStudio: string;
     malId: string | null;
     anilistId: string | null;
@@ -347,7 +347,7 @@ export async function getAnimeById(client: Client, args: GetAnimeByIdArgs): Prom
         titleEn: row[3],
         titleOriginal: row[4],
         animeDescription: row[5],
-        coverUrl: row[6],
+        coverId: row[6],
         productionStudio: row[7],
         malId: row[8],
         anilistId: row[9],
@@ -372,7 +372,7 @@ SELECT
     a.title_en,
     a.title_original,
     a.anime_description,
-    a.cover_url,
+    a.cover_id,
     a.production_studio,
     a.mal_id,
     a.anilist_id,
@@ -405,7 +405,7 @@ export interface GetAnimeBySlugRow {
     titleEn: string;
     titleOriginal: string;
     animeDescription: string;
-    coverUrl: string;
+    coverId: string | null;
     productionStudio: string;
     malId: string | null;
     anilistId: string | null;
@@ -438,7 +438,7 @@ export async function getAnimeBySlug(client: Client, args: GetAnimeBySlugArgs): 
         titleEn: row[3],
         titleOriginal: row[4],
         animeDescription: row[5],
-        coverUrl: row[6],
+        coverId: row[6],
         productionStudio: row[7],
         malId: row[8],
         anilistId: row[9],
@@ -629,7 +629,7 @@ SELECT
     "slug",
     "title_ua",
     "year_released",
-    "cover_url",
+    "cover_id",
     "episodes_count"
 FROM public.animes
 WHERE
@@ -642,7 +642,7 @@ export interface GetAvailableAnimesByCurrentYearRow {
     slug: string;
     titleUa: string;
     yearReleased: number | null;
-    coverUrl: string;
+    coverId: string | null;
     episodesCount: number;
 }
 
@@ -658,7 +658,7 @@ export async function getAvailableAnimesByCurrentYear(client: Client): Promise<G
             slug: row[1],
             titleUa: row[2],
             yearReleased: row[3],
-            coverUrl: row[4],
+            coverId: row[4],
             episodesCount: row[5]
         };
     });
@@ -672,7 +672,7 @@ SET
     "title_en"             = COALESCE($3::text, title_en),
     "title_original"       = COALESCE($4::text, title_original),
     "anime_description"    = COALESCE($5::text, anime_description),
-    "cover_url"            = COALESCE($6::text, cover_url),
+    "cover_id"            = COALESCE($6::text, cover_id),
     "production_studio"    = COALESCE($7::text, production_studio),
     "mal_id"               = $8::bigint,
     "anilist_id"           = $9::bigint,
@@ -694,7 +694,7 @@ RETURNING
     "title_en",
     "title_original",
     "anime_description",
-    "cover_url",
+    "cover_id",
     "production_studio",
     "mal_id",
     "anilist_id",
@@ -714,7 +714,7 @@ export interface UpdateAnimeByIdArgs {
     titleEn: string | null;
     titleOriginal: string | null;
     animeDescription: string | null;
-    coverUrl: string | null;
+    coverId: string | null;
     productionStudio: string | null;
     malId: string | null;
     anilistId: string | null;
@@ -737,7 +737,7 @@ export interface UpdateAnimeByIdRow {
     titleEn: string;
     titleOriginal: string;
     animeDescription: string;
-    coverUrl: string;
+    coverId: string | null;
     productionStudio: string;
     malId: string | null;
     anilistId: string | null;
@@ -755,7 +755,7 @@ export interface UpdateAnimeByIdRow {
 export async function updateAnimeById(client: Client, args: UpdateAnimeByIdArgs): Promise<UpdateAnimeByIdRow | null> {
     const result = await client.query({
         text: updateAnimeByIdQuery,
-        values: [args.slug, args.titleUa, args.titleEn, args.titleOriginal, args.animeDescription, args.coverUrl, args.productionStudio, args.malId, args.anilistId, args.hikkaId, args.imdbId, args.yearReleased, args.avgEpisodeDuration, args.episodesCount, args.ageRestriction, args.animeStatus, args.animeFormat, args.available, args.animeId],
+        values: [args.slug, args.titleUa, args.titleEn, args.titleOriginal, args.animeDescription, args.coverId, args.productionStudio, args.malId, args.anilistId, args.hikkaId, args.imdbId, args.yearReleased, args.avgEpisodeDuration, args.episodesCount, args.ageRestriction, args.animeStatus, args.animeFormat, args.available, args.animeId],
         rowMode: "array"
     });
     if (result.rows.length !== 1) {
@@ -769,7 +769,7 @@ export async function updateAnimeById(client: Client, args: UpdateAnimeByIdArgs)
         titleEn: row[3],
         titleOriginal: row[4],
         animeDescription: row[5],
-        coverUrl: row[6],
+        coverId: row[6],
         productionStudio: row[7],
         malId: row[8],
         anilistId: row[9],
