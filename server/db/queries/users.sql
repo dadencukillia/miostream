@@ -266,12 +266,13 @@ WITH old_vals AS (
   SELECT avatar_id, user_id 
   FROM public.users
   WHERE "user_id" = @user_id::uuid
+  FOR UPDATE
 ) UPDATE public.users u
 SET
   "avatar_id" = sqlc.narg('new_avatar_id')::uuid,
   "updated_at" = now()
 FROM old_vals o
-WHERE "user_id" = o.user_id
+WHERE u.user_id = o.user_id
 RETURNING
     o."user_id",
     u."nickname",
