@@ -7,6 +7,7 @@ import type {
 	UpdateAnimeBodyType,
 } from "./anime.dto";
 import * as animeService from "./anime.service";
+import { isUuid, normalizeUuid } from "@utils/uuid";
 
 export const listAnimes = async (
 	request: FastifyRequest<{ Querystring: AnimeListQueryType }>,
@@ -20,24 +21,14 @@ export const listAnimes = async (
 };
 
 export const getAnime = async (
-	request: FastifyRequest<{ Params: AnimeIdParamsType }>,
+	request: FastifyRequest<{ Params: { idOrSlug: string } }>,
 	reply: FastifyReply,
 ) => {
-	const anime = await animeService.getAnime(
-		request.server.pg,
-		request.params.id,
-	);
-	return reply.status(200).send(anime);
-};
-
-export const getAnimeBySlug = async (
-	request: FastifyRequest<{ Params: AnimeSlugParamsType }>,
-	reply: FastifyReply,
-) => {
-	const anime = await animeService.getAnimeBySlug(
-		request.server.pg,
-		request.params.slug,
-	);
+	const { idOrSlug } = request.params;
+	const normalizedId = normalizeUuid(idOrSlug);
+	const anime = normalizedId
+		? await animeService.getAnime(request.server.pg, normalizedId)
+		: await animeService.getAnimeBySlug(request.server.pg, idOrSlug);
 	return reply.status(200).send(anime);
 };
 

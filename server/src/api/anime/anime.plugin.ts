@@ -7,8 +7,7 @@ const modulePlugin: FastifyPluginAsync = async (fastify: FastifyInstance, _opts:
   AnimeErrors.setupErrorHandler(fastify);
 
   fastify.get("/", { schema: schemas.listAnimesRouteSchema }, controllers.listAnimes);
-  fastify.get("/slug/:slug", { schema: schemas.getAnimeBySlugRouteSchema }, controllers.getAnimeBySlug);
-  fastify.get("/:id", { schema: schemas.getAnimeRouteSchema }, controllers.getAnime);
+  fastify.get("/:idOrSlug", { schema: schemas.getAnimeRouteSchema }, controllers.getAnime);
   fastify.post("/", { schema: schemas.createAnimeRouteSchema }, controllers.createAnime);
   fastify.patch("/:id", { schema: schemas.updateAnimeRouteSchema }, controllers.updateAnime);
   fastify.delete("/:id", { schema: schemas.deleteAnimeRouteSchema }, controllers.deleteAnime);

@@ -353,9 +353,9 @@ export const listAnimesRouteSchema = {
 
 export const getAnimeRouteSchema = {
 	tags: ["Anime"],
-	summary: "Get anime by id",
-	description: "Fetches a single anime by its UUID.",
-	params: AnimeIdParamsSchema,
+	summary: "Get anime by id or slug",
+	description: "Fetches a single anime by its UUID or slug.",
+	params: Type.Object({ idOrSlug: Type.String({ minLength: 1, maxLength: 200 }) }, { additionalProperties: false }),
 	response: {
 		200: AnimeResponseSchema,
 		400: ErrorResponseSchema,

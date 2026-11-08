@@ -41,7 +41,7 @@ describe("anime API", () => {
   test("routes ID and slug lookups to the corresponding query", async () => {
     calls.length = 0;
     const byId = await app.inject({ method: "GET", url: `/api/anime/${id}` });
-    const bySlug = await app.inject({ method: "GET", url: "/api/anime/slug/sample-anime" });
+    const bySlug = await app.inject({ method: "GET", url: "/api/anime/sample-anime" });
     expect(byId.statusCode).toBe(200);
     expect(bySlug.statusCode).toBe(200);
     expect(calls).toEqual(["GetAnimeById", "GetAnimeBySlug"]);
