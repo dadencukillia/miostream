@@ -5,7 +5,7 @@ import type {
 	ANIME_STATUSES,
 	AnimeIdParamsSchema,
 	AnimeListResponseSchema,
-	AnimeSchema,
+	AnimeResponseSchema,
 	AnimeSlugParamsSchema,
 	CreateAnimeBodySchema,
 	GENRES,
@@ -15,30 +15,30 @@ import type {
 	UpdateAnimeBodySchema,
 } from "./anime.schema";
 
-export type Anime = Type.Static<typeof AnimeSchema>;
-export type CreateAnimeRequest = Type.Static<typeof CreateAnimeBodySchema>;
-export type UpdateAnimeRequest = Type.Static<typeof UpdateAnimeBodySchema>;
-export type AnimeListQuery = Type.Static<typeof ListAnimesQuerySchema>;
-export type AnimeListResponse = Type.Static<typeof AnimeListResponseSchema>;
-export type Pagination = Type.Static<typeof PaginationSchema>;
-export type AnimeIdParams = Type.Static<typeof AnimeIdParamsSchema>;
-export type AnimeSlugParams = Type.Static<typeof AnimeSlugParamsSchema>;
+export type AnimeResponseType = Type.Static<typeof AnimeResponseSchema>;
+export type CreateAnimeBodyType = Type.Static<typeof CreateAnimeBodySchema>;
+export type UpdateAnimeBodyType = Type.Static<typeof UpdateAnimeBodySchema>;
+export type AnimeListQueryType = Type.Static<typeof ListAnimesQuerySchema>;
+export type AnimeListResponseType = Type.Static<typeof AnimeListResponseSchema>;
+export type PaginationType = Type.Static<typeof PaginationSchema>;
+export type AnimeIdParamsType = Type.Static<typeof AnimeIdParamsSchema>;
+export type AnimeSlugParamsType = Type.Static<typeof AnimeSlugParamsSchema>;
 
-export type AnimeFormat = (typeof ANIME_FORMATS)[number];
-export type AnimeStatus = (typeof ANIME_STATUSES)[number];
-export type AgeRestriction = (typeof MPAA_RATINGS)[number];
-export type Genre = (typeof GENRES)[number];
-export type AnimeSort = (typeof ANIME_SORTS)[number];
+export type AnimeFormatType = (typeof ANIME_FORMATS)[number];
+export type AnimeStatusType = (typeof ANIME_STATUSES)[number];
+export type AgeRestrictionType = (typeof MPAA_RATINGS)[number];
+export type GenreType = (typeof GENRES)[number];
+export type AnimeSortType = (typeof ANIME_SORTS)[number];
 
 // Normalized filters used by the service/repository layer
-export interface AnimeListFilter {
+export interface AnimeListFilterType {
 	search: string | null;
-	genre: Genre | null;
-	status: AnimeStatus | null;
-	format: AnimeFormat | null;
+	genre: GenreType | null;
+	status: AnimeStatusType | null;
+	format: AnimeFormatType | null;
 	year: number | null;
 	available: boolean | null;
-	sort: AnimeSort;
+	sort: AnimeSortType;
 	limit: number;
 	offset: number;
 }

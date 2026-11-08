@@ -1,15 +1,15 @@
 import type { Pool, PoolClient } from "pg";
 import type {
-	AgeRestriction,
-	Anime,
-	AnimeFormat,
-	AnimeListFilter,
-	AnimeListQuery,
-	AnimeListResponse,
-	AnimeStatus,
-	CreateAnimeRequest,
-	Genre,
-	UpdateAnimeRequest,
+	AgeRestrictionType,
+	AnimeResponseType,
+	AnimeFormatType,
+	AnimeListFilterType,
+	AnimeListQueryType,
+	AnimeListResponseType,
+	AnimeStatusType,
+	CreateAnimeBodyType,
+	GenreType,
+	UpdateAnimeBodyType,
 } from "./anime.dto";
 import { AnimeErrors } from "./anime.errors";
 import {
@@ -36,24 +36,24 @@ const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const includes = (values: readonly string[], value: string) =>
 	values.includes(value);
 
-const toAgeRestriction = (value: string | null): AgeRestriction | null =>
+const toAgeRestriction = (value: string | null): AgeRestrictionType | null =>
 	value !== null && includes(MPAA_RATINGS, value)
-		? (value as AgeRestriction)
+		? (value as AgeRestrictionType)
 		: null;
 
-const toAnimeStatus = (value: string | null): AnimeStatus | null =>
+const toAnimeStatus = (value: string | null): AnimeStatusType | null =>
 	value !== null && includes(ANIME_STATUSES, value)
-		? (value as AnimeStatus)
+		? (value as AnimeStatusType)
 		: null;
 
-const toAnimeFormat = (value: string): AnimeFormat =>
-	includes(ANIME_FORMATS, value) ? (value as AnimeFormat) : "other";
+const toAnimeFormat = (value: string): AnimeFormatType =>
+	includes(ANIME_FORMATS, value) ? (value as AnimeFormatType) : "other";
 
-const toGenres = (values: string[] | null): Genre[] =>
-	(values ?? []).filter((value): value is Genre => includes(GENRES, value));
+const toGenres = (values: string[] | null): GenreType[] =>
+	(values ?? []).filter((value): value is GenreType => includes(GENRES, value));
 
 /** Maps a SQL row (camelCase) to the public API shape (camelCase). */
-export const toAnime = (row: AnimeRecord): Anime => ({
+export const toAnime = (row: AnimeRecord): AnimeResponseType => ({
 	animeId: row.animeId,
 	slug: row.slug,
 	titleUa: row.titleUa,
@@ -162,19 +162,19 @@ function assertHasTitle(titles: Array<string | null | undefined>) {
 	}
 }
 
-const uniqueGenres = (genres: Genre[] | undefined): Genre[] => [
+const uniqueGenres = (genres: GenreType[] | undefined): GenreType[] => [
 	...new Set(genres ?? []),
 ];
 
 export async function listAnimes(
 	db: Pool,
-	query: AnimeListQuery,
-): Promise<AnimeListResponse> {
+	query: AnimeListQueryType,
+): Promise<AnimeListResponseType> {
 	const page = query.page ?? 1;
 	const limit = query.limit ?? 20;
 	const search = query.search?.trim() || null;
 
-	const filter: AnimeListFilter = {
+	const filter: AnimeListFilterType = {
 		search,
 		genre: query.genre ?? null,
 		status: query.status ?? null,
@@ -200,7 +200,7 @@ export async function listAnimes(
 	};
 }
 
-export async function getAnime(db: Pool, animeId: string): Promise<Anime> {
+export async function getAnime(db: Pool, animeId: string): Promise<AnimeResponseType> {
 	assertValidId(animeId);
 
 	const anime = await repoGetAnimeById(db, animeId).catch(handleDbError);
@@ -209,7 +209,7 @@ export async function getAnime(db: Pool, animeId: string): Promise<Anime> {
 	return toAnime(anime);
 }
 
-export async function getAnimeBySlug(db: Pool, slug: string): Promise<Anime> {
+export async function getAnimeBySlug(db: Pool, slug: string): Promise<AnimeResponseType> {
 	assertValidSlug(slug);
 
 	const anime = await repoGetAnimeBySlug(db, slug).catch(handleDbError);
@@ -220,8 +220,8 @@ export async function getAnimeBySlug(db: Pool, slug: string): Promise<Anime> {
 
 export async function createAnime(
 	db: Pool,
-	data: CreateAnimeRequest,
-): Promise<Anime> {
+	data: CreateAnimeBodyType,
+): Promise<AnimeResponseType> {
 	assertValidSlug(data.slug);
 	assertHasTitle([data.titleUa, data.titleEn, data.titleOriginal]);
 
@@ -256,8 +256,8 @@ export async function createAnime(
 export async function updateAnime(
 	db: Pool,
 	animeId: string,
-	data: UpdateAnimeRequest,
-): Promise<Anime> {
+	data: UpdateAnimeBodyType,
+): Promise<AnimeResponseType> {
 	assertValidId(animeId);
 
 	if (!data || Object.keys(data).length === 0) {
@@ -373,11 +373,11 @@ export interface CreateAnimeRecord {
 	animeStatus: string | null;
 	animeFormat: string;
 	available: boolean;
-	genres: Genre[];
+	genres: GenreType[];
 }
 
 export type UpdateAnimeRecord = Partial<Omit<CreateAnimeRecord, "genres">> & {
-	genres?: Genre[];
+	genres?: GenreType[];
 };
 
 async function withTransaction<T>(
@@ -398,7 +398,7 @@ async function withTransaction<T>(
 	}
 }
 
-async function repoListAnimes(db: Pool, filter: AnimeListFilter) {
+async function repoListAnimes(db: Pool, filter: AnimeListFilterType) {
 	const filters = {
 		search: filter.search,
 		genre: filter.genre,

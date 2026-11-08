@@ -1,15 +1,15 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import type {
-	AnimeIdParams,
-	AnimeListQuery,
-	AnimeSlugParams,
-	CreateAnimeRequest,
-	UpdateAnimeRequest,
+	AnimeIdParamsType,
+	AnimeListQueryType,
+	AnimeSlugParamsType,
+	CreateAnimeBodyType,
+	UpdateAnimeBodyType,
 } from "./anime.dto";
 import * as animeService from "./anime.service";
 
 export const listAnimes = async (
-	request: FastifyRequest<{ Querystring: AnimeListQuery }>,
+	request: FastifyRequest<{ Querystring: AnimeListQueryType }>,
 	reply: FastifyReply,
 ) => {
 	const result = await animeService.listAnimes(
@@ -20,7 +20,7 @@ export const listAnimes = async (
 };
 
 export const getAnime = async (
-	request: FastifyRequest<{ Params: AnimeIdParams }>,
+	request: FastifyRequest<{ Params: AnimeIdParamsType }>,
 	reply: FastifyReply,
 ) => {
 	const anime = await animeService.getAnime(
@@ -31,7 +31,7 @@ export const getAnime = async (
 };
 
 export const getAnimeBySlug = async (
-	request: FastifyRequest<{ Params: AnimeSlugParams }>,
+	request: FastifyRequest<{ Params: AnimeSlugParamsType }>,
 	reply: FastifyReply,
 ) => {
 	const anime = await animeService.getAnimeBySlug(
@@ -42,7 +42,7 @@ export const getAnimeBySlug = async (
 };
 
 export const createAnime = async (
-	request: FastifyRequest<{ Body: CreateAnimeRequest }>,
+	request: FastifyRequest<{ Body: CreateAnimeBodyType }>,
 	reply: FastifyReply,
 ) => {
 	const anime = await animeService.createAnime(request.server.pg, request.body);
@@ -51,8 +51,8 @@ export const createAnime = async (
 
 export const updateAnime = async (
 	request: FastifyRequest<{
-		Params: AnimeIdParams;
-		Body: UpdateAnimeRequest;
+		Params: AnimeIdParamsType;
+		Body: UpdateAnimeBodyType;
 	}>,
 	reply: FastifyReply,
 ) => {
@@ -65,7 +65,7 @@ export const updateAnime = async (
 };
 
 export const deleteAnime = async (
-	request: FastifyRequest<{ Params: AnimeIdParams }>,
+	request: FastifyRequest<{ Params: AnimeIdParamsType }>,
 	reply: FastifyReply,
 ) => {
 	await animeService.deleteAnime(request.server.pg, request.params.id);

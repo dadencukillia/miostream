@@ -166,7 +166,7 @@ export const AnimeSlugParamsSchema = Type.Object(
 	},
 );
 
-export const AnimeSchema = Type.Object(
+export const AnimeResponseSchema = Type.Object(
 	{
 		animeId: Type.String({ format: "uuid", description: "Unique anime identifier (UUID)" }),
 		slug: Type.String({ description: "URL-friendly unique anime slug" }),
@@ -316,7 +316,7 @@ export const PaginationSchema = Type.Object(
 
 export const AnimeListResponseSchema = Type.Object(
 	{
-		items: Type.Array(AnimeSchema, { description: "List of anime entries" }),
+		items: Type.Array(AnimeResponseSchema, { description: "List of anime entries" }),
 		pagination: PaginationSchema,
 	},
 	{
@@ -363,7 +363,7 @@ export const getAnimeRouteSchema = {
 	description: "Fetches a single anime by its UUID.",
 	params: AnimeIdParamsSchema,
 	response: {
-		200: AnimeSchema,
+		200: AnimeResponseSchema,
 		400: ErrorResponseSchema,
 		404: ErrorResponseSchema,
 		500: ErrorResponseSchema,
@@ -376,7 +376,7 @@ export const getAnimeBySlugRouteSchema = {
 	description: "Fetches a single anime by its URL-friendly slug.",
 	params: AnimeSlugParamsSchema,
 	response: {
-		200: AnimeSchema,
+		200: AnimeResponseSchema,
 		400: ErrorResponseSchema,
 		404: ErrorResponseSchema,
 		500: ErrorResponseSchema,
@@ -389,7 +389,7 @@ export const createAnimeRouteSchema = {
 	description: "Creates a new anime entry with the provided data.",
 	body: CreateAnimeBodySchema,
 	response: {
-		201: AnimeSchema,
+		201: AnimeResponseSchema,
 		400: ErrorResponseSchema,
 		409: ErrorResponseSchema,
 		500: ErrorResponseSchema,
@@ -403,7 +403,7 @@ export const updateAnimeRouteSchema = {
 	params: AnimeIdParamsSchema,
 	body: UpdateAnimeBodySchema,
 	response: {
-		200: AnimeSchema,
+		200: AnimeResponseSchema,
 		400: ErrorResponseSchema,
 		404: ErrorResponseSchema,
 		409: ErrorResponseSchema,
@@ -423,3 +423,4 @@ export const deleteAnimeRouteSchema = {
 		500: ErrorResponseSchema,
 	},
 } as const;
+export type ErrorResponseType = Type.Static<typeof ErrorResponseSchema>;
