@@ -29,7 +29,7 @@ export async function updateUserAvatarImage(
     userId: string,
     imageContent: Buffer
 ): Promise<UserResponseDto> {
-    const newAvatarId = crypto.randomUUID().replaceAll("-", "");
+    const newAvatarId = crypto.randomUUID();
 
     // Process image
 
@@ -111,14 +111,14 @@ export async function resetUserAvatar(
         throw new AvatarCouldntReachDBError("couldn't reset user avatar");
     }
 
-    if (dbResponse.avatarId == null) {
+    if (dbResponse.oldAvatarId == null) {
         throw new AvatarAlreadyNoAvatarError("already no avatar");
     }
 
     // Remove old avatar image file in S3
 
     try {
-        await removeAvatarById(s3, dbResponse.avatarId);
+        await removeAvatarById(s3, dbResponse.oldAvatarId);
     } catch (e) {
         logger.error(e);
         throw new AvatarS3Error("couldn't remove a file in the file storage");

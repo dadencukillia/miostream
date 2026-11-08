@@ -236,7 +236,7 @@ export async function createAnime(
 		titleEn: data.titleEn ?? "",
 		titleOriginal: data.titleOriginal ?? "",
 		animeDescription: data.animeDescription ?? "",
-		coverId: data.coverId ?? "",
+		coverId: data.coverId ?? null,
 		productionStudio: data.productionStudio ?? "",
 		malId: data.malId ?? null,
 		anilistId: data.anilistId ?? null,
@@ -365,7 +365,7 @@ export interface CreateAnimeRecord {
 	titleEn: string;
 	titleOriginal: string;
 	animeDescription: string;
-	coverId: string;
+	coverId: string | null;
 	productionStudio: string;
 	malId: number | null;
 	anilistId: number | null;

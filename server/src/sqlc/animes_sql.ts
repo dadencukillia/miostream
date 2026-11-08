@@ -30,7 +30,7 @@ INSERT INTO public.animes (
     $3::text,
     $4::text,
     $5::text,
-    $6::text,
+    $6::uuid,
     $7::text,
     $8::bigint,
     $9::bigint,
@@ -52,7 +52,7 @@ export interface CreateAnimeArgs {
     titleEn: string;
     titleOriginal: string;
     animeDescription: string;
-    coverId: string;
+    coverId: string | null;
     productionStudio: string;
     malId: string | null;
     anilistId: string | null;
@@ -672,7 +672,7 @@ SET
     "title_en"             = COALESCE($3::text, title_en),
     "title_original"       = COALESCE($4::text, title_original),
     "anime_description"    = COALESCE($5::text, anime_description),
-    "cover_id"            = COALESCE($6::text, cover_id),
+    "cover_id"             = COALESCE($6::uuid, cover_id),
     "production_studio"    = COALESCE($7::text, production_studio),
     "mal_id"               = $8::bigint,
     "anilist_id"           = $9::bigint,

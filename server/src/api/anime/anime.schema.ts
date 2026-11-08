@@ -192,7 +192,7 @@ export const CreateAnimeBodySchema = Type.Object(
 		titleEn: Type.Optional(Type.String({ minLength: 1 })),
 		titleOriginal: Type.Optional(Type.String({ minLength: 1 })),
 		animeDescription: Type.Optional(Type.String()),
-		coverId: Type.Optional(Type.String()),
+		coverId: Type.Optional(Nullable(Type.String())),
 		productionStudio: Type.Optional(Type.String()),
 		malId: Type.Optional(Nullable(Type.Integer({ minimum: 1 }))),
 		anilistId: Type.Optional(Nullable(Type.Integer({ minimum: 1 }))),

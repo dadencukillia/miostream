@@ -4,7 +4,10 @@ import type { FastifySchema } from "fastify";
 // Primitives
 
 export const AvatarIdParam = Type.Object({
-  avatarId: Type.String({ description: "avatar ID" }),
+  avatarId: Type.String({
+    format: "uuid",
+    description: "avatar ID"
+  }),
 });
 
 export const AvatarErrorResponse = Type.Object({
