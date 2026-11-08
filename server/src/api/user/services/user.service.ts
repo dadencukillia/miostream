@@ -171,11 +171,11 @@ export const updateUserProfile = async (client: Pool, userId: string, data: Upda
     }
 };
 
-export const updateUserAvatar = async (client: Pool, userId: string, avatarUrl: string) => {
+export const updateUserAvatar = async (client: Pool, userId: string, avatarId: string) => {
     try {
         const user = await usersSqlc.updateUserAvatar(client, {
             userId: userId,
-            avatarUrl: avatarUrl
+            avatarId: avatarId
         });
         if (!user) {
             throw new UserNotFoundError(`User with id '${userId}' not found`);

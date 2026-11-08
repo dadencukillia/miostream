@@ -117,7 +117,7 @@ export const UserResponseSchema = Type.Object({
         description: 'Short profile biography',
         examples: ['Variety streamer and tech enthusiast']
     }),
-    avatarUrl: Type.String({
+    avatarId: Type.String({
         description: 'Direct link to user avatar image (empty string if not set)',
         examples: ['https://cdn.example.com/avatar/default.webp']
     }),
@@ -154,7 +154,7 @@ export const UserResponseSchema = Type.Object({
             fullName: 'John Doe',
             email: 'john.doe@example.com',
             bio: 'Variety streamer and tech enthusiast',
-            avatarUrl: 'https://cdn.example.com/avatar/default.webp',
+            avatarId: 'https://cdn.example.com/avatar/default.webp',
             maxStreak: 12,
             timezone: 'Europe/Kyiv',
             streakStartDate: '2026-04-01',
@@ -291,7 +291,7 @@ export const UpdateUserProfileBodySchema = Type.Object({
 export type UpdateUserProfileDto = Static<typeof UpdateUserProfileBodySchema>;
 
 export const UpdateUserAvatarBodySchema = Type.Object({
-    avatarUrl: Type.String({
+    avatarId: Type.String({
         format: 'uri',
         maxLength: 2048,
         description: 'URL of the avatar image. Must use the http or https protocol (up to 2048 characters). The file is not uploaded or checked, only the URL is stored',

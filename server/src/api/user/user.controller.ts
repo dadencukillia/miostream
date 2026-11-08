@@ -83,16 +83,16 @@ export const updateUserAvatar = async (
     request: FastifyRequest<{ Params: UserIdParamDto; Body: UpdateUserAvatarDto }>,
     reply: FastifyReply<{ Params: UserIdParamDto; Body: UpdateUserAvatarDto; Reply: UserResponseDto }>
 ) => {
-    const { avatarUrl } = request.body;
+    const { avatarId } = request.body;
 
-    if (!isSafeHttpUrl(avatarUrl)) {
+    if (!isSafeHttpUrl(avatarId)) {
         throw new UserInvalidError('Avatar URL must use http or https protocol');
     }
 
     const user = await services.updateUserAvatar(
         request.server.pg,
         request.params.userId,
-        avatarUrl
+        avatarId
     );
     return reply.status(200).send(user);
 };
