@@ -117,10 +117,10 @@ export const UserResponseSchema = Type.Object({
         description: 'Short profile biography',
         examples: ['Variety streamer and tech enthusiast']
     }),
-    avatarId: Type.String({
-        description: 'Direct link to user avatar image (empty string if not set)',
-        examples: ['https://cdn.example.com/avatar/default.webp']
-    }),
+    avatarId: Nullable(Type.String({
+        description: 'UUID of user avatar image in S3 storage',
+        examples: ['01a1bba1-8f21-73cc-b596-6fa8d2dde341']
+    })),
     maxStreak: Type.Integer({
         minimum: 0,
         description: 'Longest watch streak achieved (in days)',
@@ -154,7 +154,7 @@ export const UserResponseSchema = Type.Object({
             fullName: 'John Doe',
             email: 'john.doe@example.com',
             bio: 'Variety streamer and tech enthusiast',
-            avatarId: 'https://cdn.example.com/avatar/default.webp',
+            avatarId: '01a1bba1-8f21-73cc-b596-6fa8d2dde341',
             maxStreak: 12,
             timezone: 'Europe/Kyiv',
             streakStartDate: '2026-04-01',
@@ -290,17 +290,7 @@ export const UpdateUserProfileBodySchema = Type.Object({
 });
 export type UpdateUserProfileDto = Static<typeof UpdateUserProfileBodySchema>;
 
-export const UpdateUserAvatarBodySchema = Type.Object({
-    avatarId: Type.String({
-        format: 'uri',
-        maxLength: 2048,
-        description: 'URL of the avatar image. Must use the http or https protocol (up to 2048 characters). The file is not uploaded or checked, only the URL is stored',
-        examples: ['https://cdn.example.com/avatar/user-123.webp']
-    }),
-}, {
-    additionalProperties: false,
-    description: 'Payload for updating user profile avatar'
-});
+export const UpdateUserAvatarBodySchema = Type.String({ description: "base64 image content" });
 export type UpdateUserAvatarDto = Static<typeof UpdateUserAvatarBodySchema>;
 
 export const UpdateUserCustomizationBodySchema = Type.Object({
@@ -446,6 +436,19 @@ export const updateUserAvatarRouteSchema = {
     body: UpdateUserAvatarBodySchema,
     response: {
         200: UserResponseSchema,
+        400: ErrorResponseSchema,
+        404: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+    },
+} as const;
+
+export const deleteUserAvatarSchema = {
+    tags: ['Users'],
+    summary: 'Delete user avatar',
+    description: 'Permanently removes the user avatar from S3 storage',
+    params: UserIdParamSchema,
+    response: {
+        204: Type.Null({ description: 'User avatar removed successfully' }),
         400: ErrorResponseSchema,
         404: ErrorResponseSchema,
         500: ErrorResponseSchema,
