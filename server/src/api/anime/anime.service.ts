@@ -172,10 +172,7 @@ export async function listAnimes(
 ): Promise<AnimeListResponseType> {
 	const page = query.page ?? 1;
 	const limit = query.limit ?? 20;
-	const search = query.search?.trim() || null;
-
 	const filter: AnimeListFilterType = {
-		search,
 		genre: query.genre ?? null,
 		status: query.status ?? null,
 		format: query.format ?? null,
@@ -286,7 +283,7 @@ export async function updateAnime(
 	if (data.animeDescription !== undefined) {
 		patch.animeDescription = data.animeDescription;
 	}
-	if (data.coverUrl !== undefined) patch.coverUrl = data.coverUrl;
+	if (data.coverUrl !== undefined) patch.coverUrl = data.coverUrl ?? "";
 	if (data.productionStudio !== undefined) {
 		patch.productionStudio = data.productionStudio;
 	}
@@ -400,7 +397,6 @@ async function withTransaction<T>(
 
 async function repoListAnimes(db: Pool, filter: AnimeListFilterType) {
 	const filters = {
-		search: filter.search,
 		genre: filter.genre,
 		status: filter.status,
 		format: filter.format,

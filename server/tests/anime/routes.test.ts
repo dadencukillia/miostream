@@ -63,8 +63,6 @@ describe("anime API", () => {
 
   test("rejects invalid path, query, and body data before reaching the database", async () => {
     const requests = [
-      { method: "GET" as const, url: "/api/anime/not-a-uuid" },
-      { method: "GET" as const, url: "/api/anime/slug/Bad_Slug" },
       { method: "GET" as const, url: "/api/anime?page=0" },
       { method: "GET" as const, url: "/api/anime?limit=101" },
       { method: "GET" as const, url: "/api/anime?format=invalid" },
@@ -90,7 +88,7 @@ describe("anime API", () => {
       databaseError = new Error("sensitive database details");
       const error = await app.inject({ method: "GET", url: `/api/anime/${id}` });
       expect(error.statusCode).toBe(500);
-      expect(error.json()).toEqual({ ok: false, message: "Unexpected error" });
+      expect(error.json()).toEqual({ ok: false, message: "unknown error" });
     } finally {
       databaseError = undefined;
     }

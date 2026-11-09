@@ -220,7 +220,7 @@ export const CreateAnimeBodySchema = Type.Object(
 		titleEn: Type.Optional(Type.String({ minLength: 1, description: "Anime title in English" })),
 		titleOriginal: Type.Optional(Type.String({ minLength: 1, description: "Original anime title" })),
 		animeDescription: Type.Optional(Type.String({ description: "Anime synopsis/description" })),
-		coverUrl: Type.Optional(Type.String({ description: "URL to anime cover image" })),
+		coverUrl: Type.Optional(Type.Union([Type.String({ description: "URL to anime cover image" }), Type.Null()], { description: "URL to anime cover image; null resets to default" })),
 		productionStudio: Type.Optional(Type.String({ description: "Production studio name" })),
 		malId: Type.Optional(Nullable(Type.Integer({ minimum: 1 }))),
 		anilistId: Type.Optional(Nullable(Type.Integer({ minimum: 1 }))),
@@ -268,13 +268,6 @@ export const ListAnimesQuerySchema = Type.Object(
 		limit: Type.Optional(
 			Type.Integer({ minimum: 1, maximum: 100, default: 20, description: "Number of items per page" }),
 		),
-		search: Type.Optional(
-			Type.String({
-				minLength: 1,
-				maxLength: 200,
-				description: "Case-insensitive search by slug or any title",
-			}),
-		),
 		genre: Type.Optional(StringEnum(GENRES, { description: "Filter by genre" })),
 		status: Type.Optional(StringEnum(ANIME_STATUSES, { description: "Filter by anime status" })),
 		format: Type.Optional(StringEnum(ANIME_FORMATS, { description: "Filter by anime format" })),
@@ -290,7 +283,7 @@ export const ListAnimesQuerySchema = Type.Object(
 	{
 		additionalProperties: false,
 		description: "Query parameters for listing animes",
-		examples: [{ page: 1, limit: 20, search: "frieren", sort: "newest" }],
+		examples: [{ page: 1, limit: 20, sort: "newest" }],
 	},
 );
 
@@ -342,7 +335,7 @@ export const ErrorResponseSchema = Type.Object(
 export const listAnimesRouteSchema = {
 	tags: ["Anime"],
 	summary: "List animes",
-	description: "Returns a paginated list of animes with optional filtering, search and sorting.",
+	description: "Returns a paginated list of animes with optional filtering and sorting.",
 	querystring: ListAnimesQuerySchema,
 	response: {
 		200: AnimeListResponseSchema,

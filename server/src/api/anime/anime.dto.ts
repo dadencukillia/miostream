@@ -32,7 +32,6 @@ export type AnimeSortType = (typeof ANIME_SORTS)[number];
 
 // Normalized filters used by the service/repository layer
 export interface AnimeListFilterType {
-	search: string | null;
 	genre: GenreType | null;
 	status: AnimeStatusType | null;
 	format: AnimeFormatType | null;

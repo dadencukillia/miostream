@@ -135,21 +135,16 @@ SELECT
     )::text[] AS genres
 FROM public.animes a
 WHERE
-    ($1::text IS NULL OR
-        a.slug ILIKE '%' || $1::text || '%' OR
-        a.title_ua ILIKE '%' || $1::text || '%' OR
-        a.title_en ILIKE '%' || $1::text || '%' OR
-        a.title_original ILIKE '%' || $1::text || '%')
-    AND ($2::genre_type_enum IS NULL OR EXISTS (
+    ($1::genre_type_enum IS NULL OR EXISTS (
         SELECT 1
         FROM public.genres fg
         WHERE fg.anime_id = a.anime_id
-          AND fg.genre_type = $2::genre_type_enum
+          AND fg.genre_type = $1::genre_type_enum
     ))
-    AND ($3::anime_status_enum IS NULL OR a.anime_status = $3::anime_status_enum)
-    AND ($4::anime_format_enum IS NULL OR a.anime_format = $4::anime_format_enum)
-    AND ($5::smallint IS NULL OR a.year_released = $5::smallint)
-    AND ($6::boolean IS NULL OR a.available = $6::boolean)
+    AND ($2::anime_status_enum IS NULL OR a.anime_status = $2::anime_status_enum)
+    AND ($3::anime_format_enum IS NULL OR a.anime_format = $3::anime_format_enum)
+    AND ($4::smallint IS NULL OR a.year_released = $4::smallint)
+    AND ($5::boolean IS NULL OR a.available = $5::boolean)
 ORDER BY
     CASE WHEN $7::text = 'oldest' THEN a.anime_id END ASC,
     CASE WHEN $7::text = 'title' THEN lower(a.title_ua) END ASC,
@@ -159,7 +154,6 @@ ORDER BY
 LIMIT $9::int OFFSET $8::int`;
 
 export interface ListAnimesArgs {
-    search: string | null;
     genre: string | null;
     status: string | null;
     format: string | null;
@@ -196,7 +190,7 @@ export interface ListAnimesRow {
 export async function listAnimes(client: Client, args: ListAnimesArgs): Promise<ListAnimesRow[]> {
     const result = await client.query({
         text: listAnimesQuery,
-        values: [args.search, args.genre, args.status, args.format, args.year, args.available, args.sort, args.offset, args.limit],
+        values: [args.genre, args.status, args.format, args.year, args.available, args.sort, args.offset, args.limit],
         rowMode: "array"
     });
     return result.rows.map(row => {
@@ -229,24 +223,18 @@ export const countAnimesQuery = `-- name: CountAnimes :one
 SELECT COUNT(*)::int AS total
 FROM public.animes a
 WHERE
-    ($1::text IS NULL OR
-        a.slug ILIKE '%' || $1::text || '%' OR
-        a.title_ua ILIKE '%' || $1::text || '%' OR
-        a.title_en ILIKE '%' || $1::text || '%' OR
-        a.title_original ILIKE '%' || $1::text || '%')
-    AND ($2::genre_type_enum IS NULL OR EXISTS (
+    ($1::genre_type_enum IS NULL OR EXISTS (
         SELECT 1
         FROM public.genres fg
         WHERE fg.anime_id = a.anime_id
-          AND fg.genre_type = $2::genre_type_enum
+          AND fg.genre_type = $1::genre_type_enum
     ))
-    AND ($3::anime_status_enum IS NULL OR a.anime_status = $3::anime_status_enum)
-    AND ($4::anime_format_enum IS NULL OR a.anime_format = $4::anime_format_enum)
-    AND ($5::smallint IS NULL OR a.year_released = $5::smallint)
-    AND ($6::boolean IS NULL OR a.available = $6::boolean)`;
+    AND ($2::anime_status_enum IS NULL OR a.anime_status = $2::anime_status_enum)
+    AND ($3::anime_format_enum IS NULL OR a.anime_format = $3::anime_format_enum)
+    AND ($4::smallint IS NULL OR a.year_released = $4::smallint)
+    AND ($5::boolean IS NULL OR a.available = $5::boolean)`;
 
 export interface CountAnimesArgs {
-    search: string | null;
     genre: string | null;
     status: string | null;
     format: string | null;
@@ -261,7 +249,7 @@ export interface CountAnimesRow {
 export async function countAnimes(client: Client, args: CountAnimesArgs): Promise<CountAnimesRow | null> {
     const result = await client.query({
         text: countAnimesQuery,
-        values: [args.search, args.genre, args.status, args.format, args.year, args.available],
+        values: [args.genre, args.status, args.format, args.year, args.available],
         rowMode: "array"
     });
     if (result.rows.length !== 1) {
