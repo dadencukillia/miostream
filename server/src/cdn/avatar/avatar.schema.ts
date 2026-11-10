@@ -1,36 +1,25 @@
-import { Type, type Static } from "typebox";
+import { Type } from "typebox";
 import type { FastifySchema } from "fastify";
+import { ErrorResponse } from "@utils/errorsCollection";
 
-// Primitives
+// Get Avatar
 
-export const AvatarIdParam = Type.Object({
+export const AvatarIdRequestParams = Type.Object({
   avatarId: Type.String({
     format: "uuid",
     description: "avatar ID"
   }),
 });
 
-export const AvatarErrorResponse = Type.Object({
-  ok: Type.Literal(false),
-  message: Type.String()
-}, {
-  examples: [{
-    ok: false,
-    message: "unexpected error",
-  }],
-});
+export const AvatarResponse = Type.Any({ description: "binary format of image/webp" });
 
-// Get Avatar
-
-export const AvatarBinaryContentResponse = Type.Any({ description: "binary format of image/webp" });
-
-export const getAvatarSchema: FastifySchema = {
-  params: AvatarIdParam,
+export const GetAvatarSchema: FastifySchema = {
+  tags: ["cdn", "avatar"],
+  summary: "loads avatar image",
+  params: AvatarIdRequestParams,
   response: {
-    200: AvatarBinaryContentResponse,
-    404: AvatarErrorResponse,
-    500: AvatarErrorResponse,
+    200: AvatarResponse,
+    404: ErrorResponse,
+    500: ErrorResponse,
   }
 };
-
-export type GetAvatarReturnType = Static<typeof AvatarBinaryContentResponse>|Static<typeof AvatarErrorResponse>;
