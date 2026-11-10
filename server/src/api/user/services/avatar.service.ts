@@ -10,7 +10,7 @@ import {
 import {
     updateUserAvatarReturningOld
 } from "@sqlc/users_sql";
-import type { UserResponseDto } from "../user.schema";
+import * as dto from "../user.dto";
 
 const AVATAR_WIDTH = 256;
 const AVATAR_HEIGHT = 256;
@@ -22,7 +22,7 @@ export async function updateUserAvatarImage(
     logger: FastifyBaseLogger,
     userId: string,
     imageContent: Buffer
-): Promise<UserResponseDto> {
+): Promise<dto.UserResponseType> {
     const newAvatarId = crypto.randomUUID();
 
     // Process image
@@ -89,7 +89,7 @@ export async function resetUserAvatar(
     db: Pool,
     logger: FastifyBaseLogger,
     userId: string
-): Promise<UserResponseDto> {
+): Promise<dto.UserResponseType> {
     // Update avatar id in database, return old
 
     let dbResponse;

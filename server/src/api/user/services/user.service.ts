@@ -2,17 +2,10 @@ import type { Pool } from "pg";
 import * as usersSqlc from "@sqlc/users_sql";
 import * as userLinksSqlc from "@sqlc/user_links_sql";
 import { UserErrors } from "../user.errors";
-import type {
-    CreateUserDto,
-    UpdateUserProfileDto,
-    UpdateUserCustomizationDto,
-    UpdateUserPasswordDto,
-    UserStatus,
-    UserRole
-} from "../user.schema";
+import * as dto from "../user.dto";
 import { hashPassword, verifyPassword } from "@utils/password";
 
-export const createUser = async (client: Pool, data: CreateUserDto) => {
+export const createUser = async (client: Pool, data: dto.CreateUserRequestPayloadType) => {
     const passwordHash = data.password ? await hashPassword(data.password) : null;
 
     let user;
@@ -104,7 +97,7 @@ export const deleteUserById = async (client: Pool, userId: string) => {
     if (!deleted) throw UserErrors.error("user-not-found");
 };
 
-export const updateUserProfile = async (client: Pool, userId: string, data: UpdateUserProfileDto) => {
+export const updateUserProfile = async (client: Pool, userId: string, data: dto.UpdateUserProfileRequestPayloadType) => {
     let user;
     try {
         user = await usersSqlc.updateUserProfile(client, {
@@ -132,7 +125,7 @@ export const updateUserProfile = async (client: Pool, userId: string, data: Upda
     return user;
 };
 
-export const updateUserCustomization = async (client: Pool, userId: string, data: UpdateUserCustomizationDto) => {
+export const updateUserCustomization = async (client: Pool, userId: string, data: dto.UpdateUserCustomizationRequestPayloadType) => {
     let user;
     try {
         user = await usersSqlc.updateUserCustomization(client, {
@@ -153,7 +146,7 @@ export const updateUserCustomization = async (client: Pool, userId: string, data
     return user;
 };
 
-export const updateUserPassword = async (client: Pool, userId: string, data: UpdateUserPasswordDto) => {
+export const updateUserPassword = async (client: Pool, userId: string, data: dto.UpdateUserPasswordRequestPayloadType) => {
     let user;
     try {
         user = await usersSqlc.getPasswordHashById(client, { userId });
@@ -188,7 +181,7 @@ export const updateUserPassword = async (client: Pool, userId: string, data: Upd
     if (!updated) throw UserErrors.error("user-not-found");
 };
 
-export const updateUserStatus = async (client: Pool, userId: string, status: UserStatus) => {
+export const updateUserStatus = async (client: Pool, userId: string, status: dto.UserStatusType) => {
     let user;
     try {
         user = await usersSqlc.updateUserStatus(client, {
@@ -207,7 +200,7 @@ export const updateUserStatus = async (client: Pool, userId: string, status: Use
 };
 
 // TODO(admin): add check of last-admin rule.
-export const updateUserRole = async (client: Pool, userId: string, role: UserRole) => {
+export const updateUserRole = async (client: Pool, userId: string, role: dto.UserRoleType) => {
     let user;
     try {
         user = await usersSqlc.updateUserRole(client, {
