@@ -1,44 +1,58 @@
-import type { FastifyPluginAsync, FastifyInstance, FastifyPluginOptions } from 'fastify';
+import type { FastifyPluginAsync, FastifyInstance, FastifyPluginOptions, FastifyRequest, FastifyReply } from 'fastify';
 import * as schemas from './user.schema';
 import * as controllers from './user.controller';
 import { UserErrors, AvatarErrors } from './user.errors';
+import { grantAuthMiddleware } from '@/api/auth/auth.middleware';
+
+type AuthHook = (req: FastifyRequest<any>, reply: FastifyReply<any>) => Promise<void | unknown>;
+
+const requireAdmin = grantAuthMiddleware({ userHasRole: ['admin'] }) as AuthHook;
+const requireAuth = grantAuthMiddleware() as AuthHook;
+
+const verifySelf: AuthHook = async (req: FastifyRequest, reply: FastifyReply) => {
+    const { userId } = req.params as { userId: string };
+    if (req.auth?.userId !== userId?.trim().toLowerCase()) {
+        return reply.status(403).send({ ok: false, message: 'no access' });
+    }
+};
+const requireSelf = [requireAuth, verifySelf];
+
+const verifySelfOrAdmin: AuthHook = async (req: FastifyRequest, reply: FastifyReply) => {
+    const { userId } = req.params as { userId: string };
+    const isSelf = req.auth?.userId === userId?.trim().toLowerCase();
+    const isAdmin = req.auth?.role === 'admin';
+
+    if (!isSelf && !isAdmin) {
+        return reply.status(403).send({ ok: false, message: 'no access' });
+    }
+};
+const requireSelfOrAdmin = [requireAuth, verifySelfOrAdmin];
 
 const modulePlugin: FastifyPluginAsync = async (fastify: FastifyInstance, _opts: FastifyPluginOptions) => {
-    // TODO(auth): add authentication hook (401) and reject banned/deactivated users.
-    // TODO(auth): add module augmentation for request.user ({ id, role, status }).
-
     UserErrors.setupErrorHandler(fastify);
     AvatarErrors.setupErrorHandler(fastify);
 
-    // TODO(auth): public registration; add rate limit.
     fastify.post('/', { schema: schemas.CreateUserSchema }, controllers.createUser);
 
-    // TODO(auth): self or admin; decide whether profile is public (then split response schema).
-    fastify.get('/:userId', { schema: schemas.GetUserByIdSchema }, controllers.getUserById);
+    fastify.get('/:userId', { schema: schemas.GetUserByIdSchema, preHandler: requireSelfOrAdmin }, controllers.getUserById);
 
-    // TODO(auth): self only for profile, avatar, customization and password.
-    // TODO(auth): rate limit password route.
-    fastify.patch('/:userId/profile', { schema: schemas.UpdateUserProfileSchema }, controllers.updateUserProfile);
+    fastify.patch('/:userId/profile', { schema: schemas.UpdateUserProfileSchema, preHandler: requireSelf }, controllers.updateUserProfile);
 
-    fastify.put('/:userId/avatar', { schema: schemas.UpdateUserAvatarSchema }, controllers.updateUserAvatar);
-    fastify.delete('/:userId/avatar', { schema: schemas.DeleteUserAvatarSchema }, controllers.deleteUserAvatar);
+    fastify.put('/:userId/avatar', { schema: schemas.UpdateUserAvatarSchema, preHandler: requireSelf }, controllers.updateUserAvatar);
+    fastify.delete('/:userId/avatar', { schema: schemas.DeleteUserAvatarSchema, preHandler: requireSelf }, controllers.deleteUserAvatar);
 
-    fastify.patch('/:userId/customization', { schema: schemas.UpdateUserCustomizationSchema }, controllers.updateUserCustomization);
-    fastify.patch('/:userId/password', { schema: schemas.UpdateUserPasswordSchema }, controllers.updateUserPassword);
-    // TODO(admin): admin only for status and role.
-    fastify.patch('/:userId/status', { schema: schemas.UpdateUserStatusSchema }, controllers.updateUserStatus);
-    fastify.patch('/:userId/role', { schema: schemas.UpdateUserRoleSchema }, controllers.updateUserRole);
+    fastify.patch('/:userId/customization', { schema: schemas.UpdateUserCustomizationSchema, preHandler: requireSelf }, controllers.updateUserCustomization);
+    fastify.patch('/:userId/password', { schema: schemas.UpdateUserPasswordSchema, preHandler: requireSelf }, controllers.updateUserPassword);
 
-    // TODO(auth): self or admin.
-    fastify.delete('/:userId', { schema: schemas.DeleteUserSchema }, controllers.deleteUser);
+    fastify.patch('/:userId/status', { schema: schemas.UpdateUserStatusSchema, preHandler: requireAdmin }, controllers.updateUserStatus);
+    fastify.patch('/:userId/role', { schema: schemas.UpdateUserRoleSchema, preHandler: requireAdmin }, controllers.updateUserRole);
 
-    // TODO(auth): self only for create/update/delete; GET depends on profile visibility.
-    fastify.post('/:userId/links', { schema: schemas.CreateUserLinkSchema }, controllers.createUserLink);
-    fastify.get('/:userId/links', { schema: schemas.ListUserLinksSchema }, controllers.listUserLinks);
-    fastify.put('/:userId/links/:userLinkId', { schema: schemas.UpdateUserLinkSchema }, controllers.updateUserLink);
-    fastify.delete('/:userId/links/:userLinkId', { schema: schemas.DeleteUserLinkSchema }, controllers.deleteUserLink);
+    fastify.delete('/:userId', { schema: schemas.DeleteUserSchema, preHandler: requireSelfOrAdmin }, controllers.deleteUser);
 
-    // TODO(admin): add admin-only GET / (user list) with pagination and filters.
+    fastify.post('/:userId/links', { schema: schemas.CreateUserLinkSchema, preHandler: requireSelf }, controllers.createUserLink);
+    fastify.get('/:userId/links', { schema: schemas.ListUserLinksSchema, preHandler: requireSelfOrAdmin }, controllers.listUserLinks);
+    fastify.put('/:userId/links/:userLinkId', { schema: schemas.UpdateUserLinkSchema, preHandler: requireSelf }, controllers.updateUserLink);
+    fastify.delete('/:userId/links/:userLinkId', { schema: schemas.DeleteUserLinkSchema, preHandler: requireSelf }, controllers.deleteUserLink);
 };
 
 export default modulePlugin;
