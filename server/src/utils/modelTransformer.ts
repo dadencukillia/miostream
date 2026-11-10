@@ -20,15 +20,11 @@ export function generateTransformer<
   map: (a: REQ) => NEW,
 }): Transformer<REQ, NEW, DELETE> {
   return (a) => {
-    const c = { ...a };
-    const newValues = opts.map(c);
-    for (const f of opts.delete ?? []) {
-      delete c[f];
+    const inputCopy = { ...a };
+    const newValues = opts.map(inputCopy);
+    for (const fieldToRemove of opts.delete ?? []) {
+      delete inputCopy[fieldToRemove];
     }
-
-    return {
-      ...c,
-      ...newValues
-    };
+    return Object.assign(inputCopy, newValues);
   };
 }
