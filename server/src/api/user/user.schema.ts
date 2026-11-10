@@ -8,24 +8,28 @@ import {
     BigIntIdResponseType
 } from "@/utils/types";
 
+// Tags
+export const TAG_USERS = "Users";
+export const TAG_USER_LINKS = "User Links";
+
 // Enums
 export const USER_ROLE = ["user", "admin"] as const;
 export const USER_STATUS = ["active", "banned", "deactivated"] as const;
 
 // Responses
 export const ErrorResponse = Type.Object({
-    ok: Type.Literal(false, { description: "indicates an unsuccessful operation" }),
+    ok: Type.Literal(false, { description: "Indicates an unsuccessful operation" }),
     message: Type.String({
-        description: "human-readable error details",
-        examples: ["database entity not found", "validation failed"]
+        description: "Human-readable error details",
+        examples: ["referenced user does not exist"]
     }),
 }, {
     additionalProperties: false,
-    description: "standard error response payload",
+    description: "Standard error response payload",
     examples: [
         {
             ok: false,
-            message: "database user already exists"
+            message: "referenced user does not exist"
         }
     ]
 });
@@ -46,7 +50,7 @@ export const UserResponse = Type.Object({
     }),
     email: Type.String({
         format: "email",
-        description: "User email address",
+        description: "User primary email address",
         examples: ["john.doe@example.com"]
     }),
     bio: Type.String({
@@ -54,7 +58,8 @@ export const UserResponse = Type.Object({
         examples: ["Variety streamer and tech enthusiast"]
     }),
     avatarId: Nullable(Type.String({
-        description: "UUID of user avatar image in S3 storage",
+        format: "uuid",
+        description: "UUID of user avatar image stored in S3 (null if not set)",
         examples: ["01a1bba1-8f21-73cc-b596-6fa8d2dde341"]
     })),
     maxStreak: Type.Integer({
@@ -70,11 +75,13 @@ export const UserResponse = Type.Object({
     lastWatchDate: NullableDateType,
     profileFrameUrl: Nullable(Type.String({
         format: "uri",
-        description: "Custom profile frame decorative asset URL (null if not set)"
+        description: "Custom profile frame decorative asset URL (null if not set)",
+        examples: ["https://cdn.example.com/frames/gold.webp"]
     })),
     profileBackgroundUrl: Nullable(Type.String({
         format: "uri",
-        description: "Custom profile banner/background asset URL (null if not set)"
+        description: "Custom profile banner/background asset URL (null if not set)",
+        examples: ["https://cdn.example.com/banners/cyberpunk.webp"]
     })),
     userRole: StringEnumResponseType(USER_ROLE, "Assigned user authorization role"),
     userStatus: StringEnumResponseType(USER_STATUS, "Current account standing status"),
@@ -82,7 +89,7 @@ export const UserResponse = Type.Object({
     updatedAt: DateTimeType
 }, {
     additionalProperties: false,
-    description: "Detailed user profile data, including private fields (email, role, status)",
+    description: "Detailed user profile data, including account settings and standing",
     examples: [
         {
             userId: "01a2d591-6280-7000-8b43-b956a29e46a7",
@@ -114,7 +121,7 @@ export const UserLinkResponse = Type.Object({
     }),
     userLinkUrl: Type.String({
         format: "uri",
-        description: "External link URL destination (http or https)",
+        description: "External destination URL (http or https)",
         examples: ["https://twitch.tv/streamer_pro"]
     })
 }, {
@@ -133,15 +140,18 @@ export const UserLinkResponse = Type.Object({
 export const UserIdRequestParams = Type.Object({
     userId: Type.String({
         format: "uuid",
-        description: "Unique user identifier (UUID)",
+        description: "Unique user identifier (UUID v7)",
         examples: ["01a2d591-6280-7000-8b43-b956a29e46a7"]
     }),
-}, { additionalProperties: false });
+}, { 
+    additionalProperties: false,
+    description: "Route parameters containing target user UUID"
+});
 
 export const UserLinkRequestParams = Type.Object({
     userId: Type.String({
         format: "uuid",
-        description: "Unique user identifier (UUID)",
+        description: "Unique user identifier (UUID v7)",
         examples: ["01a2d591-6280-7000-8b43-b956a29e46a7"]
     }),
     userLinkId: Type.Integer({
@@ -150,7 +160,10 @@ export const UserLinkRequestParams = Type.Object({
         description: "Unique user link identifier",
         examples: [42]
     }),
-}, { additionalProperties: false });
+}, { 
+    additionalProperties: false,
+    description: "Route parameters identifying a specific user and user link"
+});
 
 // Request Payloads
 export const CreateUserRequestPayload = Type.Object({
@@ -158,14 +171,14 @@ export const CreateUserRequestPayload = Type.Object({
         minLength: 3,
         maxLength: 30,
         pattern: "^[a-zA-Z0-9_]+$",
-        description: "Unique nickname (3-30 characters, Latin letters, digits and underscores only). Uniqueness is case-insensitive",
+        description: "Unique nickname (3-30 characters, Latin letters, digits, and underscores only). Uniqueness is case-insensitive",
         examples: ["streamer_pro"]
     }),
     fullName: Type.String({
         minLength: 2,
         maxLength: 100,
         pattern: "^[\\p{L}]([\\p{L} '\\u2019\\u02BC.-]*[\\p{L}.])?$",
-        description: "Full name or public display name (2-100 characters; Unicode letters, spaces, apostrophes, dots and hyphens only; no digits; must start with a letter)",
+        description: "Full name or public display name (2-100 characters; Unicode letters, spaces, apostrophes, dots, and hyphens only; must start with a letter)",
         examples: ["John Doe"]
     }),
     email: Type.String({
@@ -177,22 +190,22 @@ export const CreateUserRequestPayload = Type.Object({
     password: Type.Optional(Type.String({
         minLength: 8,
         maxLength: 72,
-        description: "Account password (8 to 72 characters). Required if googleId is not provided",
+        description: "Account password (8 to 72 characters). Required if googleId is omitted",
         examples: ["Str0ngP@ssw0rd!"]
     })),
     googleId: Type.Optional(Type.String({
         maxLength: 255,
-        description: "Google OAuth subject identifier. Required if password is not provided. Currently taken from the request body as is, without verification of a Google ID token",
+        description: "Google OAuth subject identifier. Required if password is omitted",
         examples: ["109238491023849102384"]
     })),
     timezone: Type.Optional(Type.String({
         maxLength: 64,
-        description: "Valid IANA timezone identifier. Defaults to Europe/Kyiv when omitted",
+        description: "Valid IANA timezone identifier. Defaults to Europe/Kyiv if omitted",
         examples: ["Europe/Kyiv"]
     })),
 }, {
     additionalProperties: false,
-    description: "Payload for new user registration. At least one of password or googleId must be provided",
+    description: "Payload for user registration. At least one of password or googleId must be supplied",
     examples: [
         {
             nickname: "streamer_pro",
@@ -209,30 +222,30 @@ export const UpdateUserProfileRequestPayload = Type.Object({
         minLength: 3,
         maxLength: 30,
         pattern: "^[a-zA-Z0-9_]+$",
-        description: "New unique nickname (3-30 characters, Latin letters, digits and underscores only). Uniqueness is case-insensitive",
+        description: "New unique nickname (3-30 characters, Latin letters, digits, and underscores). Uniqueness is case-insensitive",
         examples: ["streamer_elite"]
     }),
     fullName: Type.String({
         minLength: 2,
         maxLength: 100,
         pattern: "^[\\p{L}]([\\p{L} '\\u2019\\u02BC.-]*[\\p{L}.])?$",
-        description: "Updated full name (2-100 characters; Unicode letters, spaces, apostrophes, dots and hyphens only; no digits; must start with a letter)",
+        description: "Updated full name (2-100 characters; Unicode letters, spaces, apostrophes, dots, and hyphens)",
         examples: ["Johnathan Doe"]
     }),
     bio: Type.String({
         maxLength: 500,
         pattern: "^[^<>]*$",
-        description: "Updated user biography (up to 500 characters; the < and > characters are not allowed). Empty string clears the bio",
+        description: "Updated biography (up to 500 characters; angle brackets '<' and '>' are forbidden). An empty string clears the bio",
         examples: ["Full-time creator exploring space sims."]
     }),
     timezone: Type.String({
         maxLength: 64,
-        description: "Updated valid IANA timezone identifier",
+        description: "Valid IANA timezone identifier",
         examples: ["UTC"]
     }),
 }, {
     additionalProperties: false,
-    description: "Payload for replacing general user profile attributes. All fields are required",
+    description: "Payload for replacing user profile fields. All fields are required",
     examples: [
         {
             nickname: "streamer_elite",
@@ -247,18 +260,18 @@ export const UpdateUserCustomizationRequestPayload = Type.Object({
     profileFrameUrl: Type.Optional(Nullable(Type.String({
         format: "uri",
         maxLength: 2048,
-        description: "http or https URL to decorative avatar frame. Set null to remove, omit to leave unchanged",
+        description: "HTTP/HTTPS URL pointing to an avatar frame asset. Pass null to remove, omit to leave unchanged",
         examples: ["https://cdn.example.com/frames/gold.webp"]
     }))),
     profileBackgroundUrl: Type.Optional(Nullable(Type.String({
         format: "uri",
         maxLength: 2048,
-        description: "http or https URL to profile banner background. Set null to remove, omit to leave unchanged",
+        description: "HTTP/HTTPS URL pointing to a profile banner asset. Pass null to remove, omit to leave unchanged",
         examples: ["https://cdn.example.com/banners/cyberpunk.webp"]
     }))),
 }, {
     additionalProperties: false,
-    description: "Payload for updating profile cosmetic visual elements. At least one field must be specified",
+    description: "Payload for profile cosmetic customization. At least one property must be specified",
     examples: [
         {
             profileFrameUrl: "https://cdn.example.com/frames/gold.webp",
@@ -271,18 +284,24 @@ export const UpdateUserPasswordRequestPayload = Type.Object({
     oldPassword: Type.String({
         minLength: 8,
         maxLength: 72,
-        description: "Current user password",
+        description: "Current account password",
         examples: ["OldP@ssw0rd123"]
     }),
     newPassword: Type.String({
         minLength: 8,
         maxLength: 72,
-        description: "New password (8 to 72 characters). Must differ from the old password",
+        description: "New account password (8 to 72 characters; must differ from oldPassword)",
         examples: ["NewStrongerP@ssw0rd!"]
     })
 }, {
     additionalProperties: false,
-    description: "Payload for changing user account password"
+    description: "Payload for changing the account password",
+    examples: [
+        {
+            oldPassword: "OldP@ssw0rd123",
+            newPassword: "NewStrongerP@ssw0rd!"
+        }
+    ]
 });
 
 export const UpdateUserStatusRequestPayload = Type.Object({
@@ -292,50 +311,77 @@ export const UpdateUserStatusRequestPayload = Type.Object({
     }),
 }, {
     additionalProperties: false,
-    description: "Payload for account status management (intended for administrators)"
+    description: "Payload for changing user account standing (administrator action)",
+    examples: [
+        {
+            userStatus: "banned"
+        }
+    ]
 });
 
 export const UpdateUserRoleRequestPayload = Type.Object({
     userRole: StringEnum(USER_ROLE, {
-        description: "Assigned system privilege level (user or admin)",
+        description: "Assigned privilege role level (user or admin)",
         examples: ["admin"]
     })
 }, {
     additionalProperties: false,
-    description: "Payload for account role changes (intended for administrators)"
+    description: "Payload for changing user permission role (administrator action)",
+    examples: [
+        {
+            userRole: "admin"
+        }
+    ]
 });
 
-export const UpdateUserAvatarRequestPayload = Type.String({ description: "base64 image content" });
+export const UpdateUserAvatarRequestPayload = Type.String({
+    contentEncoding: "base64",
+    description: "Raw image binary encoded as a base64 string. The image is processed, converted to 256x256 WebP, and stored in S3",
+    examples: [
+        // 1x1 transparent PNG in base64
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+    ]
+});
 
 export const CreateUserLinkRequestPayload = Type.Object({
     userLinkUrl: Type.String({
         format: "uri",
         maxLength: 2048,
-        description: "External target URL. Must use the http or https protocol (up to 2048 characters)",
+        description: "External target URL using HTTP or HTTPS (up to 2048 characters)",
         examples: ["https://github.com/developer"]
     })
 }, {
     additionalProperties: false,
-    description: "Payload for adding a new link"
+    description: "Payload for adding a new external profile link",
+    examples: [
+        {
+            userLinkUrl: "https://github.com/developer"
+        }
+    ]
 });
 
 export const UpdateUserLinkRequestPayload = Type.Object({
     userLinkUrl: Type.String({
         format: "uri",
         maxLength: 2048,
-        description: "Updated external target URL. Must use the http or https protocol (up to 2048 characters)",
+        description: "Updated external destination URL using HTTP or HTTPS (up to 2048 characters)",
         examples: ["https://youtube.com/@newchannel"]
     })
 }, {
     additionalProperties: false,
-    description: "Payload for updating an existing link"
+    description: "Payload for updating an existing external profile link",
+    examples: [
+        {
+            userLinkUrl: "https://youtube.com/@newchannel"
+        }
+    ]
 });
 
 // Fastify Route Schemas
 export const CreateUserSchema = {
-    tags: ["user"],
-    summary: "Register a new user",
-    description: "Creates a new user profile. Either password or googleId must be provided, otherwise 400 is returned. Responds with 409 if the nickname, email or Google account is already taken.",
+    tags: [TAG_USERS],
+    summary: "Register user",
+    description: "Registers a new user account. Requires either password or googleId. Responds with 409 if the nickname, email, or Google ID is already in use.",
     body: CreateUserRequestPayload,
     response: {
         201: UserResponse,
@@ -346,9 +392,9 @@ export const CreateUserSchema = {
 } as const;
 
 export const GetUserByIdSchema = {
-    tags: ["user"],
+    tags: [TAG_USERS],
     summary: "Get user by ID",
-    description: "Fetches detailed profile information for the specified user UUID. The response includes private fields (email, role, status); access restrictions are not enforced yet.",
+    description: "Retrieves complete profile details for the specified user UUID. Responds with 404 if the user does not exist, or 400 if the UUID is invalid.",
     params: UserIdRequestParams,
     response: {
         200: UserResponse,
@@ -359,9 +405,9 @@ export const GetUserByIdSchema = {
 } as const;
 
 export const UpdateUserProfileSchema = {
-    tags: ["user"],
+    tags: [TAG_USERS],
     summary: "Update user profile",
-    description: "Replaces primary profile information: nickname, full name, bio and timezone. All fields are required. Responds with 409 if the nickname is already taken.",
+    description: "Replaces general profile information (nickname, fullName, bio, timezone). All fields are mandatory. Responds with 409 if the new nickname is already taken.",
     params: UserIdRequestParams,
     body: UpdateUserProfileRequestPayload,
     response: {
@@ -374,9 +420,9 @@ export const UpdateUserProfileSchema = {
 } as const;
 
 export const UpdateUserAvatarSchema = {
-    tags: ["user"],
-    summary: "Update user avatar",
-    description: "Updates the URL pointing to the user profile avatar image. Only http and https URLs are accepted; the image itself is not uploaded or validated.",
+    tags: [TAG_USERS],
+    summary: "Upload user avatar",
+    description: "Uploads a base64-encoded avatar image. The file is validated, resized to 256x256 WebP, uploaded to S3 storage, and linked to the user. Deletes any previous avatar from S3.",
     params: UserIdRequestParams,
     body: UpdateUserAvatarRequestPayload,
     response: {
@@ -388,22 +434,23 @@ export const UpdateUserAvatarSchema = {
 } as const;
 
 export const DeleteUserAvatarSchema = {
-    tags: ["user"],
+    tags: [TAG_USERS],
     summary: "Delete user avatar",
-    description: "Permanently removes the user avatar from S3 storage",
+    description: "Permanently removes the user avatar file from S3 storage and sets avatarId to null. Responds with 409 if the user does not have an avatar.",
     params: UserIdRequestParams,
     response: {
         204: Type.Null({ description: "User avatar removed successfully" }),
         400: ErrorResponse,
         404: ErrorResponse,
+        409: ErrorResponse,
         500: ErrorResponse,
     },
 } as const;
 
 export const UpdateUserCustomizationSchema = {
-    tags: ["user"],
+    tags: [TAG_USERS],
     summary: "Update profile customization",
-    description: "Updates optional cosmetic enhancements: profile frame and background banner. At least one field must be specified; null removes the corresponding asset, an omitted field stays unchanged. Only http and https URLs are accepted.",
+    description: "Updates profile decorative assets (frame and banner background URLs). At least one field must be provided. Providing null deletes the asset; omitting leaves it untouched.",
     params: UserIdRequestParams,
     body: UpdateUserCustomizationRequestPayload,
     response: {
@@ -415,9 +462,9 @@ export const UpdateUserCustomizationSchema = {
 } as const;
 
 export const UpdateUserPasswordSchema = {
-    tags: ["user"],
+    tags: [TAG_USERS],
     summary: "Change account password",
-    description: "Verifies the current password and replaces it with the new one. Returns 400 if the old password is wrong, the new password equals the old one, or the account has no password (registered via OAuth).",
+    description: "Verifies the current password and sets the new password. Returns 400 if the old password is incorrect or identical to the new one. Returns 404 if the user does not exist or has no password set (e.g., OAuth-only accounts).",
     params: UserIdRequestParams,
     body: UpdateUserPasswordRequestPayload,
     response: {
@@ -429,9 +476,9 @@ export const UpdateUserPasswordSchema = {
 } as const;
 
 export const UpdateUserStatusSchema = {
-    tags: ["user"],
-    summary: "Update user account status",
-    description: "Modifies account standing (active, banned, deactivated). Intended for administrators only; authorization is not enforced yet.",
+    tags: [TAG_USERS],
+    summary: "Update user status",
+    description: "Modifies account standing status (active, banned, or deactivated). Restricted to administrators.",
     params: UserIdRequestParams,
     body: UpdateUserStatusRequestPayload,
     response: {
@@ -443,9 +490,9 @@ export const UpdateUserStatusSchema = {
 } as const;
 
 export const UpdateUserRoleSchema = {
-    tags: ["user"],
-    summary: "Update user authorization role",
-    description: "Assigns a new permission role (user, admin). Intended for administrators only; authorization is not enforced yet.",
+    tags: [TAG_USERS],
+    summary: "Update user role",
+    description: "Updates account authorization privilege role (user or admin). Restricted to administrators.",
     params: UserIdRequestParams,
     body: UpdateUserRoleRequestPayload,
     response: {
@@ -457,9 +504,9 @@ export const UpdateUserRoleSchema = {
 } as const;
 
 export const DeleteUserSchema = {
-    tags: ["user"],
+    tags: [TAG_USERS],
     summary: "Delete user account",
-    description: "Permanently removes the user account together with all its external links.",
+    description: "Permanently deletes the user profile and cascades deletion to all associated user links.",
     params: UserIdRequestParams,
     response: {
         204: Type.Null({ description: "User account removed successfully" }),
@@ -470,9 +517,9 @@ export const DeleteUserSchema = {
 } as const;
 
 export const CreateUserLinkSchema = {
-    tags: ["user_link"],
-    summary: "Create an external link",
-    description: "Adds an external profile or social link (http or https) to the user profile. Responds with 409 if the user already has this link.",
+    tags: [TAG_USER_LINKS],
+    summary: "Create external link",
+    description: "Adds an external profile or social destination URL to the user profile. Responds with 409 if the URL already exists for this user, or 404 if the user is not found.",
     params: UserIdRequestParams,
     body: CreateUserLinkRequestPayload,
     response: {
@@ -485,21 +532,21 @@ export const CreateUserLinkSchema = {
 } as const;
 
 export const ListUserLinksSchema = {
-    tags: ["user_link"],
+    tags: [TAG_USER_LINKS],
     summary: "List user links",
-    description: "Returns all external links associated with the specified user ID, ordered by link ID ascending. Returns an empty array if the user has no links or does not exist.",
+    description: "Fetches all external links belonging to the specified user ID, ordered by link ID ascending. Returns an empty array if the user has no links.",
     params: UserIdRequestParams,
     response: {
-        200: Type.Array(UserLinkResponse, { description: "Collection of user links" }),
+        200: Type.Array(UserLinkResponse, { description: "List of user links" }),
         400: ErrorResponse,
         500: ErrorResponse,
     },
 } as const;
 
 export const UpdateUserLinkSchema = {
-    tags: ["user_link"],
-    summary: "Update an external link",
-    description: "Replaces the destination URL (http or https) of an existing user link. Responds with 404 if the link is not found and 409 if the user already has a link with this URL.",
+    tags: [TAG_USER_LINKS],
+    summary: "Update external link",
+    description: "Updates the destination URL of an existing user link. Responds with 404 if the link is not found, or 409 if the user already has a link with this URL.",
     params: UserLinkRequestParams,
     body: UpdateUserLinkRequestPayload,
     response: {
@@ -512,9 +559,9 @@ export const UpdateUserLinkSchema = {
 } as const;
 
 export const DeleteUserLinkSchema = {
-    tags: ["user_link"],
-    summary: "Delete an external link",
-    description: "Removes the specified external link from the user account.",
+    tags: [TAG_USER_LINKS],
+    summary: "Delete external link",
+    description: "Permanently removes the specified external link from the user account. Responds with 404 if the link does not exist.",
     params: UserLinkRequestParams,
     response: {
         204: Type.Null({ description: "User link removed successfully" }),
