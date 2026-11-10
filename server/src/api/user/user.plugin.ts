@@ -1,39 +1,14 @@
-import type { FastifyPluginAsync, FastifyError, FastifyInstance, FastifyPluginOptions } from 'fastify';
-import { UserError } from './user.errors';
+import type { FastifyPluginAsync, FastifyInstance, FastifyPluginOptions } from 'fastify';
 import * as schemas from './user.schema';
 import * as controllers from './user.controller';
+import { UserErrors, AvatarErrors } from './user.errors';
 
 const modulePlugin: FastifyPluginAsync = async (fastify: FastifyInstance, _opts: FastifyPluginOptions) => {
     // TODO(auth): add authentication hook (401) and reject banned/deactivated users.
     // TODO(auth): add module augmentation for request.user ({ id, role, status }).
 
-    fastify.setErrorHandler<FastifyError>((error, request, reply) => {
-        if (reply.sent) return;
-
-        if (error.validation) {
-            return reply.status(400).send({
-                ok: false,
-                message: error.message
-            });
-        }
-
-        if (error instanceof UserError) {
-            if (error.status >= 500) {
-                request.log.error({ err: error }, error.message);
-            }
-            return reply.status(error.status).send({ ok: false, message: error.message });
-        }
-
-        if (error.statusCode && error.statusCode >= 400 && !Number.isNaN(error.statusCode)) {
-            return reply.status(error.statusCode).send({ ok: false, message: error.message });
-        }
-
-        request.log.error({ err: error }, 'Unhandled server error');
-        return reply.status(500).send({
-            ok: false,
-            message: 'Unexpected error'
-        });
-    });
+    UserErrors.setupErrorHandler(fastify);
+    AvatarErrors.setupErrorHandler(fastify);
 
     // TODO(auth): public registration; add rate limit.
     fastify.post('/', { schema: schemas.createUserRouteSchema }, controllers.createUser);

@@ -1,5 +1,5 @@
 import type { FastifyRequest, FastifyReply } from "fastify";
-import { UserInvalidError } from "./user.errors";
+import { UserErrors } from "./user.errors";
 import type {
     UserIdParamDto,
     UserLinkParamDto,
@@ -28,13 +28,8 @@ export const createUser = async (
     // TODO(auth): take googleId/email from a verified Google ID token, not from body.
     const { password, googleId, timezone } = request.body;
 
-    if (!password && !googleId) {
-        throw new UserInvalidError('Either password or googleId must be provided for registration');
-    }
-
-    if (timezone && !isValidTimezone(timezone)) {
-        throw new UserInvalidError(`Invalid IANA timezone: '${timezone}'`);
-    }
+    if (!password && !googleId) throw UserErrors.error("user-invalid");
+    if (timezone && !isValidTimezone(timezone)) throw UserErrors.error("user-invalid");
 
     const user = await services.createUser(request.server.pg, request.body);
     return reply.status(201).send(user);
@@ -64,13 +59,8 @@ export const updateUserProfile = async (
 ) => {
     const { timezone, nickname, fullName } = request.body;
 
-    if (!isValidTimezone(timezone)) {
-        throw new UserInvalidError(`Invalid IANA timezone: '${timezone}'`);
-    }
-
-    if (nickname.trim().length === 0 || fullName.trim().length === 0) {
-        throw new UserInvalidError('Nickname and full name cannot consist only of whitespace');
-    }
+    if (!isValidTimezone(timezone)) throw UserErrors.error("user-invalid");
+    if (nickname.trim().length === 0 || fullName.trim().length === 0) throw UserErrors.error("user-invalid");
 
     const user = await services.updateUserProfile(
         request.server.pg,
@@ -111,17 +101,9 @@ export const updateUserCustomization = async (
 ) => {
     const { profileFrameUrl, profileBackgroundUrl } = request.body;
 
-    if (profileFrameUrl === undefined && profileBackgroundUrl === undefined) {
-        throw new UserInvalidError('At least one customization field must be specified');
-    }
-
-    if (profileFrameUrl && !isSafeHttpUrl(profileFrameUrl)) {
-        throw new UserInvalidError('Profile frame URL must use http or https protocol');
-    }
-
-    if (profileBackgroundUrl && !isSafeHttpUrl(profileBackgroundUrl)) {
-        throw new UserInvalidError('Profile background URL must use http or https protocol');
-    }
+    if (profileFrameUrl === undefined && profileBackgroundUrl === undefined) throw UserErrors.error("user-invalid");
+    if (profileFrameUrl && !isSafeHttpUrl(profileFrameUrl)) throw UserErrors.error("user-invalid");
+    if (profileBackgroundUrl && !isSafeHttpUrl(profileBackgroundUrl)) throw UserErrors.error("user-invalid");
 
     const user = await services.updateUserCustomization(
         request.server.pg,
@@ -137,10 +119,7 @@ export const updateUserPassword = async (
 ) => {
     const { oldPassword, newPassword } = request.body;
     // TODO(auth): revoke all other sessions/tokens after password change.
-
-    if (oldPassword === newPassword) {
-        throw new UserInvalidError('New password must be different from the old password');
-    }
+    if (oldPassword === newPassword) throw UserErrors.error("user-invalid");
 
     await services.updateUserPassword(
         request.server.pg,
@@ -182,9 +161,7 @@ export const createUserLink = async (
 ) => {
     const { userLinkUrl } = request.body;
 
-    if (!isSafeHttpUrl(userLinkUrl)) {
-        throw new UserInvalidError('Link URL must use http or https protocol');
-    }
+    if (!isSafeHttpUrl(userLinkUrl)) throw UserErrors.error("user-invalid");
 
     const link = await services.createUserLink(
         request.server.pg,
@@ -208,9 +185,7 @@ export const updateUserLink = async (
 ) => {
     const { userLinkUrl } = request.body;
 
-    if (!isSafeHttpUrl(userLinkUrl)) {
-        throw new UserInvalidError('Link URL must use http or https protocol');
-    }
+    if (!isSafeHttpUrl(userLinkUrl)) throw UserErrors.error("user-invalid");
 
     const link = await services.updateUserLink(
         request.server.pg,
