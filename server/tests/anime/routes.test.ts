@@ -90,7 +90,7 @@ describe("anime API", () => {
       databaseError = new Error("sensitive database details");
       const error = await app.inject({ method: "GET", url: `/api/anime/${id}` });
       expect(error.statusCode).toBe(500);
-      expect(error.json()).toEqual({ ok: false, message: "Unexpected error" });
+      expect(error.json()).toEqual({ ok: false, message: "unknown error" });
     } finally {
       databaseError = undefined;
     }

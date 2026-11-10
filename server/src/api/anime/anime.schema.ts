@@ -141,7 +141,7 @@ const genresSchema = Type.Array(StringEnum(GENRES), {
 	description: "Anime genres (in the `genres` table)",
 });
 
-export const AnimeIdParamsSchema = Type.Object(
+export const AnimeIdRequestParams = Type.Object(
 	{
 		id: Type.String({ format: "uuid", description: "Anime UUID" }),
 	},
@@ -151,7 +151,7 @@ export const AnimeIdParamsSchema = Type.Object(
 	},
 );
 
-export const AnimeSlugParamsSchema = Type.Object(
+export const AnimeSlugRequestParams = Type.Object(
 	{
 		slug: Type.String({
 			minLength: 1,
@@ -166,7 +166,7 @@ export const AnimeSlugParamsSchema = Type.Object(
 	},
 );
 
-export const AnimeSchema = Type.Object(
+export const AnimeResponse = Type.Object(
 	{
 		animeId: Type.String({ format: "uuid", description: "Unique anime identifier (UUID)" }),
 		slug: Type.String({ description: "URL-friendly unique anime slug" }),
@@ -219,7 +219,7 @@ export const AnimeSchema = Type.Object(
 	},
 );
 
-export const CreateAnimeBodySchema = Type.Object(
+export const CreateAnimeRequestPayload = Type.Object(
 	{
 		slug: slugSchema,
 		titleUa: Type.Optional(Type.String({ minLength: 1, description: "Anime title in Ukrainian" })),
@@ -264,11 +264,11 @@ export const CreateAnimeBodySchema = Type.Object(
  * PATCH uses the same fields as POST, but every field becomes optional.
  * Service additionally rejects an empty patch object.
  */
-export const UpdateAnimeBodySchema = Type.Partial(CreateAnimeBodySchema, {
+export const UpdateAnimeRequestPayload = Type.Partial(CreateAnimeRequestPayload, {
 	additionalProperties: false,
 });
 
-export const ListAnimesQuerySchema = Type.Object(
+export const ListAnimesRequestQueries = Type.Object(
 	{
 		page: Type.Optional(Type.Integer({ minimum: 1, default: 1, description: "Page number (1-based)" })),
 		limit: Type.Optional(
@@ -300,7 +300,7 @@ export const ListAnimesQuerySchema = Type.Object(
 	},
 );
 
-export const PaginationSchema = Type.Object(
+export const PaginationResponse = Type.Object(
 	{
 		page: Type.Integer({ minimum: 1, description: "Current page number" }),
 		limit: Type.Integer({ minimum: 1, description: "Items per page" }),
@@ -314,10 +314,10 @@ export const PaginationSchema = Type.Object(
 	},
 );
 
-export const AnimeListResponseSchema = Type.Object(
+export const AnimeListResponse = Type.Object(
 	{
-		items: Type.Array(AnimeSchema, { description: "List of anime entries" }),
-		pagination: PaginationSchema,
+		items: Type.Array(AnimeResponse, { description: "List of anime entries" }),
+		pagination: PaginationResponse,
 	},
 	{
 		additionalProperties: false,
@@ -331,7 +331,7 @@ export const AnimeListResponseSchema = Type.Object(
 	},
 );
 
-export const ErrorResponseSchema = Type.Object(
+export const ErrorResponse = Type.Object(
 	{
 		ok: Type.Literal(false, { description: "Indicates an unsuccessful operation" }),
 		message: Type.String({ description: "Human-readable error details" }),
@@ -345,81 +345,81 @@ export const ErrorResponseSchema = Type.Object(
 
 // Route schemas passed directly to Fastify.
 
-export const listAnimesRouteSchema = {
-	tags: ["Anime"],
+export const ListAnimesSchema = {
+	tags: ["anime"],
 	summary: "List animes",
 	description: "Returns a paginated list of animes with optional filtering, search and sorting.",
-	querystring: ListAnimesQuerySchema,
+	querystring: ListAnimesRequestQueries,
 	response: {
-		200: AnimeListResponseSchema,
-		400: ErrorResponseSchema,
-		500: ErrorResponseSchema,
+		200: AnimeListResponse,
+		400: ErrorResponse,
+		500: ErrorResponse,
 	},
 } as const;
 
-export const getAnimeRouteSchema = {
-	tags: ["Anime"],
+export const GetAnimeSchema = {
+	tags: ["anime"],
 	summary: "Get anime by id",
 	description: "Fetches a single anime by its UUID.",
-	params: AnimeIdParamsSchema,
+	params: AnimeIdRequestParams,
 	response: {
-		200: AnimeSchema,
-		400: ErrorResponseSchema,
-		404: ErrorResponseSchema,
-		500: ErrorResponseSchema,
+		200: AnimeResponse,
+		400: ErrorResponse,
+		404: ErrorResponse,
+		500: ErrorResponse,
 	},
 } as const;
 
-export const getAnimeBySlugRouteSchema = {
-	tags: ["Anime"],
+export const GetAnimeBySlugSchema = {
+	tags: ["anime"],
 	summary: "Get anime by slug",
 	description: "Fetches a single anime by its URL-friendly slug.",
-	params: AnimeSlugParamsSchema,
+	params: AnimeSlugRequestParams,
 	response: {
-		200: AnimeSchema,
-		400: ErrorResponseSchema,
-		404: ErrorResponseSchema,
-		500: ErrorResponseSchema,
+		200: AnimeResponse,
+		400: ErrorResponse,
+		404: ErrorResponse,
+		500: ErrorResponse,
 	},
 } as const;
 
-export const createAnimeRouteSchema = {
-	tags: ["Anime"],
+export const CreateAnimeSchema = {
+	tags: ["anime"],
 	summary: "Create anime",
 	description: "Creates a new anime entry with the provided data.",
-	body: CreateAnimeBodySchema,
+	body: CreateAnimeRequestPayload,
 	response: {
-		201: AnimeSchema,
-		400: ErrorResponseSchema,
-		409: ErrorResponseSchema,
-		500: ErrorResponseSchema,
+		201: AnimeResponse,
+		400: ErrorResponse,
+		409: ErrorResponse,
+		500: ErrorResponse,
 	},
 } as const;
 
-export const updateAnimeRouteSchema = {
-	tags: ["Anime"],
+export const UpdateAnimeSchema = {
+	tags: ["anime"],
 	summary: "Update anime",
 	description: "Updates an existing anime by its UUID.",
-	params: AnimeIdParamsSchema,
-	body: UpdateAnimeBodySchema,
+	params: AnimeIdRequestParams,
+	body: UpdateAnimeRequestPayload,
 	response: {
-		200: AnimeSchema,
-		400: ErrorResponseSchema,
-		404: ErrorResponseSchema,
-		409: ErrorResponseSchema,
-		500: ErrorResponseSchema,
+		200: AnimeResponse,
+		400: ErrorResponse,
+		404: ErrorResponse,
+		409: ErrorResponse,
+		500: ErrorResponse,
 	},
 } as const;
 
-export const deleteAnimeRouteSchema = {
-	tags: ["Anime"],
+export const DeleteAnimeSchema = {
+	tags: ["anime"],
 	summary: "Delete anime",
 	description: "Permanently removes an anime by its UUID.",
-	params: AnimeIdParamsSchema,
+	params: AnimeIdRequestParams,
 	response: {
 		204: Type.Null(),
-		400: ErrorResponseSchema,
-		404: ErrorResponseSchema,
-		500: ErrorResponseSchema,
+		400: ErrorResponse,
+		404: ErrorResponse,
+		500: ErrorResponse,
 	},
 } as const;

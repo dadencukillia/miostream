@@ -6,12 +6,12 @@ import * as controllers from "./anime.controller";
 const modulePlugin: FastifyPluginAsync = async (fastify: FastifyInstance, _opts: FastifyPluginOptions) => {
   AnimeErrors.setupErrorHandler(fastify);
 
-  fastify.get("/", { schema: schemas.listAnimesRouteSchema }, controllers.listAnimes);
-  fastify.get("/slug/:slug", { schema: schemas.getAnimeBySlugRouteSchema }, controllers.getAnimeBySlug);
-  fastify.get("/:id", { schema: schemas.getAnimeRouteSchema }, controllers.getAnime);
-  fastify.post("/", { schema: schemas.createAnimeRouteSchema }, controllers.createAnime);
-  fastify.patch("/:id", { schema: schemas.updateAnimeRouteSchema }, controllers.updateAnime);
-  fastify.delete("/:id", { schema: schemas.deleteAnimeRouteSchema }, controllers.deleteAnime);
+  fastify.get("/", { schema: schemas.ListAnimesSchema }, controllers.listAnimes);
+  fastify.get("/slug/:slug", { schema: schemas.GetAnimeBySlugSchema }, controllers.getAnimeBySlug);
+  fastify.get("/:id", { schema: schemas.GetAnimeSchema }, controllers.getAnime);
+  fastify.post("/", { schema: schemas.CreateAnimeSchema }, controllers.createAnime);
+  fastify.patch("/:id", { schema: schemas.UpdateAnimeSchema }, controllers.updateAnime);
+  fastify.delete("/:id", { schema: schemas.DeleteAnimeSchema }, controllers.deleteAnime);
 
   fastify.get("/stats/by-status", controllers.countByStatus);
   fastify.get("/stats/by-studio", controllers.studioStats);
