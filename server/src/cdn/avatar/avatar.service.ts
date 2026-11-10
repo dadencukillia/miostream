@@ -1,12 +1,7 @@
 import type { FastifyBaseLogger } from "fastify";
 import type { S3Client } from "@aws-sdk/client-s3";
-import {
-  getAvatarById,
-} from "./avatarBucket.repo";
-import {
-  AvatarS3Error,
-  AvatarNotFoundError,
-} from "./avatar.errors";
+import { getAvatarById } from "./avatarBucket.repo";
+import { AvatarErrors } from "./avatar.errors";
 
 // Services
 
@@ -18,9 +13,11 @@ export async function getAvatar(s3: S3Client, logger: FastifyBaseLogger, avatarI
   } catch(e) {
     logger.error(e);
 
-    throw new AvatarS3Error("couldn't reach the file storage");
+    throw AvatarErrors
+      .error("unreachable-s3-storage")
+      .withDetails(e);
   }
 
-  if (!avatar) throw new AvatarNotFoundError("no avatar found");
+  if (!avatar) throw AvatarErrors.error("avatar-not-found");
   return Buffer.from(avatar);
 }

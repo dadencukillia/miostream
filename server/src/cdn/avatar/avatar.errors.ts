@@ -1,4 +1,6 @@
-export class AvatarError extends Error { status = 500; }
+import { ErrorsSet } from "@utils/errorsCollection";
 
-export class AvatarS3Error extends AvatarError { override status = 500; }
-export class AvatarNotFoundError extends AvatarError { override status = 404; }
+export const AvatarErrors = new ErrorsSet("avatar", {
+  "unreachable-s3-storage": [500, "couldn't reach the file storage"],
+  "avatar-not-found": [404, "avatar is not found"],
+});
