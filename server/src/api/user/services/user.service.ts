@@ -1,12 +1,7 @@
 import type { Pool } from "pg";
 import * as usersSqlc from "@sqlc/users_sql";
 import * as userLinksSqlc from "@sqlc/user_links_sql";
-import {
-    UserError,
-    UserInvalidError,
-    UserNotFoundError,
-    UserAlreadyExistsError
-} from "../user.errors";
+import { UserErrors } from "../user.errors";
 import type {
     CreateUserDto,
     UpdateUserProfileDto,
@@ -17,76 +12,12 @@ import type {
 } from "../user.schema";
 import { hashPassword, verifyPassword } from "@utils/password";
 
-interface PostgresError extends Error {
-    code?: string;
-    constraint?: string;
-    detail?: string;
-}
-
-const dbError = (error: unknown): UserError => {
-    if (error instanceof UserError) {
-        return error;
-    }
-
-    const pgErr = error as PostgresError;
-
-    // 23505: Unique Violation
-    if (pgErr.code === '23505') {
-        const constraint = pgErr.constraint ?? '';
-
-        if (constraint.includes('nickname')) {
-            return new UserAlreadyExistsError('User with this nickname already exists');
-        }
-        if (constraint.includes('email')) {
-            return new UserAlreadyExistsError('User with this email already exists');
-        }
-        if (constraint.includes('google_id')) {
-            return new UserAlreadyExistsError('This Google account is already linked to another user');
-        }
-        if (constraint.includes('user_link') || constraint.includes('user_links')) {
-            return new UserAlreadyExistsError('This link already exists in user profile');
-        }
-
-        return new UserAlreadyExistsError('Record with these unique attributes already exists');
-    }
-
-    // 23503: Foreign Key Violation
-    if (pgErr.code === '23503') {
-        const constraint = pgErr.constraint ?? '';
-        if (constraint.includes('user_id')) {
-            return new UserNotFoundError('Referenced user does not exist');
-        }
-        return new UserInvalidError('Referenced resource does not exist');
-    }
-
-    // 23514: Check Constraint Violation
-    if (pgErr.code === '23514') {
-        return new UserInvalidError('Data does not satisfy database constraints');
-    }
-
-    // 22P02: Invalid Text Representation
-    if (pgErr.code === '22P02') {
-        return new UserInvalidError('Invalid identifier format');
-    }
-
-    // 22003: Numeric Value Out Of Range
-    if (pgErr.code === '22003') {
-        return new UserInvalidError('Numeric value is out of range');
-    }
-
-    // 22001: String Data Right Truncation
-    if (pgErr.code === '22001') {
-        return new UserInvalidError('Value is too long');
-    }
-
-    return new UserError('Database operation failed', { cause: error });
-};
-
 export const createUser = async (client: Pool, data: CreateUserDto) => {
-    try {
-        const passwordHash = data.password ? await hashPassword(data.password) : null;
+    const passwordHash = data.password ? await hashPassword(data.password) : null;
 
-        const user = await usersSqlc.createUser(client, {
+    let user;
+    try {
+        user = await usersSqlc.createUser(client, {
             nickname: data.nickname,
             fullName: data.fullName,
             email: data.email,
@@ -94,182 +25,242 @@ export const createUser = async (client: Pool, data: CreateUserDto) => {
             googleId: data.googleId ?? null,
             timezone: data.timezone ?? null
         });
-
-        if (!user) {
-            throw new UserError('Failed to create user record');
+    } catch (e: any) {
+        if (e?.code === "23505") {
+            const constraint = e?.constraint ?? "";
+            if (constraint.includes("nickname")) {
+                throw UserErrors.error("user-nickname-already-taken").withDetails(e);
+            }
+            if (constraint.includes("email")) {
+                throw UserErrors.error("user-email-already-taken").withDetails(e);
+            }
+            if (constraint.includes("google_id")) {
+                throw UserErrors.error("user-google-id-already-taken").withDetails(e);
+            }
+            throw UserErrors.error("user-already-exists").withDetails(e);
         }
-
-        return user;
-    } catch (error) {
-        throw dbError(error);
+        if (e?.code === "23514" || e?.code === "22P02" || e?.code === "22003" || e?.code === "22001") {
+            throw UserErrors.error("user-db-invalid-error").withDetails(e);
+        }
+        throw UserErrors.error("user-db-error").withDetails(e);
     }
+
+    if (!user) throw UserErrors.error("user-db-error");
+
+    return user;
 };
 
 export const getUserById = async (client: Pool, userId: string) => {
+    let user;
     try {
-        const user = await usersSqlc.getUserById(client, { userId });
-        if (!user) {
-            throw new UserNotFoundError(`User with id '${userId}' not found`);
+        user = await usersSqlc.getUserById(client, { userId });
+    } catch (e: any) {
+        if (e?.code === "22P02") {
+            throw UserErrors.error("user-db-invalid-error").withDetails(e);
         }
-        return user;
-    } catch (error) {
-        throw dbError(error);
+        throw UserErrors.error("user-db-error").withDetails(e);
     }
+
+    if (!user) throw UserErrors.error("user-not-found");
+    return user;
 };
 
 // TODO(auth): move getUserByEmail/getUserByGoogleId to an auth module; keep email/googleId out of client-facing errors.
 export const getUserByEmail = async (client: Pool, email: string) => {
+    let user;
     try {
-        const user = await usersSqlc.getUserByEmail(client, { email });
-        if (!user) {
-            throw new UserNotFoundError(`User with email '${email}' not found`);
-        }
-        return user;
-    } catch (error) {
-        throw dbError(error);
+        user = await usersSqlc.getUserByEmail(client, { email });
+    } catch (e) {
+        throw UserErrors.error("user-db-error").withDetails(e);
     }
+
+    if (!user) throw UserErrors.error("user-not-found");
+    return user;
 };
 
 export const getUserByGoogleId = async (client: Pool, googleId: string) => {
+    let user;
     try {
-        const user = await usersSqlc.getUserByGoogleId(client, { googleId });
-        if (!user) {
-            throw new UserNotFoundError(`User with Google ID '${googleId}' not found`);
-        }
-        return user;
-    } catch (error) {
-        throw dbError(error);
+        user = await usersSqlc.getUserByGoogleId(client, { googleId });
+    } catch (e) {
+        throw UserErrors.error("user-db-error").withDetails(e);
     }
+
+    if (!user) throw UserErrors.error("user-not-found");
+    return user;
 };
 
 export const deleteUserById = async (client: Pool, userId: string) => {
+    let deleted;
     try {
-        const deleted = await usersSqlc.deleteUserById(client, { userId });
-        if (!deleted) {
-            throw new UserNotFoundError(`User with id '${userId}' not found`);
+        deleted = await usersSqlc.deleteUserById(client, { userId });
+    } catch (e: any) {
+        if (e?.code === "22P02") {
+            throw UserErrors.error("user-db-invalid-error").withDetails(e);
         }
-    } catch (error) {
-        throw dbError(error);
+        throw UserErrors.error("user-db-error").withDetails(e);
     }
+
+    if (!deleted) throw UserErrors.error("user-not-found");
 };
 
 export const updateUserProfile = async (client: Pool, userId: string, data: UpdateUserProfileDto) => {
+    let user;
     try {
-        const user = await usersSqlc.updateUserProfile(client, {
+        user = await usersSqlc.updateUserProfile(client, {
             userId: userId,
             nickname: data.nickname,
             fullName: data.fullName,
             bio: data.bio,
             timezone: data.timezone
         });
-        if (!user) {
-            throw new UserNotFoundError(`User with id '${userId}' not found`);
+    } catch (e: any) {
+        if (e?.code === "23505") {
+            const constraint = e?.constraint ?? "";
+            if (constraint.includes("nickname")) {
+                throw UserErrors.error("user-nickname-already-taken").withDetails(e);
+            }
+            throw UserErrors.error("user-already-exists").withDetails(e);
         }
-        return user;
-    } catch (error) {
-        throw dbError(error);
+        if (e?.code === "23514" || e?.code === "22P02" || e?.code === "22003" || e?.code === "22001") {
+            throw UserErrors.error("user-db-invalid-error").withDetails(e);
+        }
+        throw UserErrors.error("user-db-error").withDetails(e);
     }
+
+    if (!user) throw UserErrors.error("user-not-found");
+    return user;
 };
 
 export const updateUserCustomization = async (client: Pool, userId: string, data: UpdateUserCustomizationDto) => {
+    let user;
     try {
-        const user = await usersSqlc.updateUserCustomization(client, {
+        user = await usersSqlc.updateUserCustomization(client, {
             userId,
             setFrame: data.profileFrameUrl !== undefined,
             profileFrameUrl: data.profileFrameUrl ?? null,
             setBackground: data.profileBackgroundUrl !== undefined,
             profileBackgroundUrl: data.profileBackgroundUrl ?? null
         });
-        if (!user) {
-            throw new UserNotFoundError(`User with id '${userId}' not found`);
+    } catch (e: any) {
+        if (e?.code === "23514" || e?.code === "22P02" || e?.code === "22003" || e?.code === "22001") {
+            throw UserErrors.error("user-db-invalid-error").withDetails(e);
         }
-        return user;
-    } catch (error) {
-        throw dbError(error);
+        throw UserErrors.error("user-db-error").withDetails(e);
     }
+
+    if (!user) throw UserErrors.error("user-not-found");
+    return user;
 };
 
 export const updateUserPassword = async (client: Pool, userId: string, data: UpdateUserPasswordDto) => {
+    let user;
     try {
-        const userRow = await usersSqlc.getPasswordHashById(client, { userId });
-        if (!userRow) {
-            throw new UserNotFoundError(`User with id '${userId}' not found`);
+        user = await usersSqlc.getPasswordHashById(client, { userId });
+    } catch (e: any) {
+        if (e?.code === "22P02") {
+            throw UserErrors.error("user-db-invalid-error").withDetails(e);
         }
-        if (!userRow.passwordHash) {
-            throw new UserInvalidError('User registered via OAuth does not have a password set');
-        }
+        throw UserErrors.error("user-db-error").withDetails(e);
+    }
 
-        const isMatch = await verifyPassword(data.oldPassword, userRow.passwordHash);
-        if (!isMatch) {
-            throw new UserInvalidError('Invalid old password');
-        }
+    if (!user) throw UserErrors.error("user-not-found");
+    if (!user.passwordHash) throw UserErrors.error("user-db-data-not-found");
 
-        const hashedPassword = await hashPassword(data.newPassword);
+    const isMatch = await verifyPassword(data.oldPassword, user.passwordHash);
+    if (!isMatch) throw UserErrors.error("user-invalid");
 
-        const updated = await usersSqlc.updateUserPassword(client, {
+    const hashedPassword = await hashPassword(data.newPassword);
+
+    let updated;
+    try {
+        updated = await usersSqlc.updateUserPassword(client, {
             userId: userId,
             passwordHash: hashedPassword
         });
-
-        if (!updated) {
-            throw new UserNotFoundError(`User with id '${userId}' not found`);
+    } catch (e: any) {
+        if (e?.code === "22P02") {
+            throw UserErrors.error("user-db-invalid-error").withDetails(e);
         }
-    } catch (error) {
-        throw dbError(error);
+        throw UserErrors.error("user-db-error").withDetails(e);
     }
+
+    if (!updated) throw UserErrors.error("user-not-found");
 };
 
 export const updateUserStatus = async (client: Pool, userId: string, status: UserStatus) => {
+    let user;
     try {
-        const user = await usersSqlc.updateUserStatus(client, {
+        user = await usersSqlc.updateUserStatus(client, {
             userId: userId,
             userStatus: status
         });
-        if (!user) {
-            throw new UserNotFoundError(`User with id '${userId}' not found`);
+    } catch (e: any) {
+        if (e?.code === "23514" || e?.code === "22P02") {
+            throw UserErrors.error("user-db-invalid-error").withDetails(e);
         }
-        return user;
-    } catch (error) {
-        throw dbError(error);
+        throw UserErrors.error("user-db-error").withDetails(e);
     }
+
+    if (!user) throw UserErrors.error("user-not-found");
+    return user;
 };
 
-// TODO(admin): check last-admin rule.
+// TODO(admin): add check of last-admin rule.
 export const updateUserRole = async (client: Pool, userId: string, role: UserRole) => {
+    let user;
     try {
-        const user = await usersSqlc.updateUserRole(client, {
+        user = await usersSqlc.updateUserRole(client, {
             userId: userId,
             userRole: role
         });
-        if (!user) {
-            throw new UserNotFoundError(`User with id '${userId}' not found`);
+    } catch (e: any) {
+        if (e?.code === "23514" || e?.code === "22P02") {
+            throw UserErrors.error("user-db-invalid-error").withDetails(e);
         }
-        return user;
-    } catch (error) {
-        throw dbError(error);
+        throw UserErrors.error("user-db-error").withDetails(e);
     }
+
+    if (!user) throw UserErrors.error("user-not-found");
+    return user;
 };
 
 export const createUserLink = async (client: Pool, userId: string, url: string) => {
+    let link;
     try {
-        const link = await userLinksSqlc.createUserLink(client, {
+        link = await userLinksSqlc.createUserLink(client, {
             userId: userId,
             userLinkUrl: url
         });
-        if (!link) {
-            throw new UserError('Failed to create user link');
+    } catch (e: any) {
+        if (e?.code === "23505") {
+            throw UserErrors.error("user-link-already-exists").withDetails(e);
         }
-        return link;
-    } catch (error) {
-        throw dbError(error);
+        if (e?.code === "23503") {
+            const constraint = e?.constraint ?? "";
+            if (constraint.includes("user_id")) {
+                throw UserErrors.error("user-not-found").withDetails(e);
+            }
+            throw UserErrors.error("user-db-data-not-found").withDetails(e);
+        }
+        if (e?.code === "23514" || e?.code === "22P02" || e?.code === "22003" || e?.code === "22001") {
+            throw UserErrors.error("user-db-invalid-error").withDetails(e);
+        }
+        throw UserErrors.error("user-db-error").withDetails(e);
     }
+
+    if (!link) throw UserErrors.error("user-db-error");
+    return link;
 };
 
 export const listUserLinksByUserId = async (client: Pool, userId: string) => {
     try {
         return await userLinksSqlc.listUserLinksByUserId(client, { userId });
-    } catch (error) {
-        throw dbError(error);
+    } catch (e: any) {
+        if (e?.code === "22P02") {
+            throw UserErrors.error("user-db-invalid-error").withDetails(e);
+        }
+        throw UserErrors.error("user-db-error").withDetails(e);
     }
 };
 
@@ -279,19 +270,25 @@ export const updateUserLink = async (
     linkId: string | number | bigint,
     url: string
 ) => {
+    let link;
     try {
-        const link = await userLinksSqlc.updateUserLink(client, {
+        link = await userLinksSqlc.updateUserLink(client, {
             userId: userId,
             userLinkId: String(linkId),
             userLinkUrl: url
         });
-        if (!link) {
-            throw new UserNotFoundError(`User link with id '${linkId}' not found`);
+    } catch (e: any) {
+        if (e?.code === "23505") {
+            throw UserErrors.error("user-link-already-exists").withDetails(e);
         }
-        return link;
-    } catch (error) {
-        throw dbError(error);
+        if (e?.code === "23514" || e?.code === "22P02" || e?.code === "22003" || e?.code === "22001") {
+            throw UserErrors.error("user-db-invalid-error").withDetails(e);
+        }
+        throw UserErrors.error("user-db-error").withDetails(e);
     }
+
+    if (!link) throw UserErrors.error("user-link-not-found");
+    return link;
 };
 
 export const deleteUserLinkById = async (
@@ -299,12 +296,15 @@ export const deleteUserLinkById = async (
     userId: string,
     linkId: string | number | bigint
 ) => {
+    let deleted;
     try {
-        const deleted = await userLinksSqlc.deleteUserLink(client, { userId, userLinkId: String(linkId) });
-        if (!deleted) {
-            throw new UserNotFoundError(`User link with id '${linkId}' not found`);
+        deleted = await userLinksSqlc.deleteUserLink(client, { userId, userLinkId: String(linkId) });
+    } catch (e: any) {
+        if (e?.code === "22P02") {
+            throw UserErrors.error("user-db-invalid-error").withDetails(e);
         }
-    } catch (error) {
-        throw dbError(error);
+        throw UserErrors.error("user-db-error").withDetails(e);
     }
+
+    if (!deleted) throw UserErrors.error("user-link-not-found");
 };

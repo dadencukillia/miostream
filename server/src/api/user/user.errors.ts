@@ -11,7 +11,7 @@
 // export class AvatarAlreadyNoAvatarError extends UserError { override status = 409; }
 // export class AvatarInvalidImageError extends UserError { override status = 400; }
 
-import { ErrorsSet } from "@/utils/errorsCollection";
+import { ErrorsSet } from "@utils/errorsCollection";
 
 export const UserErrors = new ErrorsSet('user', {
     // DB
@@ -22,7 +22,7 @@ export const UserErrors = new ErrorsSet('user', {
     // Request
     "user-invalid": [400, "invalid payload"],
     "user-not-found": [404, "referenced user does not exist"],
-    "user-res-not-found": [404, "referenced resource does not exist"],
+    "user-link-not-found": [404, "referenced user link does not exist"],
 
     // Conflict
     "user-already-exists": [409, "user with this payload already exists"],
