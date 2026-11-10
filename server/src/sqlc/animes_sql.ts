@@ -146,12 +146,12 @@ WHERE
     AND ($4::smallint IS NULL OR a.year_released = $4::smallint)
     AND ($5::boolean IS NULL OR a.available = $5::boolean)
 ORDER BY
-    CASE WHEN $7::text = 'oldest' THEN a.anime_id END ASC,
-    CASE WHEN $7::text = 'title' THEN lower(a.title_ua) END ASC,
-    CASE WHEN $7::text = 'year_desc' THEN a.year_released END DESC NULLS LAST,
-    CASE WHEN $7::text = 'year_asc' THEN a.year_released END ASC NULLS LAST,
+    CASE WHEN $6::text = 'oldest' THEN a.anime_id END ASC,
+    CASE WHEN $6::text = 'title' THEN lower(a.title_ua) END ASC,
+    CASE WHEN $6::text = 'year_desc' THEN a.year_released END DESC NULLS LAST,
+    CASE WHEN $6::text = 'year_asc' THEN a.year_released END ASC NULLS LAST,
     a.anime_id DESC
-LIMIT $9::int OFFSET $8::int`;
+LIMIT $8::int OFFSET $7::int`;
 
 export interface ListAnimesArgs {
     genre: string | null;

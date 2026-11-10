@@ -59,17 +59,21 @@ describe("anime service", () => {
   test("normalizes list filters and returns pagination and mapped items", async () => {
     const fake = fakeDb({ total: 21 });
     const result = await service.listAnimes(fake.db, { page: 2, limit: 10, genre: "action", status: "ongoing", format: "tv", year: 2020, available: false, sort: "title" });
+    for (const call of fake.calls) {
+      const placeholders = [...call.text.matchAll(/\$(\d+)/g)].map((match) => Number(match[1]));
+      expect([...new Set(placeholders)].sort((a, b) => a - b)).toEqual(call.values.map((_, i) => i + 1));
+    }
     expect(result.pagination).toEqual({ page: 2, limit: 10, total: 21, total_pages: 3 });
     expect(result.items[0]).toMatchObject({ animeId: id, malId: 123, anilistId: 456, genres: ["action", "drama"] });
-    expect(byName(fake.calls, "ListAnimes")?.values).toEqual(["Title", "action", "ongoing", "tv", 2020, false, "title", 10, 10]);
-    expect(byName(fake.calls, "CountAnimes")?.values).toEqual(["Title", "action", "ongoing", "tv", 2020, false]);
+    expect(byName(fake.calls, "ListAnimes")?.values).toEqual(["action", "ongoing", "tv", 2020, false, "title", 10, 10]);
+    expect(byName(fake.calls, "CountAnimes")?.values).toEqual(["action", "ongoing", "tv", 2020, false]);
   });
 
   test("uses list defaults and zero pages for an empty result", async () => {
     const fake = fakeDb({ missing: true, total: 0 });
     const result = await service.listAnimes(fake.db, {});
     expect(result).toEqual({ items: [], pagination: { page: 1, limit: 20, total: 0, total_pages: 0 } });
-    expect(byName(fake.calls, "ListAnimes")?.values).toEqual([null, null, null, null, null, true, "newest", 0, 20]);
+    expect(byName(fake.calls, "ListAnimes")?.values).toEqual([null, null, null, null, true, "newest", 0, 20]);
   });
 
   test("retrieves by id and slug and reports missing records", async () => {

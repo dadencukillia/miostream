@@ -5,7 +5,7 @@ import { grantAuthMiddleware } from "@/api/auth/auth.middleware";
 import * as controllers from "./anime.controller";
 
 const modulePlugin: FastifyPluginAsync = async (fastify: FastifyInstance, _opts: FastifyPluginOptions) => {
-  AnimeErrors.setupErrorHandler(fastify);
+  AnimeErrors.setupErrorHandler(fastify, [AnimeErrors], true, true);
 
   fastify.get("/", { schema: schemas.listAnimesRouteSchema }, controllers.listAnimes);
   fastify.get("/:idOrSlug", { schema: schemas.getAnimeRouteSchema }, controllers.getAnime);

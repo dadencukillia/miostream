@@ -75,12 +75,7 @@ SELECT
     )::text[] AS genres
 FROM public.animes a
 WHERE
-    (sqlc.narg('search')::text IS NULL OR
-        a.slug ILIKE '%' || sqlc.narg('search')::text || '%' OR
-        a.title_ua ILIKE '%' || sqlc.narg('search')::text || '%' OR
-        a.title_en ILIKE '%' || sqlc.narg('search')::text || '%' OR
-        a.title_original ILIKE '%' || sqlc.narg('search')::text || '%')
-    AND (sqlc.narg('genre')::genre_type_enum IS NULL OR EXISTS (
+    (sqlc.narg('genre')::genre_type_enum IS NULL OR EXISTS (
         SELECT 1
         FROM public.genres fg
         WHERE fg.anime_id = a.anime_id
@@ -102,12 +97,7 @@ LIMIT sqlc.arg('limit')::int OFFSET sqlc.arg('offset')::int;
 SELECT COUNT(*)::int AS total
 FROM public.animes a
 WHERE
-    (sqlc.narg('search')::text IS NULL OR
-        a.slug ILIKE '%' || sqlc.narg('search')::text || '%' OR
-        a.title_ua ILIKE '%' || sqlc.narg('search')::text || '%' OR
-        a.title_en ILIKE '%' || sqlc.narg('search')::text || '%' OR
-        a.title_original ILIKE '%' || sqlc.narg('search')::text || '%')
-    AND (sqlc.narg('genre')::genre_type_enum IS NULL OR EXISTS (
+    (sqlc.narg('genre')::genre_type_enum IS NULL OR EXISTS (
         SELECT 1
         FROM public.genres fg
         WHERE fg.anime_id = a.anime_id
