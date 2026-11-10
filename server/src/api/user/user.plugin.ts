@@ -29,8 +29,7 @@ const verifySelfOrAdmin: AuthHook = async (req: FastifyRequest, reply: FastifyRe
 const requireSelfOrAdmin = [requireAuth, verifySelfOrAdmin];
 
 const modulePlugin: FastifyPluginAsync = async (fastify: FastifyInstance, _opts: FastifyPluginOptions) => {
-    UserErrors.setupErrorHandler(fastify);
-    AvatarErrors.setupErrorHandler(fastify);
+    UserErrors.setupErrorHandler(fastify, [UserErrors, AvatarErrors]);
 
     fastify.post('/', { schema: schemas.CreateUserSchema }, controllers.createUser);
 
