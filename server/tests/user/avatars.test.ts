@@ -35,7 +35,7 @@ describe("user avatars", async () => {
       ],
     });
 
-    await fastify.register(userPlugin, { prefix: "/users" });
+    await fastify.register(userPlugin, { prefix: "/user" });
     await fastify.register(cdnPlugin, { prefix: "/cdn" });
 
     await fastify.pg.query("DELETE FROM public.users;");
@@ -53,7 +53,7 @@ describe("user avatars", async () => {
       email: "test@miostream.dev"
     };
     const response = await fastify.inject({
-      path: "/users",
+      path: "/user",
       method: "POST",
       payload: {
         ...userData,
@@ -75,7 +75,7 @@ describe("user avatars", async () => {
 
   test("attach avatar to user", async () => {
     const response = await fastify.inject({
-      path: `/users/${userId}/avatar`,
+      path: `/user/${userId}/avatar`,
       method: "PUT",
       payload: JSON.stringify(avatarPicture.toBase64()),
       headers: {
@@ -90,7 +90,7 @@ describe("user avatars", async () => {
 
     {
       const response = await fastify.inject({
-        path: `/users/${userId}/avatar`,
+        path: `/user/${userId}/avatar`,
         method: "PUT",
         payload: JSON.stringify(avatarPicture.toBase64()),
         headers: {
@@ -110,7 +110,7 @@ describe("user avatars", async () => {
 
     {
       const response = await fastify.inject({
-        path: `/users/${userId}/avatar`,
+        path: `/user/${userId}/avatar`,
         method: "DELETE",
       });
 
@@ -125,7 +125,7 @@ describe("user avatars", async () => {
 
     {
       const response = await fastify.inject({
-        path: `/users/${userId}/avatar`,
+        path: `/user/${userId}/avatar`,
         method: "DELETE",
       });
       expect(response.statusCode).toEqual(409);
@@ -134,7 +134,7 @@ describe("user avatars", async () => {
     // Put a new avatar
 
     const response = await fastify.inject({
-      path: `/users/${userId}/avatar`,
+      path: `/user/${userId}/avatar`,
       method: "PUT",
       payload: JSON.stringify(avatarPicture.toBase64()),
       headers: {
@@ -159,7 +159,7 @@ describe("user avatars", async () => {
 
     {
       const response = await fastify.inject({
-        path: `/users/${userId}/avatar`,
+        path: `/user/${userId}/avatar`,
         method: "DELETE",
       });
 
