@@ -14,9 +14,9 @@ const modulePlugin: FastifyPluginAsync = async (fastify: FastifyInstance, _opts:
 
     // Public routes
     fastify.post("/", { schema: schemas.CreateUserSchema }, controllers.createUser);
-    fastify.get("/:userId", { schema: schemas.GetUserByIdSchema }, controllers.getUserById);
+    fastify.get("/:identifier", { schema: schemas.GetUserSchema }, controllers.getUser);
     fastify.get("/:userId/links", { schema: schemas.ListUserLinksByUserIdSchema }, controllers.listUserLinksByUserId);
-
+    
     // Authenticated user routes
     fastify.patch("/profile", { schema: schemas.UpdateUserProfileSchema, preHandler: requireAuth }, controllers.updateUserProfile);
     fastify.put("/avatar", { schema: schemas.UpdateUserAvatarSchema, preHandler: requireAuth }, controllers.updateUserAvatar);

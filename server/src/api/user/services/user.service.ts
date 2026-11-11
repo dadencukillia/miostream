@@ -58,6 +58,18 @@ export const getUserById = async (client: Pool, userId: string) => {
     return user;
 };
 
+export const getUserByNickname = async (client: Pool, nickname: string) => {
+    let user;
+    try {
+        user = await usersSqlc.getUserByNickname(client, { nickname });
+    } catch (e: any) {
+        throw UserErrors.error("user-db-error").withDetails(e);
+    }
+
+    if (!user) throw UserErrors.error("user-not-found");
+    return user;
+};
+
 // TODO(auth): move getUserByEmail/getUserByGoogleId to an auth module; keep email/googleId out of client-facing errors.
 export const getUserByEmail = async (client: Pool, email: string) => {
     let user;

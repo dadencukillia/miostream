@@ -12,6 +12,7 @@ export type UserLinkResponseType = Static<typeof userSchema.UserLinkResponse>;
 export type UserLinkListResponseType = UserLinkResponseType[];
 
 // Request Params
+export type UserIdentifierRequestParamsType = Static<typeof userSchema.UserIdentifierRequestParams>;
 export type UserIdRequestParamsType = Static<typeof userSchema.UserIdRequestParams>;
 export type UserLinkIdRequestParamsType = Static<typeof userSchema.UserLinkIdRequestParams>;
 
@@ -28,6 +29,7 @@ export type UpdateUserLinkRequestPayloadType = Static<typeof userSchema.UpdateUs
 
 // Controller Return Types
 export type CreateUserReturnType = UserResponseType | ErrorResponseType;
+export type GetUserReturnType = UserResponseType | ErrorResponseType;
 export type GetUserByIdReturnType = UserResponseType | ErrorResponseType;
 export type UpdateUserProfileReturnType = UserResponseType | ErrorResponseType;
 export type UpdateUserAvatarReturnType = UserResponseType | ErrorResponseType;

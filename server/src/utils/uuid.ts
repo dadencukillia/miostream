@@ -1,7 +1,8 @@
-export const isUuid = (value: string): boolean => {
-	return /^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$/i.test(value);
-};
+const UUID_REGEX = /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[0-9a-f]{32})$/i;
 
+export const isUuid = (value: string): boolean => {
+	return UUID_REGEX.test(value);
+};
 
 //  Normalizes a UUID string to its canonical hyphenated, lowercase form.
 //  Returns null if the input is not a valid UUID.

@@ -5,26 +5,33 @@ import * as services from "./services/user.service";
 import * as avatarServices from "./services/avatar.service";
 import { isSafeHttpUrl } from "@utils/urls";
 import { isValidTimezone } from "@utils/timezones";
+import { isUuid, normalizeUuid } from "@utils/uuid";
 
 export const createUser = async (
     request: FastifyRequest<{ Body: dto.CreateUserRequestPayloadType }>,
     reply: FastifyReply<{ Body: dto.CreateUserRequestPayloadType; Reply: dto.CreateUserReturnType }>
 ) => {
     // TODO(auth): take googleId/email from a verified Google ID token, not from body.
-    const { password, googleId, timezone } = request.body;
+    const { password, googleId, timezone, nickname } = request.body;
 
     if (!password && !googleId) throw UserErrors.error("user-invalid");
     if (timezone && !isValidTimezone(timezone)) throw UserErrors.error("user-invalid");
+    if (isUuid(nickname)) throw UserErrors.error("user-invalid");
 
     const user = await services.createUser(request.server.pg, request.body);
     return reply.status(201).send(user);
 };
 
-export const getUserById = async (
-    request: FastifyRequest<{ Params: dto.UserIdRequestParamsType }>,
-    reply: FastifyReply<{ Params: dto.UserIdRequestParamsType; Reply: dto.GetUserByIdReturnType }>
+export const getUser = async (
+    request: FastifyRequest<{ Params: dto.UserIdentifierRequestParamsType }>,
+    reply: FastifyReply<{ Params: dto.UserIdentifierRequestParamsType; Reply: dto.GetUserReturnType }>
 ) => {
-    const user = await services.getUserById(request.server.pg, request.params.userId);
+    const { identifier } = request.params;
+
+    const user = isUuid(identifier)
+        ? await services.getUserById(request.server.pg, normalizeUuid(identifier)!)
+        : await services.getUserByNickname(request.server.pg, identifier);
+
     return reply.status(200).send(user);
 };
 
@@ -52,6 +59,7 @@ export const updateUserProfile = async (
 
     if (!isValidTimezone(timezone)) throw UserErrors.error("user-invalid");
     if (nickname.trim().length === 0 || fullName.trim().length === 0) throw UserErrors.error("user-invalid");
+    if (isUuid(nickname)) throw UserErrors.error("user-invalid");
 
     const user = await services.updateUserProfile(
         request.server.pg,

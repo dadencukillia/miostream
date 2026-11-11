@@ -110,6 +110,18 @@ export const UserLinkResponse = Type.Object({
 });
 
 // Request Params
+export const UserIdentifierRequestParams = Type.Object({
+    identifier: Type.String({
+        minLength: 3,
+        maxLength: 36,
+        description: "User UUID (with or without hyphens) or unique nickname",
+        examples: ["01a2d591-6280-7000-8b43-b956a29e46a7", "streamer_pro"]
+    })
+}, {
+    additionalProperties: false,
+    description: "Route parameters containing user UUID or nickname identifier"
+});
+
 export const UserIdRequestParams = Type.Object({
     userId: Type.String({
         format: "uuid",
@@ -302,6 +314,19 @@ export const CreateUserSchema = {
         201: UserResponse,
         400: ErrorResponse,
         409: ErrorResponse,
+        500: ErrorResponse,
+    },
+} as const;
+
+export const GetUserSchema = {
+    tags: [TAG_USER],
+    summary: "Get user by ID or nickname",
+    description: "Retrieves public profile details by user UUID (canonical or compact) or unique nickname.",
+    params: UserIdentifierRequestParams,
+    response: {
+        200: UserResponse,
+        400: ErrorResponse,
+        404: ErrorResponse,
         500: ErrorResponse,
     },
 } as const;

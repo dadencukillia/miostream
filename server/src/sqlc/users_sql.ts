@@ -171,6 +171,81 @@ export async function getUserById(client: Client, args: GetUserByIdArgs): Promis
     };
 }
 
+export const getUserByNicknameQuery = `-- name: GetUserByNickname :one
+SELECT 
+    "user_id",
+    "nickname",
+    "full_name",
+    "email",
+    "bio",
+    "avatar_id",
+    "max_streak",
+    "timezone",
+    "streak_start_date",
+    "last_watch_date",
+    "profile_frame_url",
+    "profile_background_url",
+    "user_role",
+    "user_status",
+    "created_at",
+    "updated_at"
+FROM public.users
+WHERE "nickname" = $1::text
+LIMIT 1`;
+
+export interface GetUserByNicknameArgs {
+    nickname: string;
+}
+
+export interface GetUserByNicknameRow {
+    userId: string;
+    nickname: string;
+    fullName: string;
+    email: string;
+    bio: string;
+    avatarId: string | null;
+    maxStreak: number;
+    timezone: string;
+    streakStartDate: Date | null;
+    lastWatchDate: Date | null;
+    profileFrameUrl: string | null;
+    profileBackgroundUrl: string | null;
+    userRole: string;
+    userStatus: string;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export async function getUserByNickname(client: Client, args: GetUserByNicknameArgs): Promise<GetUserByNicknameRow | null> {
+    const result = await client.query({
+        text: getUserByNicknameQuery,
+        values: [args.nickname],
+        rowMode: "array"
+    });
+    if (result.rows.length !== 1) {
+        return null;
+    }
+    const row = result.rows[0];
+    return {
+        userId: row[0],
+        nickname: row[1],
+        fullName: row[2],
+        email: row[3],
+        bio: row[4],
+        avatarId: row[5],
+        maxStreak: row[6],
+        timezone: row[7],
+        streakStartDate: row[8],
+        lastWatchDate: row[9],
+        profileFrameUrl: row[10],
+        profileBackgroundUrl: row[11],
+        userRole: row[12],
+        userStatus: row[13],
+        createdAt: row[14],
+        updatedAt: row[15]
+    };
+}
+
 export const getUserByEmailQuery = `-- name: GetUserByEmail :one
 SELECT 
     "user_id",
