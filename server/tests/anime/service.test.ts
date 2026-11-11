@@ -48,7 +48,7 @@ describe("anime service", () => {
   test("maps database rows, including numeric IDs and unknown enum values", () => {
     const anime = service.toAnime({
       animeId: id, slug: "sample-anime", titleUa: "Назва", titleEn: "Title", titleOriginal: "Original",
-      animeDescription: "Description", coverUrl: "cover", productionStudio: "Studio", malId: "123", anilistId: null,
+      animeDescription: "Description", coverId: "4f2f627b-cec4-48ca-ae1e-1c59b1fccd7c", productionStudio: "Studio", malId: "123", anilistId: null,
       hikkaId: null, imdbId: null, yearReleased: null, avgEpisodeDuration: 0, episodesCount: 0,
       ageRestriction: "unknown", animeStatus: "unknown", animeFormat: "unknown", available: false,
       genres: ["action", "unknown", "drama"],
@@ -105,7 +105,7 @@ describe("anime service", () => {
     const result = await service.createAnime(fake.db, { slug: "sample-anime", titleEn: "Title", genres: ["action", "drama", "action"], malId: 123, available: false });
     expect(result.animeId).toBe(id);
     expect(fake.calls.map((call) => call.name)).toEqual(["BEGIN", "CreateAnime", "CreateAnimeGenres", "GetAnimeById", "COMMIT"]);
-    expect(byName(fake.calls, "CreateAnime")?.values).toEqual(["sample-anime", "", "Title", "", "", "", "", "123", null, null, null, null, 0, 0, null, null, "tv", false]);
+    expect(byName(fake.calls, "CreateAnime")?.values).toEqual(["sample-anime", "", "Title", "", "", null, "", "123", null, null, null, null, 0, 0, null, null, "tv", false]);
     expect(byName(fake.calls, "CreateAnimeGenres")?.values).toEqual([id, ["action", "drama"]]);
     expect(fake.released).toBe(true);
   });

@@ -44,7 +44,10 @@ const modulePlugin: FastifyPluginAsync = async (fastify: FastifyInstance, _opts:
     // TODO(auth): self only for profile, avatar, customization and password.
     // TODO(auth): rate limit password route.
     fastify.patch('/:userId/profile', { schema: schemas.updateUserProfileRouteSchema }, controllers.updateUserProfile);
-    fastify.patch('/:userId/avatar', { schema: schemas.updateUserAvatarRouteSchema }, controllers.updateUserAvatar);
+
+    fastify.put('/:userId/avatar', { schema: schemas.updateUserAvatarRouteSchema }, controllers.updateUserAvatar);
+    fastify.delete('/:userId/avatar', { schema: schemas.deleteUserAvatarSchema }, controllers.deleteUserAvatar);
+
     fastify.patch('/:userId/customization', { schema: schemas.updateUserCustomizationRouteSchema }, controllers.updateUserCustomization);
     fastify.patch('/:userId/password', { schema: schemas.updateUserPasswordRouteSchema }, controllers.updateUserPassword);
     // TODO(admin): admin only for status and role.

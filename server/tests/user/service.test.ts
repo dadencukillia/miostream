@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { Pool } from "pg";
-import * as service from "@/api/user/user.service";
+import * as service from "@/api/user/services/user.service";
 import { UserAlreadyExistsError, UserError, UserInvalidError, UserNotFoundError } from "@/api/user/user.errors";
 import { hashPassword, verifyPassword } from "@utils/password";
 import { isValidTimezone } from "@utils/timezones";
@@ -8,8 +8,8 @@ import { isSafeHttpUrl } from "@utils/urls";
 
 const id = "a7b3fd74-00ab-4d5c-949e-07c135475bd1";
 const now = new Date("2026-01-01T00:00:00Z");
-const userRow = [id, "alice", "Alice Doe", "alice@example.com", "", "", 0, "UTC", null, null, null, null, "user", "active", now, now];
-const user = { userId: id, nickname: "alice", fullName: "Alice Doe", email: "alice@example.com", bio: "", avatarUrl: "", maxStreak: 0, timezone: "UTC", streakStartDate: null, lastWatchDate: null, profileFrameUrl: null, profileBackgroundUrl: null, userRole: "user", userStatus: "active", createdAt: now, updatedAt: now };
+const userRow = [id, "alice", "Alice Doe", "alice@example.com", "", null, 0, "UTC", null, null, null, null, "user", "active", now, now];
+const user = { userId: id, nickname: "alice", fullName: "Alice Doe", email: "alice@example.com", bio: "", avatarId: null, maxStreak: 0, timezone: "UTC", streakStartDate: null, lastWatchDate: null, profileFrameUrl: null, profileBackgroundUrl: null, userRole: "user", userStatus: "active", createdAt: now, updatedAt: now };
 
 function database(...results: (unknown[][] | Error)[]) {
     const calls: { text: string; values: unknown[] }[] = [];
@@ -48,24 +48,53 @@ describe("user service", () => {
         await expect(lookup(db.pool)).rejects.toBeInstanceOf(UserNotFoundError);
     });
 
-    test("updates profile, avatar, status, role and deletes a user", async () => {
-        const db = database([userRow], [userRow], [userRow], [userRow], [[id]], []);
+    test("updates profile", async () => {
+        const db = database([userRow]);
         const profile = { nickname: "alice", fullName: "Alice Doe", bio: "Hello", timezone: "UTC" };
+
         expect(await service.updateUserProfile(db.pool, id, profile)).toEqual(user);
-        expect(db.calls[0]!.values).toEqual([profile.nickname, profile.fullName, profile.bio, profile.timezone, id]);
-        expect(await service.updateUserAvatar(db.pool, id, "https://example.com/avatar")).toEqual(user);
-        expect(await service.updateUserStatus(db.pool, id, "banned")).toEqual(user);
-        expect(await service.updateUserRole(db.pool, id, "admin")).toEqual(user);
-        expect(db.calls.slice(1, 4).map(call => call.values)).toEqual([
-            ["https://example.com/avatar", id], ["banned", id], ["admin", id],
+
+        expect(db.calls).toHaveLength(1);
+        expect(db.calls[0]?.values).toEqual([
+            profile.nickname, profile.fullName, profile.bio, profile.timezone, id,
         ]);
+    });
+
+    test("updates status", async () => {
+        const db = database([userRow]);
+
+        expect(await service.updateUserStatus(db.pool, id, "banned")).toEqual(user);
+
+        expect(db.calls).toHaveLength(1);
+        expect(db.calls[0]?.values).toEqual(["banned", id]);
+    });
+
+    test("updates role", async () => {
+        const db = database([userRow]);
+
+        expect(await service.updateUserRole(db.pool, id, "admin")).toEqual(user);
+
+        expect(db.calls).toHaveLength(1);
+        expect(db.calls[0]?.values).toEqual(["admin", id]);
+    });
+
+    test("deletes an existing user", async () => {
+        const db = database([[id]]);
+
         await expect(service.deleteUserById(db.pool, id)).resolves.toBeUndefined();
+
+        expect(db.calls).toHaveLength(1);
+        expect(db.calls[0]?.values).toEqual([id]);
+    });
+
+    test("throws UserNotFoundError when deleting a missing user", async () => {
+        const db = database([]);
+
         await expect(service.deleteUserById(db.pool, id)).rejects.toBeInstanceOf(UserNotFoundError);
     });
 
     test.each([
         ["profile", (pool: Pool) => service.updateUserProfile(pool, id, { nickname: "alice", fullName: "Alice Doe", bio: "", timezone: "UTC" })],
-        ["avatar", (pool: Pool) => service.updateUserAvatar(pool, id, "https://example.com")],
         ["customization", (pool: Pool) => service.updateUserCustomization(pool, id, { profileFrameUrl: null })],
         ["status", (pool: Pool) => service.updateUserStatus(pool, id, "active")],
         ["role", (pool: Pool) => service.updateUserRole(pool, id, "user")],

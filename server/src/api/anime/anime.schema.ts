@@ -1,5 +1,6 @@
 import Type, { type TSchema, type TSchemaOptions } from "typebox";
 import { AnimeIdParamsSchema } from "./anime.shared";
+import { ErrorResponse } from "@/utils/errorsCollection";
 export { AnimeIdParamsSchema } from "./anime.shared";
 
 export const ANIME_FORMATS = [
@@ -168,7 +169,7 @@ export const AnimeResponseSchema = Type.Object(
 		titleEn: Type.String({ description: "Anime title in English" }),
 		titleOriginal: Type.String({ description: "Original anime title" }),
 		animeDescription: Type.String({ description: "Anime synopsis/description" }),
-		coverUrl: Type.String({ description: "URL to anime cover image" }),
+		coverId: Nullable(Type.String({ description: "ID of anime cover image" })),
 		productionStudio: Type.String({ description: "Production studio name" }),
 		malId: Nullable(Type.Integer({ description: "MyAnimeList ID" })),
 		anilistId: Nullable(Type.Integer({ description: "AniList ID" })),
@@ -318,18 +319,6 @@ export const AnimeListResponseSchema = Type.Object(
 	},
 );
 
-export const ErrorResponseSchema = Type.Object(
-	{
-		ok: Type.Literal(false, { description: "Indicates an unsuccessful operation" }),
-		message: Type.String({ description: "Human-readable error details" }),
-	},
-	{
-		additionalProperties: false,
-		description: "Standard error response payload",
-		examples: [{ ok: false, message: "Anime not found" }],
-	},
-);
-
 // Route schemas passed directly to Fastify.
 
 export const listAnimesRouteSchema = {
@@ -339,8 +328,8 @@ export const listAnimesRouteSchema = {
 	querystring: ListAnimesQuerySchema,
 	response: {
 		200: AnimeListResponseSchema,
-		400: ErrorResponseSchema,
-		500: ErrorResponseSchema,
+		400: ErrorResponse,
+		500: ErrorResponse,
 	},
 } as const;
 
@@ -351,9 +340,9 @@ export const getAnimeRouteSchema = {
 	params: Type.Object({ idOrSlug: Type.String({ minLength: 1, maxLength: 200 }) }, { additionalProperties: false }),
 	response: {
 		200: AnimeResponseSchema,
-		400: ErrorResponseSchema,
-		404: ErrorResponseSchema,
-		500: ErrorResponseSchema,
+		400: ErrorResponse,
+		404: ErrorResponse,
+		500: ErrorResponse,
 	},
 } as const;
 
@@ -364,9 +353,9 @@ export const getAnimeBySlugRouteSchema = {
 	params: AnimeSlugParamsSchema,
 	response: {
 		200: AnimeResponseSchema,
-		400: ErrorResponseSchema,
-		404: ErrorResponseSchema,
-		500: ErrorResponseSchema,
+		400: ErrorResponse,
+		404: ErrorResponse,
+		500: ErrorResponse,
 	},
 } as const;
 
@@ -377,9 +366,9 @@ export const createAnimeRouteSchema = {
 	body: CreateAnimeBodySchema,
 	response: {
 		201: AnimeResponseSchema,
-		400: ErrorResponseSchema,
-		409: ErrorResponseSchema,
-		500: ErrorResponseSchema,
+		400: ErrorResponse,
+		409: ErrorResponse,
+		500: ErrorResponse,
 	},
 } as const;
 
@@ -391,10 +380,10 @@ export const updateAnimeRouteSchema = {
 	body: UpdateAnimeBodySchema,
 	response: {
 		200: AnimeResponseSchema,
-		400: ErrorResponseSchema,
-		404: ErrorResponseSchema,
-		409: ErrorResponseSchema,
-		500: ErrorResponseSchema,
+		400: ErrorResponse,
+		404: ErrorResponse,
+		409: ErrorResponse,
+		500: ErrorResponse,
 	},
 } as const;
 
@@ -405,9 +394,8 @@ export const deleteAnimeRouteSchema = {
 	params: AnimeIdParamsSchema,
 	response: {
 		204: Type.Null(),
-		400: ErrorResponseSchema,
-		404: ErrorResponseSchema,
-		500: ErrorResponseSchema,
+		400: ErrorResponse,
+		404: ErrorResponse,
+		500: ErrorResponse,
 	},
 } as const;
-export type ErrorResponseType = Type.Static<typeof ErrorResponseSchema>;

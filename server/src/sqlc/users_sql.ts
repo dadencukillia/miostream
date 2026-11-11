@@ -5,7 +5,7 @@ interface Client {
 }
 
 export const createUserQuery = `-- name: CreateUser :one
-INSERT INTO public.users (
+INSERT INTO public.users(
     "nickname",
     "full_name",
     "email",
@@ -18,7 +18,7 @@ INSERT INTO public.users (
     $3, 
     $4,
     $5,
-    COALESCE($6, 'Europe/Kyiv')
+    coalesce($6, 'Europe/Kyiv')
 )
 RETURNING 
     "user_id",
@@ -26,7 +26,7 @@ RETURNING
     "full_name",
     "email",
     "bio",
-    "avatar_url",
+    "avatar_id",
     "max_streak",
     "timezone",
     "streak_start_date",
@@ -53,7 +53,7 @@ export interface CreateUserRow {
     fullName: string;
     email: string;
     bio: string;
-    avatarUrl: string;
+    avatarId: string | null;
     maxStreak: number;
     timezone: string;
     streakStartDate: Date | null;
@@ -82,7 +82,7 @@ export async function createUser(client: Client, args: CreateUserArgs): Promise<
         fullName: row[2],
         email: row[3],
         bio: row[4],
-        avatarUrl: row[5],
+        avatarId: row[5],
         maxStreak: row[6],
         timezone: row[7],
         streakStartDate: row[8],
@@ -103,7 +103,7 @@ SELECT
     "full_name",
     "email",
     "bio",
-    "avatar_url",
+    "avatar_id",
     "max_streak",
     "timezone",
     "streak_start_date",
@@ -128,7 +128,7 @@ export interface GetUserByIdRow {
     fullName: string;
     email: string;
     bio: string;
-    avatarUrl: string;
+    avatarId: string | null;
     maxStreak: number;
     timezone: string;
     streakStartDate: Date | null;
@@ -157,7 +157,7 @@ export async function getUserById(client: Client, args: GetUserByIdArgs): Promis
         fullName: row[2],
         email: row[3],
         bio: row[4],
-        avatarUrl: row[5],
+        avatarId: row[5],
         maxStreak: row[6],
         timezone: row[7],
         streakStartDate: row[8],
@@ -178,7 +178,7 @@ SELECT
     "full_name",
     "email",
     "bio",
-    "avatar_url",
+    "avatar_id",
     "max_streak",
     "timezone",
     "streak_start_date",
@@ -203,7 +203,7 @@ export interface GetUserByEmailRow {
     fullName: string;
     email: string;
     bio: string;
-    avatarUrl: string;
+    avatarId: string | null;
     maxStreak: number;
     timezone: string;
     streakStartDate: Date | null;
@@ -232,7 +232,7 @@ export async function getUserByEmail(client: Client, args: GetUserByEmailArgs): 
         fullName: row[2],
         email: row[3],
         bio: row[4],
-        avatarUrl: row[5],
+        avatarId: row[5],
         maxStreak: row[6],
         timezone: row[7],
         streakStartDate: row[8],
@@ -253,7 +253,7 @@ SELECT
     "full_name",
     "email",
     "bio",
-    "avatar_url",
+    "avatar_id",
     "max_streak",
     "timezone",
     "streak_start_date",
@@ -278,7 +278,7 @@ export interface GetUserByGoogleIdRow {
     fullName: string;
     email: string;
     bio: string;
-    avatarUrl: string;
+    avatarId: string | null;
     maxStreak: number;
     timezone: string;
     streakStartDate: Date | null;
@@ -307,7 +307,7 @@ export async function getUserByGoogleId(client: Client, args: GetUserByGoogleIdA
         fullName: row[2],
         email: row[3],
         bio: row[4],
-        avatarUrl: row[5],
+        avatarId: row[5],
         maxStreak: row[6],
         timezone: row[7],
         streakStartDate: row[8],
@@ -357,7 +357,7 @@ SET
     "full_name"  = $2,
     "bio"        = $3,
     "timezone"   = $4,
-    "updated_at" = NOW()
+    "updated_at" = now()
 WHERE "user_id" = $5::uuid
 RETURNING 
     "user_id",
@@ -365,7 +365,7 @@ RETURNING
     "full_name",
     "email",
     "bio",
-    "avatar_url",
+    "avatar_id",
     "max_streak",
     "timezone",
     "streak_start_date",
@@ -391,7 +391,7 @@ export interface UpdateUserProfileRow {
     fullName: string;
     email: string;
     bio: string;
-    avatarUrl: string;
+    avatarId: string | null;
     maxStreak: number;
     timezone: string;
     streakStartDate: Date | null;
@@ -420,85 +420,7 @@ export async function updateUserProfile(client: Client, args: UpdateUserProfileA
         fullName: row[2],
         email: row[3],
         bio: row[4],
-        avatarUrl: row[5],
-        maxStreak: row[6],
-        timezone: row[7],
-        streakStartDate: row[8],
-        lastWatchDate: row[9],
-        profileFrameUrl: row[10],
-        profileBackgroundUrl: row[11],
-        userRole: row[12],
-        userStatus: row[13],
-        createdAt: row[14],
-        updatedAt: row[15]
-    };
-}
-
-export const updateUserAvatarQuery = `-- name: UpdateUserAvatar :one
-UPDATE public.users
-SET
-    "avatar_url" = $1,
-    "updated_at" = NOW()
-WHERE "user_id" = $2::uuid
-RETURNING 
-    "user_id",
-    "nickname",
-    "full_name",
-    "email",
-    "bio",
-    "avatar_url",
-    "max_streak",
-    "timezone",
-    "streak_start_date",
-    "last_watch_date",
-    "profile_frame_url",
-    "profile_background_url",
-    "user_role",
-    "user_status",
-    "created_at",
-    "updated_at"`;
-
-export interface UpdateUserAvatarArgs {
-    avatarUrl: string;
-    userId: string;
-}
-
-export interface UpdateUserAvatarRow {
-    userId: string;
-    nickname: string;
-    fullName: string;
-    email: string;
-    bio: string;
-    avatarUrl: string;
-    maxStreak: number;
-    timezone: string;
-    streakStartDate: Date | null;
-    lastWatchDate: Date | null;
-    profileFrameUrl: string | null;
-    profileBackgroundUrl: string | null;
-    userRole: string;
-    userStatus: string;
-    createdAt: Date;
-    updatedAt: Date;
-}
-
-export async function updateUserAvatar(client: Client, args: UpdateUserAvatarArgs): Promise<UpdateUserAvatarRow | null> {
-    const result = await client.query({
-        text: updateUserAvatarQuery,
-        values: [args.avatarUrl, args.userId],
-        rowMode: "array"
-    });
-    if (result.rows.length !== 1) {
-        return null;
-    }
-    const row = result.rows[0];
-    return {
-        userId: row[0],
-        nickname: row[1],
-        fullName: row[2],
-        email: row[3],
-        bio: row[4],
-        avatarUrl: row[5],
+        avatarId: row[5],
         maxStreak: row[6],
         timezone: row[7],
         streakStartDate: row[8],
@@ -523,7 +445,7 @@ SET
         WHEN $3::boolean
         THEN $4::text
         ELSE profile_background_url END,
-    "updated_at" = NOW()
+    "updated_at" = now()
 WHERE "user_id" = $5::uuid
 RETURNING 
     "user_id",
@@ -531,7 +453,7 @@ RETURNING
     "full_name",
     "email",
     "bio",
-    "avatar_url",
+    "avatar_id",
     "max_streak",
     "timezone",
     "streak_start_date",
@@ -557,7 +479,7 @@ export interface UpdateUserCustomizationRow {
     fullName: string;
     email: string;
     bio: string;
-    avatarUrl: string;
+    avatarId: string | null;
     maxStreak: number;
     timezone: string;
     streakStartDate: Date | null;
@@ -586,7 +508,7 @@ export async function updateUserCustomization(client: Client, args: UpdateUserCu
         fullName: row[2],
         email: row[3],
         bio: row[4],
-        avatarUrl: row[5],
+        avatarId: row[5],
         maxStreak: row[6],
         timezone: row[7],
         streakStartDate: row[8],
@@ -604,7 +526,7 @@ export const updateUserPasswordQuery = `-- name: UpdateUserPassword :one
 UPDATE public.users
 SET 
     "password_hash" = $1,
-    "updated_at"    = NOW()
+    "updated_at"    = now()
 WHERE "user_id" = $2::uuid
 RETURNING "user_id"`;
 
@@ -638,7 +560,7 @@ SET
     "max_streak"        = $1,
     "streak_start_date" = $2,
     "last_watch_date"   = $3,
-    "updated_at"        = NOW()
+    "updated_at"        = now()
 WHERE "user_id" = $4::uuid
 RETURNING 
     "user_id",
@@ -646,7 +568,7 @@ RETURNING
     "full_name",
     "email",
     "bio",
-    "avatar_url",
+    "avatar_id",
     "max_streak",
     "timezone",
     "streak_start_date",
@@ -671,7 +593,7 @@ export interface UpdateUserStreakRow {
     fullName: string;
     email: string;
     bio: string;
-    avatarUrl: string;
+    avatarId: string | null;
     maxStreak: number;
     timezone: string;
     streakStartDate: Date | null;
@@ -700,7 +622,7 @@ export async function updateUserStreak(client: Client, args: UpdateUserStreakArg
         fullName: row[2],
         email: row[3],
         bio: row[4],
-        avatarUrl: row[5],
+        avatarId: row[5],
         maxStreak: row[6],
         timezone: row[7],
         streakStartDate: row[8],
@@ -718,7 +640,7 @@ export const updateUserStatusQuery = `-- name: UpdateUserStatus :one
 UPDATE public.users
 SET
     "user_status" = $1,
-    "updated_at"  = NOW()
+    "updated_at"  = now()
 WHERE "user_id" = $2::uuid
 RETURNING 
     "user_id",
@@ -726,7 +648,7 @@ RETURNING
     "full_name",
     "email",
     "bio",
-    "avatar_url",
+    "avatar_id",
     "max_streak",
     "timezone",
     "streak_start_date",
@@ -749,7 +671,7 @@ export interface UpdateUserStatusRow {
     fullName: string;
     email: string;
     bio: string;
-    avatarUrl: string;
+    avatarId: string | null;
     maxStreak: number;
     timezone: string;
     streakStartDate: Date | null;
@@ -778,7 +700,7 @@ export async function updateUserStatus(client: Client, args: UpdateUserStatusArg
         fullName: row[2],
         email: row[3],
         bio: row[4],
-        avatarUrl: row[5],
+        avatarId: row[5],
         maxStreak: row[6],
         timezone: row[7],
         streakStartDate: row[8],
@@ -796,7 +718,7 @@ export const updateUserRoleQuery = `-- name: UpdateUserRole :one
 UPDATE public.users
 SET 
     "user_role"   = $1,
-    "updated_at"  = NOW()
+    "updated_at"  = now()
 WHERE "user_id" = $2::uuid
 RETURNING 
     "user_id",
@@ -804,7 +726,7 @@ RETURNING
     "full_name",
     "email",
     "bio",
-    "avatar_url",
+    "avatar_id",
     "max_streak",
     "timezone",
     "streak_start_date",
@@ -827,7 +749,7 @@ export interface UpdateUserRoleRow {
     fullName: string;
     email: string;
     bio: string;
-    avatarUrl: string;
+    avatarId: string | null;
     maxStreak: number;
     timezone: string;
     streakStartDate: Date | null;
@@ -856,7 +778,7 @@ export async function updateUserRole(client: Client, args: UpdateUserRoleArgs): 
         fullName: row[2],
         email: row[3],
         bio: row[4],
-        avatarUrl: row[5],
+        avatarId: row[5],
         maxStreak: row[6],
         timezone: row[7],
         streakStartDate: row[8],
@@ -898,17 +820,81 @@ export async function deleteUserById(client: Client, args: DeleteUserByIdArgs): 
     };
 }
 
-export const getAvatarIdByUserIdQuery = `-- name: GetAvatarIdByUserId :one
-SELECT avatar_url
+export const selectUserByIdQuery = `-- name: SelectUserById :one
+SELECT user_id, nickname, full_name, email, google_id, bio, password_hash, max_streak, timezone, streak_start_date, last_watch_date, profile_frame_url, profile_background_url, user_role, user_status, created_at, updated_at, avatar_id
 FROM public.users
-WHERE user_id = $1`;
+WHERE "id" = $1::uuid
+LIMIT 1`;
+
+export interface SelectUserByIdArgs {
+    userId: string;
+}
+
+export interface SelectUserByIdRow {
+    userId: string;
+    nickname: string;
+    fullName: string;
+    email: string;
+    googleId: string | null;
+    bio: string;
+    passwordHash: string | null;
+    maxStreak: number;
+    timezone: string;
+    streakStartDate: Date | null;
+    lastWatchDate: Date | null;
+    profileFrameUrl: string | null;
+    profileBackgroundUrl: string | null;
+    userRole: string;
+    userStatus: string;
+    createdAt: Date;
+    updatedAt: Date;
+    avatarId: string | null;
+}
+
+export async function selectUserById(client: Client, args: SelectUserByIdArgs): Promise<SelectUserByIdRow | null> {
+    const result = await client.query({
+        text: selectUserByIdQuery,
+        values: [args.userId],
+        rowMode: "array"
+    });
+    if (result.rows.length !== 1) {
+        return null;
+    }
+    const row = result.rows[0];
+    return {
+        userId: row[0],
+        nickname: row[1],
+        fullName: row[2],
+        email: row[3],
+        googleId: row[4],
+        bio: row[5],
+        passwordHash: row[6],
+        maxStreak: row[7],
+        timezone: row[8],
+        streakStartDate: row[9],
+        lastWatchDate: row[10],
+        profileFrameUrl: row[11],
+        profileBackgroundUrl: row[12],
+        userRole: row[13],
+        userStatus: row[14],
+        createdAt: row[15],
+        updatedAt: row[16],
+        avatarId: row[17]
+    };
+}
+
+export const getAvatarIdByUserIdQuery = `-- name: GetAvatarIdByUserId :one
+SELECT avatar_id
+FROM public.users
+WHERE user_id = $1
+LIMIT 1`;
 
 export interface GetAvatarIdByUserIdArgs {
     userId: string;
 }
 
 export interface GetAvatarIdByUserIdRow {
-    avatarUrl: string;
+    avatarId: string | null;
 }
 
 export async function getAvatarIdByUserId(client: Client, args: GetAvatarIdByUserIdArgs): Promise<GetAvatarIdByUserIdRow | null> {
@@ -922,61 +908,70 @@ export async function getAvatarIdByUserId(client: Client, args: GetAvatarIdByUse
     }
     const row = result.rows[0];
     return {
-        avatarUrl: row[0]
-    };
-}
-
-export const safeUpdateUserAvatarReturningModificationFlagQuery = `-- name: SafeUpdateUserAvatarReturningModificationFlag :one
-UPDATE public.users
-SET avatar_url = $2::text
-WHERE user_id = $1
-  AND avatar_url = $3::text
-RETURNING count(*) = 1 AS affected`;
-
-export interface SafeUpdateUserAvatarReturningModificationFlagArgs {
-    userId: string;
-    newAvatarUrl: string;
-    oldAvatarUrl: string;
-}
-
-export interface SafeUpdateUserAvatarReturningModificationFlagRow {
-    affected: boolean;
-}
-
-export async function safeUpdateUserAvatarReturningModificationFlag(client: Client, args: SafeUpdateUserAvatarReturningModificationFlagArgs): Promise<SafeUpdateUserAvatarReturningModificationFlagRow | null> {
-    const result = await client.query({
-        text: safeUpdateUserAvatarReturningModificationFlagQuery,
-        values: [args.userId, args.newAvatarUrl, args.oldAvatarUrl],
-        rowMode: "array"
-    });
-    if (result.rows.length !== 1) {
-        return null;
-    }
-    const row = result.rows[0];
-    return {
-        affected: row[0]
+        avatarId: row[0]
     };
 }
 
 export const updateUserAvatarReturningOldQuery = `-- name: UpdateUserAvatarReturningOld :one
-UPDATE public.users
-SET avatar_url = $2::text
-WHERE user_id = $1
-RETURNING avatar_url`;
+WITH old_vals AS (
+  SELECT avatar_id, user_id 
+  FROM public.users
+  WHERE "user_id" = $2::uuid
+  FOR UPDATE
+) UPDATE public.users u
+SET
+  "avatar_id" = $1::uuid,
+  "updated_at" = now()
+FROM old_vals o
+WHERE u.user_id = o.user_id
+RETURNING
+    o."user_id",
+    u."nickname",
+    u."full_name",
+    u."email",
+    u."bio",
+    u."avatar_id",
+    o."avatar_id" AS old_avatar_id,
+    u."max_streak",
+    u."timezone",
+    u."streak_start_date",
+    u."last_watch_date",
+    u."profile_frame_url",
+    u."profile_background_url",
+    u."user_role",
+    u."user_status",
+    u."created_at",
+    u."updated_at"`;
 
 export interface UpdateUserAvatarReturningOldArgs {
+    newAvatarId: string | null;
     userId: string;
-    newAvatarUrl: string;
 }
 
 export interface UpdateUserAvatarReturningOldRow {
-    avatarUrl: string;
+    userId: string;
+    nickname: string;
+    fullName: string;
+    email: string;
+    bio: string;
+    avatarId: string | null;
+    oldAvatarId: string | null;
+    maxStreak: number;
+    timezone: string;
+    streakStartDate: Date | null;
+    lastWatchDate: Date | null;
+    profileFrameUrl: string | null;
+    profileBackgroundUrl: string | null;
+    userRole: string;
+    userStatus: string;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 export async function updateUserAvatarReturningOld(client: Client, args: UpdateUserAvatarReturningOldArgs): Promise<UpdateUserAvatarReturningOldRow | null> {
     const result = await client.query({
         text: updateUserAvatarReturningOldQuery,
-        values: [args.userId, args.newAvatarUrl],
+        values: [args.newAvatarId, args.userId],
         rowMode: "array"
     });
     if (result.rows.length !== 1) {
@@ -984,7 +979,23 @@ export async function updateUserAvatarReturningOld(client: Client, args: UpdateU
     }
     const row = result.rows[0];
     return {
-        avatarUrl: row[0]
+        userId: row[0],
+        nickname: row[1],
+        fullName: row[2],
+        email: row[3],
+        bio: row[4],
+        avatarId: row[5],
+        oldAvatarId: row[6],
+        maxStreak: row[7],
+        timezone: row[8],
+        streakStartDate: row[9],
+        lastWatchDate: row[10],
+        profileFrameUrl: row[11],
+        profileBackgroundUrl: row[12],
+        userRole: row[13],
+        userStatus: row[14],
+        createdAt: row[15],
+        updatedAt: row[16]
     };
 }
 
