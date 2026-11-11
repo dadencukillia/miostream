@@ -6,7 +6,7 @@ import {
     NullableDateType,
     DateTimeType,
     BigIntIdResponseType
-} from "@/utils/types";
+} from "@utils/types";
 
 // Tags
 export const TAG_USERS = "Users";
