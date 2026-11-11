@@ -13,7 +13,7 @@ export type UserLinkListResponseType = UserLinkResponseType[];
 
 // Request Params
 export type UserIdRequestParamsType = Static<typeof userSchema.UserIdRequestParams>;
-export type UserLinkRequestParamsType = Static<typeof userSchema.UserLinkRequestParams>;
+export type UserLinkIdRequestParamsType = Static<typeof userSchema.UserLinkIdRequestParams>;
 
 // Request Payloads
 export type CreateUserRequestPayloadType = Static<typeof userSchema.CreateUserRequestPayload>;
@@ -37,6 +37,7 @@ export type UpdateUserPasswordReturnType = null | ErrorResponseType;
 export type UpdateUserStatusReturnType = UserResponseType | ErrorResponseType;
 export type UpdateUserRoleReturnType = UserResponseType | ErrorResponseType;
 export type DeleteUserReturnType = null | ErrorResponseType;
+export type DeleteUserByIdReturnType = null | ErrorResponseType;
 export type CreateUserLinkReturnType = UserLinkResponseType | ErrorResponseType;
 export type ListUserLinksReturnType = UserLinkResponseType[] | ErrorResponseType;
 export type UpdateUserLinkReturnType = UserLinkResponseType | ErrorResponseType;
