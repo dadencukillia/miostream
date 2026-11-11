@@ -6,6 +6,7 @@ import * as avatarServices from "./services/avatar.service";
 import { isSafeHttpUrl } from "@utils/urls";
 import { isValidTimezone } from "@utils/timezones";
 import { isUuid, normalizeUuid } from "@utils/uuid";
+import { isReservedNickname } from "@utils/nickname";
 
 export const createUser = async (
     request: FastifyRequest<{ Body: dto.CreateUserRequestPayloadType }>,
@@ -16,7 +17,7 @@ export const createUser = async (
 
     if (!password && !googleId) throw UserErrors.error("user-invalid");
     if (timezone && !isValidTimezone(timezone)) throw UserErrors.error("user-invalid");
-    if (isUuid(nickname)) throw UserErrors.error("user-invalid");
+    if (isUuid(nickname) || isReservedNickname(nickname)) throw UserErrors.error("user-invalid");
 
     const user = await services.createUser(request.server.pg, request.body);
     return reply.status(201).send(user);
@@ -59,7 +60,7 @@ export const updateUserProfile = async (
 
     if (!isValidTimezone(timezone)) throw UserErrors.error("user-invalid");
     if (nickname.trim().length === 0 || fullName.trim().length === 0) throw UserErrors.error("user-invalid");
-    if (isUuid(nickname)) throw UserErrors.error("user-invalid");
+    if (isUuid(nickname) || isReservedNickname(nickname)) throw UserErrors.error("user-invalid");
 
     const user = await services.updateUserProfile(
         request.server.pg,

@@ -151,7 +151,7 @@ export const CreateUserRequestPayload = Type.Object({
         minLength: 3,
         maxLength: 30,
         pattern: "^[a-zA-Z0-9_]+$",
-        description: "Unique nickname (3-30 characters, Latin letters, digits, and underscores only). Uniqueness is case-insensitive",
+        description: "Unique nickname (3-30 characters, Latin letters, digits, and underscores only; reserved words such as 'password' and UUID formats are forbidden). Uniqueness is case-insensitive",
         examples: ["streamer_pro"]
     }),
     fullName: Type.String({
@@ -193,7 +193,7 @@ export const UpdateUserProfileRequestPayload = Type.Object({
         minLength: 3,
         maxLength: 30,
         pattern: "^[a-zA-Z0-9_]+$",
-        description: "New unique nickname (3-30 characters, Latin letters, digits, and underscores). Uniqueness is case-insensitive",
+        description: "New unique nickname (3-30 characters, Latin letters, digits, and underscores; reserved words such as 'password' and UUID formats are forbidden). Uniqueness is case-insensitive",
         examples: ["streamer_elite"]
     }),
     fullName: Type.String({
