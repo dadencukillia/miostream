@@ -183,8 +183,8 @@ describe("Fastify error handler", () => {
       const owner = new ErrorsCollection("users");
       const other = new ErrorsCollection("users");
       const app = Fastify();
-      if (mode === "default" || mode === "same name") owner.setupErrorHandler(app);
-      else owner.setupErrorHandler(app, mode === "multiple" ? [owner, other] : mode === "empty" ? [] : [other]);
+      if (mode === "default" || mode === "same name") owner.setupErrorHandler(app, [owner], true, true);
+      else owner.setupErrorHandler(app, mode === "multiple" ? [owner, other] : mode === "empty" ? [] : [other], true, true);
       const source = mode === "same name" || mode === "multiple" ? other : owner;
       app.get("/", () => { throw source.createError(409, "Conflict").withDetails("private detail"); });
       try {
@@ -200,7 +200,7 @@ describe("Fastify error handler", () => {
 
   test.each([true, false])("handles real request validation with passValidationErrors=%s", async (passValidationErrors) => {
     const app = Fastify();
-    new ErrorsCollection("users").setupErrorHandler(app, [], passValidationErrors);
+    new ErrorsCollection("users").setupErrorHandler(app, [], passValidationErrors, true);
     let handled = false;
     app.post("/", {
       schema: { body: { type: "object", required: ["email"], properties: { email: { type: "string" } } } },

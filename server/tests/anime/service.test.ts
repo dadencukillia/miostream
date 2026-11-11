@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { Pool } from "pg";
 import * as service from "@/api/anime/anime.service";
-import { AnimeAlreadyExistsError, AnimeInvalidError, AnimeNotFoundError } from "@/api/anime/anime.errors";
+import { AnimeErrors } from "@/api/anime/anime.errors";
 
 const id = "018f23ab-1234-7123-8123-123456789abc";
 const row = [id, "sample-anime", "Назва", "Title", "Original", "Description", "cover", "Studio", "123", "456", "hikka", "tt123", 2020, 24, 12, "pg13", "ongoing", "tv", true, ["action", "drama"]];
@@ -58,18 +58,22 @@ describe("anime service", () => {
 
   test("normalizes list filters and returns pagination and mapped items", async () => {
     const fake = fakeDb({ total: 21 });
-    const result = await service.listAnimes(fake.db, { page: 2, limit: 10, search: "  Title  ", genre: "action", status: "ongoing", format: "tv", year: 2020, available: false, sort: "title" });
+    const result = await service.listAnimes(fake.db, { page: 2, limit: 10, genre: "action", status: "ongoing", format: "tv", year: 2020, available: false, sort: "title" });
+    for (const call of fake.calls) {
+      const placeholders = [...call.text.matchAll(/\$(\d+)/g)].map((match) => Number(match[1]));
+      expect([...new Set(placeholders)].sort((a, b) => a - b)).toEqual(call.values.map((_, i) => i + 1));
+    }
     expect(result.pagination).toEqual({ page: 2, limit: 10, total: 21, total_pages: 3 });
     expect(result.items[0]).toMatchObject({ animeId: id, malId: 123, anilistId: 456, genres: ["action", "drama"] });
-    expect(byName(fake.calls, "ListAnimes")?.values).toEqual(["Title", "action", "ongoing", "tv", 2020, false, "title", 10, 10]);
-    expect(byName(fake.calls, "CountAnimes")?.values).toEqual(["Title", "action", "ongoing", "tv", 2020, false]);
+    expect(byName(fake.calls, "ListAnimes")?.values).toEqual(["action", "ongoing", "tv", 2020, false, "title", 10, 10]);
+    expect(byName(fake.calls, "CountAnimes")?.values).toEqual(["action", "ongoing", "tv", 2020, false]);
   });
 
   test("uses list defaults and zero pages for an empty result", async () => {
     const fake = fakeDb({ missing: true, total: 0 });
-    const result = await service.listAnimes(fake.db, { search: "   " });
+    const result = await service.listAnimes(fake.db, {});
     expect(result).toEqual({ items: [], pagination: { page: 1, limit: 20, total: 0, total_pages: 0 } });
-    expect(byName(fake.calls, "ListAnimes")?.values).toEqual([null, null, null, null, null, true, "newest", 0, 20]);
+    expect(byName(fake.calls, "ListAnimes")?.values).toEqual([null, null, null, null, true, "newest", 0, 20]);
   });
 
   test("retrieves by id and slug and reports missing records", async () => {
@@ -79,17 +83,17 @@ describe("anime service", () => {
     expect(byName(fake.calls, "GetAnimeById")?.values).toEqual([id]);
     expect(byName(fake.calls, "GetAnimeBySlug")?.values).toEqual(["sample-anime"]);
     const missing = fakeDb({ missing: true });
-    await expect(service.getAnime(missing.db, id)).rejects.toBeInstanceOf(AnimeNotFoundError);
-    await expect(service.getAnimeBySlug(missing.db, "missing")).rejects.toBeInstanceOf(AnimeNotFoundError);
+    await expect(service.getAnime(missing.db, id)).rejects.toMatchObject({ collection: AnimeErrors, statusCode: 404 });
+    await expect(service.getAnimeBySlug(missing.db, "missing")).rejects.toMatchObject({ collection: AnimeErrors, statusCode: 404 });
   });
 
   test("rejects malformed ids and slugs before querying", async () => {
     const fake = fakeDb();
     for (const invalid of ["", "  ", "not-a-uuid", `${id}x`]) {
-      await expect(service.getAnime(fake.db, invalid)).rejects.toBeInstanceOf(AnimeInvalidError);
+      await expect(service.getAnime(fake.db, invalid)).rejects.toMatchObject({ collection: AnimeErrors, statusCode: 400 });
     }
     for (const invalid of ["", "  ", "Uppercase", "-start", "end-", "two--hyphens", "a".repeat(201)]) {
-      await expect(service.getAnimeBySlug(fake.db, invalid)).rejects.toBeInstanceOf(AnimeInvalidError);
+      await expect(service.getAnimeBySlug(fake.db, invalid)).rejects.toMatchObject({ collection: AnimeErrors, statusCode: 400 });
     }
     expect(fake.calls).toHaveLength(0);
     await service.getAnimeBySlug(fake.db, "a".repeat(200));
@@ -108,8 +112,8 @@ describe("anime service", () => {
 
   test("requires a valid slug and at least one nonblank title on creation", async () => {
     const fake = fakeDb();
-    await expect(service.createAnime(fake.db, { slug: "bad_slug", titleEn: "Title" })).rejects.toBeInstanceOf(AnimeInvalidError);
-    await expect(service.createAnime(fake.db, { slug: "valid", titleEn: "  ", titleOriginal: "" })).rejects.toBeInstanceOf(AnimeInvalidError);
+    await expect(service.createAnime(fake.db, { slug: "bad_slug", titleEn: "Title" })).rejects.toMatchObject({ collection: AnimeErrors, statusCode: 400 });
+    await expect(service.createAnime(fake.db, { slug: "valid", titleEn: "  ", titleOriginal: "" })).rejects.toMatchObject({ collection: AnimeErrors, statusCode: 400 });
     expect(fake.calls).toHaveLength(0);
   });
 
@@ -141,18 +145,18 @@ describe("anime service", () => {
     const fake = fakeDb({ failAt: "GetAnimeById", error: original });
     await expect(service.getAnime(fake.db, id)).rejects.toBe(original);
     const duplicate = fakeDb({ failAt: "GetAnimeById", error: { code: "23505", constraint: "animes_slug_key" } });
-    await expect(service.getAnime(duplicate.db, id)).rejects.toBeInstanceOf(AnimeAlreadyExistsError);
+    await expect(service.getAnime(duplicate.db, id)).rejects.toMatchObject({ collection: AnimeErrors, statusCode: 409 });
   });
 
   test("validates updates and merges unchanged fields", async () => {
     const fake = fakeDb();
-    await expect(service.updateAnime(fake.db, id, {})).rejects.toBeInstanceOf(AnimeInvalidError);
-    await expect(service.updateAnime(fake.db, id, { slug: "Bad" })).rejects.toBeInstanceOf(AnimeInvalidError);
-    await expect(service.updateAnime(fake.db, id, { titleUa: " ", titleEn: "", titleOriginal: "" })).rejects.toBeInstanceOf(AnimeInvalidError);
+    await expect(service.updateAnime(fake.db, id, {})).rejects.toMatchObject({ collection: AnimeErrors, statusCode: 400 });
+    await expect(service.updateAnime(fake.db, id, { slug: "Bad" })).rejects.toMatchObject({ collection: AnimeErrors, statusCode: 400 });
+    await expect(service.updateAnime(fake.db, id, { titleUa: " ", titleEn: "", titleOriginal: "" })).rejects.toMatchObject({ collection: AnimeErrors, statusCode: 400 });
     await service.updateAnime(fake.db, id, { titleEn: "New title", available: false, malId: null });
     expect(byName(fake.calls, "UpdateAnimeById")?.values).toEqual(["sample-anime", "Назва", "New title", "Original", "Description", "cover", "Studio", null, "456", "hikka", "tt123", 2020, 24, 12, "pg13", "ongoing", "tv", false, id]);
     expect(fake.released).toBe(true);
-    await expect(service.updateAnime(fakeDb({ missing: true }).db, id, { titleEn: "New" })).rejects.toBeInstanceOf(AnimeNotFoundError);
+    await expect(service.updateAnime(fakeDb({ missing: true }).db, id, { titleEn: "New" })).rejects.toMatchObject({ collection: AnimeErrors, statusCode: 404 });
   });
 
   test("a nullable update clears an existing external ID", async () => {
@@ -176,7 +180,7 @@ describe("anime service", () => {
   test("deletes an existing anime", async () => {
     const fake = fakeDb();
     await expect(service.deleteAnime(fake.db, id)).resolves.toBeUndefined();
-    await expect(service.getAnime(fake.db, id)).rejects.toBeInstanceOf(AnimeNotFoundError);
-    await expect(service.deleteAnime(fake.db, id)).rejects.toBeInstanceOf(AnimeNotFoundError);
+    await expect(service.getAnime(fake.db, id)).rejects.toMatchObject({ collection: AnimeErrors, statusCode: 404 });
+    await expect(service.deleteAnime(fake.db, id)).rejects.toMatchObject({ collection: AnimeErrors, statusCode: 404 });
   });
 });

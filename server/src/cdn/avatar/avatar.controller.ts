@@ -1,12 +1,11 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import "@context";
 import { getAvatar } from "./avatar.service";
-import type * as schemas from "./avatar.schema";
-import type { Static } from "typebox";
+import type * as dtos from "./avatar.dto";
 
 export const getAvatarController = async (
-  request: FastifyRequest<{ Params: Static<typeof schemas.AvatarIdParam> }>,
-  reply: FastifyReply<{ Params: Static<typeof schemas.AvatarIdParam>, Reply: schemas.GetAvatarReturnType }>
+  request: FastifyRequest<{ Params: dtos.AvatarIdRequestParamsType }>,
+  reply: FastifyReply<{ Params: dtos.AvatarIdRequestParamsType, Reply: dtos.GetAvatarReturnType }>
 ) => {
   const { avatarId } = request.params;
 
