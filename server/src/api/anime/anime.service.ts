@@ -1,22 +1,17 @@
 import type { Pool, PoolClient } from "pg";
 import type {
-	AgeRestriction,
-	Anime,
-	AnimeFormat,
-	AnimeListFilter,
-	AnimeListQuery,
-	AnimeListResponse,
-	AnimeStatus,
-	CreateAnimeRequest,
-	Genre,
-	UpdateAnimeRequest,
+	AgeRestrictionType,
+	AnimeResponseType,
+	AnimeFormatType,
+	AnimeListFilterType,
+	AnimeListQueryType,
+	AnimeListResponseType,
+	AnimeStatusType,
+	CreateAnimeBodyType,
+	GenreType,
+	UpdateAnimeBodyType,
 } from "./anime.dto";
-import {
-	AnimeAlreadyExistsError,
-	AnimeError,
-	AnimeInvalidError,
-	AnimeNotFoundError,
-} from "./anime.errors";
+import { AnimeErrors } from "./anime.errors";
 import {
 	countAnimes,
 	createAnime as createAnimeQuery,
@@ -41,24 +36,24 @@ const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const includes = (values: readonly string[], value: string) =>
 	values.includes(value);
 
-const toAgeRestriction = (value: string | null): AgeRestriction | null =>
+const toAgeRestriction = (value: string | null): AgeRestrictionType | null =>
 	value !== null && includes(MPAA_RATINGS, value)
-		? (value as AgeRestriction)
+		? (value as AgeRestrictionType)
 		: null;
 
-const toAnimeStatus = (value: string | null): AnimeStatus | null =>
+const toAnimeStatus = (value: string | null): AnimeStatusType | null =>
 	value !== null && includes(ANIME_STATUSES, value)
-		? (value as AnimeStatus)
+		? (value as AnimeStatusType)
 		: null;
 
-const toAnimeFormat = (value: string): AnimeFormat =>
-	includes(ANIME_FORMATS, value) ? (value as AnimeFormat) : "other";
+const toAnimeFormat = (value: string): AnimeFormatType =>
+	includes(ANIME_FORMATS, value) ? (value as AnimeFormatType) : "other";
 
-const toGenres = (values: string[] | null): Genre[] =>
-	(values ?? []).filter((value): value is Genre => includes(GENRES, value));
+const toGenres = (values: string[] | null): GenreType[] =>
+	(values ?? []).filter((value): value is GenreType => includes(GENRES, value));
 
 /** Maps a SQL row (camelCase) to the public API shape (camelCase). */
-export const toAnime = (row: AnimeRecord): Anime => ({
+export const toAnime = (row: AnimeRecord): AnimeResponseType => ({
 	animeId: row.animeId,
 	slug: row.slug,
 	titleUa: row.titleUa,
@@ -93,67 +88,67 @@ function handleDbError(error: unknown): never {
 		const detail = `${dbError.detail ?? ""} ${dbError.constraint ?? ""}`;
 
 		if (detail.includes("slug")) {
-			throw new AnimeAlreadyExistsError("Anime with this slug already exists");
+			throw AnimeErrors.error("anime-already-exists").withMessage("Anime with this slug already exists");
 		}
 		if (detail.includes("mal_id")) {
-			throw new AnimeAlreadyExistsError(
+			throw AnimeErrors.error("anime-already-exists").withMessage(
 				"Anime with this MAL ID already exists",
 			);
 		}
 		if (detail.includes("anilist_id")) {
-			throw new AnimeAlreadyExistsError(
+			throw AnimeErrors.error("anime-already-exists").withMessage(
 				"Anime with this AniList ID already exists",
 			);
 		}
 		if (detail.includes("hikka_id")) {
-			throw new AnimeAlreadyExistsError(
+			throw AnimeErrors.error("anime-already-exists").withMessage(
 				"Anime with this Hikka ID already exists",
 			);
 		}
 		if (detail.includes("imdb_id")) {
-			throw new AnimeAlreadyExistsError(
+			throw AnimeErrors.error("anime-already-exists").withMessage(
 				"Anime with this IMDb ID already exists",
 			);
 		}
 
-		throw new AnimeAlreadyExistsError(
+		throw AnimeErrors.error("anime-already-exists").withMessage(
 			"Anime with the same unique fields already exists",
 		);
 	}
 
 	if (dbError.code === "22P02") {
-		throw new AnimeInvalidError("Invalid data format or enum value");
+		throw AnimeErrors.error("anime-invalid").withMessage("Invalid data format or enum value");
 	}
 	if (dbError.code === "22001") {
-		throw new AnimeInvalidError("Field value exceeds maximum allowed length");
+		throw AnimeErrors.error("anime-invalid").withMessage("Field value exceeds maximum allowed length");
 	}
 	if (dbError.code === "23514") {
-		throw new AnimeInvalidError("Value violates a database constraint");
+		throw AnimeErrors.error("anime-invalid").withMessage("Value violates a database constraint");
 	}
 	if (dbError.code === "23503") {
-		throw new AnimeInvalidError("Related record does not exist");
+		throw AnimeErrors.error("anime-invalid").withMessage("Related record does not exist");
 	}
 	if (dbError.code === "23502") {
-		throw new AnimeInvalidError("Required field is missing");
+		throw AnimeErrors.error("anime-invalid").withMessage("Required field is missing");
 	}
 
 	throw error;
 }
 
 function assertValidId(id: string) {
-	if (!id?.trim()) throw new AnimeInvalidError("Anime ID is required");
+	if (!id?.trim()) throw AnimeErrors.error("anime-invalid").withMessage("Anime ID is required");
 	if (!UUID_RE.test(id)) {
-		throw new AnimeInvalidError("Anime ID must be a valid UUID");
+		throw AnimeErrors.error("anime-invalid").withMessage("Anime ID must be a valid UUID");
 	}
 }
 
 function assertValidSlug(slug: string) {
-	if (!slug?.trim()) throw new AnimeInvalidError("Slug is required");
+	if (!slug?.trim()) throw AnimeErrors.error("anime-invalid").withMessage("Slug is required");
 	if (slug.length > 200) {
-		throw new AnimeInvalidError("Slug must not exceed 200 characters");
+		throw AnimeErrors.error("anime-invalid").withMessage("Slug must not exceed 200 characters");
 	}
 	if (!SLUG_RE.test(slug)) {
-		throw new AnimeInvalidError(
+		throw AnimeErrors.error("anime-invalid").withMessage(
 			"Slug must contain only lowercase latin letters, digits and single hyphens",
 		);
 	}
@@ -161,26 +156,23 @@ function assertValidSlug(slug: string) {
 
 function assertHasTitle(titles: Array<string | null | undefined>) {
 	if (!titles.some((title) => (title ?? "").trim().length > 0)) {
-		throw new AnimeInvalidError(
+		throw AnimeErrors.error("anime-invalid").withMessage(
 			"At least one title (title_ua, title_en or title_original) is required",
 		);
 	}
 }
 
-const uniqueGenres = (genres: Genre[] | undefined): Genre[] => [
+const uniqueGenres = (genres: GenreType[] | undefined): GenreType[] => [
 	...new Set(genres ?? []),
 ];
 
 export async function listAnimes(
 	db: Pool,
-	query: AnimeListQuery,
-): Promise<AnimeListResponse> {
+	query: AnimeListQueryType,
+): Promise<AnimeListResponseType> {
 	const page = query.page ?? 1;
 	const limit = query.limit ?? 20;
-	const search = query.search?.trim() || null;
-
-	const filter: AnimeListFilter = {
-		search,
+	const filter: AnimeListFilterType = {
 		genre: query.genre ?? null,
 		status: query.status ?? null,
 		format: query.format ?? null,
@@ -205,28 +197,28 @@ export async function listAnimes(
 	};
 }
 
-export async function getAnime(db: Pool, animeId: string): Promise<Anime> {
+export async function getAnime(db: Pool, animeId: string): Promise<AnimeResponseType> {
 	assertValidId(animeId);
 
 	const anime = await repoGetAnimeById(db, animeId).catch(handleDbError);
-	if (!anime) throw new AnimeNotFoundError("Anime not found");
+	if (!anime) throw AnimeErrors.error("anime-not-found");
 
 	return toAnime(anime);
 }
 
-export async function getAnimeBySlug(db: Pool, slug: string): Promise<Anime> {
+export async function getAnimeBySlug(db: Pool, slug: string): Promise<AnimeResponseType> {
 	assertValidSlug(slug);
 
 	const anime = await repoGetAnimeBySlug(db, slug).catch(handleDbError);
-	if (!anime) throw new AnimeNotFoundError("Anime not found");
+	if (!anime) throw AnimeErrors.error("anime-not-found");
 
 	return toAnime(anime);
 }
 
 export async function createAnime(
 	db: Pool,
-	data: CreateAnimeRequest,
-): Promise<Anime> {
+	data: CreateAnimeBodyType,
+): Promise<AnimeResponseType> {
 	assertValidSlug(data.slug);
 	assertHasTitle([data.titleUa, data.titleEn, data.titleOriginal]);
 
@@ -236,7 +228,8 @@ export async function createAnime(
 		titleEn: data.titleEn ?? "",
 		titleOriginal: data.titleOriginal ?? "",
 		animeDescription: data.animeDescription ?? "",
-		coverId: data.coverId ?? null,
+    // TODO: download cover, store it in the CDN and receive coverId
+		coverId: null,
 		productionStudio: data.productionStudio ?? "",
 		malId: data.malId ?? null,
 		anilistId: data.anilistId ?? null,
@@ -253,7 +246,7 @@ export async function createAnime(
 	})
 		.catch(handleDbError);
 
-	if (!anime) throw new AnimeError("Anime was not created");
+	if (!anime) throw AnimeErrors.error("anime-not-created");
 
 	return toAnime(anime);
 }
@@ -261,18 +254,18 @@ export async function createAnime(
 export async function updateAnime(
 	db: Pool,
 	animeId: string,
-	data: UpdateAnimeRequest,
-): Promise<Anime> {
+	data: UpdateAnimeBodyType,
+): Promise<AnimeResponseType> {
 	assertValidId(animeId);
 
 	if (!data || Object.keys(data).length === 0) {
-		throw new AnimeInvalidError("Update payload cannot be empty");
+		throw AnimeErrors.error("anime-invalid").withMessage("Update payload cannot be empty");
 	}
 	if (data.slug !== undefined) assertValidSlug(data.slug);
 
 	const existing = await repoGetAnimeById(db, animeId)
 		.catch(handleDbError);
-	if (!existing) throw new AnimeNotFoundError("Anime not found");
+	if (!existing) throw AnimeErrors.error("anime-not-found");
 
 	assertHasTitle([
 		data.titleUa ?? existing.titleUa,
@@ -291,7 +284,9 @@ export async function updateAnime(
 	if (data.animeDescription !== undefined) {
 		patch.animeDescription = data.animeDescription;
 	}
-	if (data.coverId !== undefined) patch.coverId = data.coverId;
+
+  // TODO: download cover, store it in the CDN and receive coverId
+	if (data.coverUrl !== undefined) patch.coverId = undefined;
 	if (data.productionStudio !== undefined) {
 		patch.productionStudio = data.productionStudio;
 	}
@@ -318,7 +313,7 @@ export async function updateAnime(
 
 	const anime = await repoUpdateAnime(db, animeId, patch)
 		.catch(handleDbError);
-	if (!anime) throw new AnimeNotFoundError("Anime not found");
+	if (!anime) throw AnimeErrors.error("anime-not-found");
 
 	return toAnime(anime);
 }
@@ -327,7 +322,7 @@ export async function deleteAnime(db: Pool, animeId: string): Promise<void> {
 	assertValidId(animeId);
 
 	const deleted = await repoDeleteAnime(db, animeId).catch(handleDbError);
-	if (!deleted) throw new AnimeNotFoundError("Anime not found");
+	if (!deleted) throw AnimeErrors.error("anime-not-found");
 }
 
 export async function getAnimesCountByStatus(db: Pool) {
@@ -378,11 +373,11 @@ export interface CreateAnimeRecord {
 	animeStatus: string | null;
 	animeFormat: string;
 	available: boolean;
-	genres: Genre[];
+	genres: GenreType[];
 }
 
 export type UpdateAnimeRecord = Partial<Omit<CreateAnimeRecord, "genres">> & {
-	genres?: Genre[];
+	genres?: GenreType[];
 };
 
 async function withTransaction<T>(
@@ -403,9 +398,8 @@ async function withTransaction<T>(
 	}
 }
 
-async function repoListAnimes(db: Pool, filter: AnimeListFilter) {
+async function repoListAnimes(db: Pool, filter: AnimeListFilterType) {
 	const filters = {
-		search: filter.search,
 		genre: filter.genre,
 		status: filter.status,
 		format: filter.format,

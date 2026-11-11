@@ -217,11 +217,14 @@ export class ErrorsCollection {
    * 
    * @param fastify - The Fastify application instance.
    * @param safeCollections - Array of collections allowed to be handled by this error handler.
+   * @param passValidationErrors - Whether to expose request validation errors.
+   * @param passFrameworkErrors - Whether to preserve Fastify framework 4xx errors.
    */
   public setupErrorHandler(
     fastify: FastifyInstance,
     safeCollections: ErrorsCollection[] = [this],
-    passValidationErrors: boolean = true
+    passValidationErrors: boolean = true,
+    passFrameworkErrors: boolean = false
   ) {
     fastify.setErrorHandler((
       error: unknown,
@@ -257,6 +260,25 @@ export class ErrorsCollection {
               ok: false,
               message: error.message
             } as ErrorResponseReturnType);
+        }
+      }
+
+      if (
+        passFrameworkErrors &&
+        error instanceof Error &&
+        !(error instanceof CustomError) &&
+        !isFastifyValidationError(error)
+      ) {
+        const frameworkError = error as FastifyError;
+        if (
+          frameworkError.code?.startsWith("FST_ERR_") &&
+          Number.isInteger(frameworkError.statusCode) &&
+          frameworkError.statusCode! >= 400 && frameworkError.statusCode! < 500
+        ) {
+          return reply.status(frameworkError.statusCode!).send({
+            ok: false,
+            message: frameworkError.message
+          } as ErrorResponseReturnType);
         }
       }
 

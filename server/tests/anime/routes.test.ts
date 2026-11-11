@@ -41,14 +41,14 @@ describe("anime API", () => {
   test("routes ID and slug lookups to the corresponding query", async () => {
     calls.length = 0;
     const byId = await app.inject({ method: "GET", url: `/api/anime/${id}` });
-    const bySlug = await app.inject({ method: "GET", url: "/api/anime/slug/sample-anime" });
+    const bySlug = await app.inject({ method: "GET", url: "/api/anime/sample-anime" });
     expect(byId.statusCode).toBe(200);
     expect(bySlug.statusCode).toBe(200);
     expect(calls).toEqual(["GetAnimeById", "GetAnimeBySlug"]);
   });
 
   test("creates an anime and returns the public representation", async () => {
-    const response = await app.inject({ method: "POST", url: "/api/anime", payload: { slug: "sample-anime", titleEn: "Title" } });
+    const response = await app.inject({ method: "POST", url: "/api/anime", headers: { authorization: "Bearer admin" }, payload: { slug: "sample-anime", titleEn: "Title" } });
     expect(response.statusCode).toBe(201);
     expect(response.json()).toMatchObject({ animeId: id, slug: "sample-anime", titleEn: "Title" });
   });
@@ -63,14 +63,12 @@ describe("anime API", () => {
 
   test("rejects invalid path, query, and body data before reaching the database", async () => {
     const requests = [
-      { method: "GET" as const, url: "/api/anime/not-a-uuid" },
-      { method: "GET" as const, url: "/api/anime/slug/Bad_Slug" },
       { method: "GET" as const, url: "/api/anime?page=0" },
       { method: "GET" as const, url: "/api/anime?limit=101" },
       { method: "GET" as const, url: "/api/anime?format=invalid" },
       { method: "POST" as const, url: "/api/anime", payload: { slug: "valid", titleEn: "Title", genres: ["action", "action"] } },
       { method: "POST" as const, url: "/api/anime", payload: { slug: "valid", titleEn: "Title", yearReleased: 1899 } },
-      { method: "PATCH" as const, url: `/api/anime/${id}`, payload: {} },
+      { method: "PATCH" as const, url: `/api/anime/${id}`, headers: { authorization: "Bearer admin" }, payload: {} },
     ];
     calls.length = 0;
     for (const request of requests) {
@@ -78,6 +76,20 @@ describe("anime API", () => {
       expect(response.statusCode).toBe(400);
       expect(response.json()).toMatchObject({ ok: false });
     }
+    expect(calls).toHaveLength(0);
+  });
+
+  test.each([
+    ["application/unsupported", "body", 415],
+    ["application/json", JSON.stringify({ titleEn: "a".repeat(1024 * 1024) }), 413],
+  ])("preserves framework errors for %s (%i)", async (contentType, payload, status) => {
+    calls.length = 0;
+    const response = await app.inject({
+      method: "POST", url: "/api/anime",
+      headers: { authorization: "Bearer admin", "content-type": contentType }, payload,
+    });
+    expect(response.statusCode).toBe(status);
+    expect(response.json()).toMatchObject({ ok: false });
     expect(calls).toHaveLength(0);
   });
 
@@ -90,7 +102,7 @@ describe("anime API", () => {
       databaseError = new Error("sensitive database details");
       const error = await app.inject({ method: "GET", url: `/api/anime/${id}` });
       expect(error.statusCode).toBe(500);
-      expect(error.json()).toEqual({ ok: false, message: "Unexpected error" });
+      expect(error.json()).toEqual({ ok: false, message: "unknown error" });
     } finally {
       databaseError = undefined;
     }
