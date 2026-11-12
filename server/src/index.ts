@@ -109,6 +109,7 @@ migrationCommand
 
     if (!migration) {
       console.log("No migrations were made");
+      await client.end();
       return;
     }
 
