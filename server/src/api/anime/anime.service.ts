@@ -11,7 +11,12 @@ import type {
 	GenreType,
 	UpdateAnimeRequestPayloadType,
 } from "./anime.dto";
-import { AnimeErrors } from "./anime.errors";
+import {
+	AnimeAlreadyExistsError,
+	AnimeError,
+	AnimeInvalidError,
+	AnimeNotFoundError,
+} from "./anime.errors";
 import {
 	countAnimes,
 	createAnime as createAnimeQuery,
@@ -88,67 +93,67 @@ function handleDbError(error: unknown): never {
 		const detail = `${dbError.detail ?? ""} ${dbError.constraint ?? ""}`;
 
 		if (detail.includes("slug")) {
-			throw AnimeErrors.createError(409, "Anime with this slug already exists");
+			throw new AnimeAlreadyExistsError("Anime with this slug already exists");
 		}
 		if (detail.includes("mal_id")) {
-			throw AnimeErrors.createError(409, 
+			throw new AnimeAlreadyExistsError(
 				"Anime with this MAL ID already exists",
 			);
 		}
 		if (detail.includes("anilist_id")) {
-			throw AnimeErrors.createError(409, 
+			throw new AnimeAlreadyExistsError(
 				"Anime with this AniList ID already exists",
 			);
 		}
 		if (detail.includes("hikka_id")) {
-			throw AnimeErrors.createError(409, 
+			throw new AnimeAlreadyExistsError(
 				"Anime with this Hikka ID already exists",
 			);
 		}
 		if (detail.includes("imdb_id")) {
-			throw AnimeErrors.createError(409, 
+			throw new AnimeAlreadyExistsError(
 				"Anime with this IMDb ID already exists",
 			);
 		}
 
-		throw AnimeErrors.createError(409, 
+		throw new AnimeAlreadyExistsError(
 			"Anime with the same unique fields already exists",
 		);
 	}
 
 	if (dbError.code === "22P02") {
-		throw AnimeErrors.createError(400, "Invalid data format or enum value");
+		throw new AnimeInvalidError("Invalid data format or enum value");
 	}
 	if (dbError.code === "22001") {
-		throw AnimeErrors.createError(400, "Field value exceeds maximum allowed length");
+		throw new AnimeInvalidError("Field value exceeds maximum allowed length");
 	}
 	if (dbError.code === "23514") {
-		throw AnimeErrors.createError(400, "Value violates a database constraint");
+		throw new AnimeInvalidError("Value violates a database constraint");
 	}
 	if (dbError.code === "23503") {
-		throw AnimeErrors.createError(400, "Related record does not exist");
+		throw new AnimeInvalidError("Related record does not exist");
 	}
 	if (dbError.code === "23502") {
-		throw AnimeErrors.createError(400, "Required field is missing");
+		throw new AnimeInvalidError("Required field is missing");
 	}
 
 	throw error;
 }
 
 function assertValidId(id: string) {
-	if (!id?.trim()) throw AnimeErrors.createError(400, "Anime ID is required");
+	if (!id?.trim()) throw new AnimeInvalidError("Anime ID is required");
 	if (!UUID_RE.test(id)) {
-		throw AnimeErrors.createError(400, "Anime ID must be a valid UUID");
+		throw new AnimeInvalidError("Anime ID must be a valid UUID");
 	}
 }
 
 function assertValidSlug(slug: string) {
-	if (!slug?.trim()) throw AnimeErrors.createError(400, "Slug is required");
+	if (!slug?.trim()) throw new AnimeInvalidError("Slug is required");
 	if (slug.length > 200) {
-		throw AnimeErrors.createError(400, "Slug must not exceed 200 characters");
+		throw new AnimeInvalidError("Slug must not exceed 200 characters");
 	}
 	if (!SLUG_RE.test(slug)) {
-		throw AnimeErrors.createError(400, 
+		throw new AnimeInvalidError(
 			"Slug must contain only lowercase latin letters, digits and single hyphens",
 		);
 	}
@@ -156,7 +161,7 @@ function assertValidSlug(slug: string) {
 
 function assertHasTitle(titles: Array<string | null | undefined>) {
 	if (!titles.some((title) => (title ?? "").trim().length > 0)) {
-		throw AnimeErrors.createError(400, 
+		throw new AnimeInvalidError(
 			"At least one title (title_ua, title_en or title_original) is required",
 		);
 	}
@@ -204,7 +209,7 @@ export async function getAnime(db: Pool, animeId: string): Promise<AnimeResponse
 	assertValidId(animeId);
 
 	const anime = await repoGetAnimeById(db, animeId).catch(handleDbError);
-	if (!anime) throw AnimeErrors.createError(404, "Anime not found");
+	if (!anime) throw new AnimeNotFoundError("Anime not found");
 
 	return toAnime(anime);
 }
@@ -213,7 +218,7 @@ export async function getAnimeBySlug(db: Pool, slug: string): Promise<AnimeRespo
 	assertValidSlug(slug);
 
 	const anime = await repoGetAnimeBySlug(db, slug).catch(handleDbError);
-	if (!anime) throw AnimeErrors.createError(404, "Anime not found");
+	if (!anime) throw new AnimeNotFoundError("Anime not found");
 
 	return toAnime(anime);
 }
@@ -248,7 +253,7 @@ export async function createAnime(
 		})
 		.catch(handleDbError);
 
-	if (!anime) throw AnimeErrors.createError(500, "Anime was not created");
+	if (!anime) throw new AnimeError("Anime was not created");
 
 	return toAnime(anime);
 }
@@ -261,13 +266,13 @@ export async function updateAnime(
 	assertValidId(animeId);
 
 	if (!data || Object.keys(data).length === 0) {
-		throw AnimeErrors.createError(400, "Update payload cannot be empty");
+		throw new AnimeInvalidError("Update payload cannot be empty");
 	}
 	if (data.slug !== undefined) assertValidSlug(data.slug);
 
 	const existing = await repoGetAnimeById(db, animeId)
 		.catch(handleDbError);
-	if (!existing) throw AnimeErrors.createError(404, "Anime not found");
+	if (!existing) throw new AnimeNotFoundError("Anime not found");
 
 	assertHasTitle([
 		data.titleUa ?? existing.titleUa,
@@ -313,7 +318,7 @@ export async function updateAnime(
 
 	const anime = await repoUpdateAnime(db, animeId, patch)
 		.catch(handleDbError);
-	if (!anime) throw AnimeErrors.createError(404, "Anime not found");
+	if (!anime) throw new AnimeNotFoundError("Anime not found");
 
 	return toAnime(anime);
 }
@@ -322,7 +327,7 @@ export async function deleteAnime(db: Pool, animeId: string): Promise<void> {
 	assertValidId(animeId);
 
 	const deleted = await repoDeleteAnime(db, animeId).catch(handleDbError);
-	if (!deleted) throw AnimeErrors.createError(404, "Anime not found");
+	if (!deleted) throw new AnimeNotFoundError("Anime not found");
 }
 
 export async function getAnimesCountByStatus(db: Pool) {

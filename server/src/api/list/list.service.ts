@@ -1,7 +1,7 @@
 import type { Pool } from "pg";
 import { createListUnit as createListUnitQuery } from "@/sqlc/list_units_sql";
 import type { CreateListUnitRequestPayloadType, ListUnitResponseType, UpdateListUnitRequestPayloadType } from "./list.dto";
-import { ListAlreadyExistsError, ListInvalidError, ListNotFoundError } from "./list.errors";
+import { ListErrors } from "./list.errors";
 
 export async function createListUnit(
 	db: Pool,
@@ -35,14 +35,14 @@ export async function createListUnit(
 		};
 	} catch (error: any) {
 		if (error?.code === "23505") {
-			throw new ListAlreadyExistsError("list unit already exists");
+			throw ListErrors.error("list-already-exists");
 		}
 		if (error?.code === "23503") {
-			throw new ListNotFoundError("anime not found");
+			throw ListErrors.error("list-not-found").withMessage("anime not found");
 		}
 		const clientDataErrors = new Set(["22P02", "23502", "23514"]);
 		if (clientDataErrors.has(error?.code)) {
-			throw new ListInvalidError("invalid list unit data");
+			throw ListErrors.error("list-invalid");
 		}
 		throw error;
 	}
@@ -79,14 +79,14 @@ export async function updateListUnit(
 	}
 
 	if (fields.length === 0) {
-		throw new ListInvalidError("invalid list unit data");
+		throw ListErrors.error("list-invalid");
 	}
 
 	const sql = `UPDATE public.anime_list_units SET ${fields.join(", ")} WHERE user_id = $1::uuid AND anime_id = $2::uuid RETURNING user_id, anime_id, watched_episodes, repeat_times, started_watching, list_unit_status, grade`;
 	const result = await db.query({ text: sql, values: [userId, animeId, ...values], rowMode: "array" });
 	const row = result.rows[0] as any;
 	if (!row) {
-		throw new ListNotFoundError("list unit not found");
+		throw ListErrors.error("list-not-found");
 	}
 	return {
 		userId: row[0],
@@ -102,6 +102,6 @@ export async function updateListUnit(
 export async function deleteListUnit(db: Pool, userId: string, animeId: string): Promise<void> {
 	const result = await db.query({ text: `DELETE FROM public.anime_list_units WHERE user_id = $1::uuid AND anime_id = $2::uuid`, values: [userId, animeId], rowMode: "array" });
 	if ((result as any).rowCount === 0) {
-		throw new ListNotFoundError("list unit not found");
+		throw ListErrors.error("list-not-found");
 	}
 }

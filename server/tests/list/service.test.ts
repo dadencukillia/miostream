@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import type { Pool } from "pg";
-import { ListNotFoundError } from "@/api/list/list.errors";
+import { ListErrors } from "@/api/list/list.errors";
 import { updateListUnit } from "@/api/list/list.service";
 
 const userId = "018f23ab-1234-7123-8123-123456789abc";
@@ -45,5 +45,5 @@ test("update returns all fields from the updated row", async () => {
 
 test("update reports a missing list unit", async () => {
 	const { db } = fakeDb(true);
-	await expect(updateListUnit(db, userId, animeId, { watchedEpisodes: 3 })).rejects.toBeInstanceOf(ListNotFoundError);
+	await expect(updateListUnit(db, userId, animeId, { watchedEpisodes: 3 })).rejects.toMatchObject({ collection: ListErrors, statusCode: 404 });
 });

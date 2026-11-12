@@ -1,5 +1,7 @@
-export class ListError extends Error { status = 500; }
+import { ErrorsSet } from "@utils/errorsCollection";
 
-export class ListNotFoundError extends ListError { override status = 404; }
-export class ListInvalidError extends ListError { override status = 400; }
-export class ListAlreadyExistsError extends ListError { override status = 409; }
+export const ListErrors = new ErrorsSet("list", {
+	"list-not-found": [404, "list unit not found"],
+	"list-already-exists": [409, "list unit already exists"],
+	"list-invalid": [400, "invalid list unit data"],
+});
