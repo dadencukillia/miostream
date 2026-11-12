@@ -77,10 +77,10 @@ export async function updateListUnit(
 
 	const sql = `UPDATE public.anime_list_units SET ${fields.join(", ")} WHERE user_id = $1::uuid AND anime_id = $2::uuid RETURNING user_id, anime_id, watched_episodes, repeat_times, started_watching, list_unit_status, grade`;
 	const result = await db.query({ text: sql, values: [userId, animeId, ...values], rowMode: "array" });
-	if (result.rows.length === 0) {
+	const row = result.rows[0] as any;
+	if (!row) {
 		throw new ListNotFoundError("list unit not found");
 	}
-	const row = result.rows[0] as any;
 	return {
 		userId: row[0],
 		animeId: row[1],
