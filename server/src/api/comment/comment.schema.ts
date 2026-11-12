@@ -177,7 +177,7 @@ export const UpdateCommentSchema = {
 export const DeleteCommentSchema = {
     tags: [TAG_COMMENT],
     summary: "Delete comment",
-    description: "Permanently deletes a comment. Allowed for the comment author, moderators, and administrators.",
+    description: "Permanently deletes a comment. Allowed for the comment author and administrators.",
     params: CommentRequestParams,
     response: {
         204: Type.Null({ description: "Comment removed successfully" }),

@@ -9,7 +9,7 @@ type AuthHook = (req: FastifyRequest<any>, reply: FastifyReply<any>) => Promise<
 const requireAuth = grantAuthMiddleware() as AuthHook;
 
 const modulePlugin: FastifyPluginAsync = async (fastify: FastifyInstance, _opts: FastifyPluginOptions) => {
-    CommentErrors.setupErrorHandler(fastify);
+    CommentErrors.setupErrorHandler(fastify, [CommentErrors], true, true);
 
     fastify.get("/", { schema: schemas.GetCommentsSchema }, controllers.getComments);
     fastify.post("/", { schema: schemas.PostCommentSchema, preHandler: requireAuth }, controllers.postComment);
