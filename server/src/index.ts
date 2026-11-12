@@ -9,7 +9,7 @@ program
 
 program
   .command("serve")
-  .description("run backend server")
+  .summary("run backend server")
   .option("--no-migration", "turn off auto-migration")
   .option("-p, --port <number>", "server listening port", "8080")
   .option("--openapi", "enable endpoint with YAML/JSON OpenAPI specification")
@@ -38,6 +38,25 @@ program
     }
 
     await webserver._fastifyRun(fastify);
+  });
+
+program
+  .command("openapi")
+  .summary("run openapi endpoints only")
+  .option("--no-scalar", "disable Scalar OpenAPI specification endpoint")
+  .option("-p, --port <number>", "server listening port", "8080")
+  .option("--healthcheck", "enable healthcheck endpoint")
+  .action(async (options) => {
+    const webserver = new FastifyWebServer({
+      modules: [
+        "openapi",
+        options.healthcheck ? "healthcheck" : null,
+        options.scalar ? "openapiui" : null
+      ],
+      port: options.port
+    });
+
+    webserver.run();
   });
 
 program.parse(process.argv);
