@@ -10,7 +10,7 @@ const requireAdmin = grantAuthMiddleware({ userHasRole: ["admin"] }) as AuthHook
 const requireAuth = grantAuthMiddleware() as AuthHook;
 
 const modulePlugin: FastifyPluginAsync = async (fastify: FastifyInstance, _opts: FastifyPluginOptions) => {
-    UserErrors.setupErrorHandler(fastify, [UserErrors, AvatarErrors]);
+    UserErrors.setupErrorHandler(fastify, [UserErrors, AvatarErrors], true, true);
 
     // Public routes
     fastify.post("/", { schema: schemas.CreateUserSchema }, controllers.createUser);
