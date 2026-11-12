@@ -301,25 +301,37 @@ export class Migrator {
   }
 
   public static async getMigration(db: Pool|Client, schema: string = "public", skip: number = 0): Promise<{
+    id: number,
+    executedAt: Date,
     state: number|null,
-    lastChanged: Date
+    type: "up"|"down"
   }|null> {
     const queryResult = await db.query(
-      `SELECT to_migration, executed_at FROM ${schema}.schema_migrations ORDER BY operation_id DESC LIMIT 1 OFFSET $1;`,
+      `SELECT operation_id, executed_at, from_migration, to_migration FROM ${schema}.schema_migrations ORDER BY operation_id DESC LIMIT 1 OFFSET $1;`,
       [ skip ]
     );
 
     if (queryResult.rows.length === 0) return null;
     const migrationEntry = queryResult.rows[0];
 
-    let toMigration: number|null = Number(migrationEntry["to_migration"]);
-    if (toMigration === -1 || Number.isNaN(toMigration)) toMigration = null;
+    const processDBMigrationState = (dbMigration: number|null|string): number|null => {
+      const migration = Number(dbMigration);
+      if (migration === -1 || Number.isNaN(migration)) return null;
+      return migration;
+    }
 
+    const id = Number(migrationEntry["operation_id"]);
     const executedAt = new Date(migrationEntry["executed_at"]);
+    const fromMigration: number|null = processDBMigrationState(migrationEntry["from_migration"]);
+    const toMigration: number|null = processDBMigrationState(migrationEntry["to_migration"]);
+
+    const type: "up"|"down" = (toMigration ?? 0) > (fromMigration ?? 0) ? "up" : "down";
 
     return {
+      id: id,
+      executedAt: executedAt,
       state: toMigration,
-      lastChanged: executedAt
+      type: type
     };
   }
 }

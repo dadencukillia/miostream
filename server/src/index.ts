@@ -95,4 +95,61 @@ migrationCommand
     await pool.end();
   });
 
+migrationCommand
+  .command("state")
+  .summary("shows current database state")
+  .option("-s, --schema <string>", "specify database schema for migration entries table", "public")
+  .action(async (opts) => {
+    const pool = new Pool({ connectionString: config.DB_URL });
+    const migration = await Migrator.getMigration(pool, opts.schema, 0);
+
+    if (!migration) {
+      console.log("No migrations were made");
+      return;
+    }
+
+    const dateFormat = migration.executedAt.getDate().toString().padStart(2, "0") + "." +
+      migration.executedAt.getMonth().toString().padStart(2, "0") + "." +
+      migration.executedAt.getFullYear();
+
+    const timeFormat = migration.executedAt.getHours().toString().padStart(2, "0") + ":" +
+      migration.executedAt.getMinutes().toString().padStart(2, "0") + ":" +
+      migration.executedAt.getSeconds().toString().padStart(2, "0");
+
+    console.log(`${migration.state} was migrated on ${dateFormat} at ${timeFormat}`);
+
+    await pool.end();
+  });
+
+migrationCommand
+  .command("log")
+  .summary("shows database change log")
+  .option("-s, --schema <string>", "specify database schema for migration entries table", "public")
+  .action(async (opts) => {
+    const pool = new Pool({ connectionString: config.DB_URL });
+    let skip = 0;
+
+    while(true) {
+      const migration = await Migrator.getMigration(pool, opts.schema, skip++);
+
+      if (!migration) {
+        break;
+      }
+
+      const noFormat = migration.id.toString().padStart(3, '0');
+
+      const dateFormat = migration.executedAt.getDate().toString().padStart(2, "0") + "." +
+        migration.executedAt.getMonth().toString().padStart(2, "0") + "." +
+        migration.executedAt.getFullYear();
+
+      const timeFormat = migration.executedAt.getHours().toString().padStart(2, "0") + ":" +
+        migration.executedAt.getMinutes().toString().padStart(2, "0") + ":" +
+        migration.executedAt.getSeconds().toString().padStart(2, "0");
+
+      console.log(`${noFormat}. ${migration.state} (${migration.type}) was migrated on ${dateFormat} at ${timeFormat}`);
+    }
+
+    await pool.end();
+  });
+
 program.parse(process.argv);
