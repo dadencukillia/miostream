@@ -2,7 +2,8 @@ import { Migrator } from "@utils/migrations";
 import { FastifyWebServer } from "./webserver";
 import { Command } from 'commander';
 import * as config from "@config";
-import { Pool } from "pg";
+import { Client, Pool } from "pg";
+import { formatDate } from "@utils/time";
 
 const program = new Command();
 
@@ -100,30 +101,23 @@ migrationCommand
   .summary("shows current database state")
   .option("-s, --schema <string>", "specify database schema for migration entries table", "public")
   .action(async (opts) => {
-    const pool = new Pool({ connectionString: config.DB_URL });
-    const migration = await Migrator.getMigration(pool, opts.schema, 0);
+    const client = new Client({ connectionString: config.DB_URL });
+    const migration = await Migrator.getMigration(client, opts.schema, 0);
 
     if (!migration) {
       console.log("No migrations were made");
       return;
     }
 
-    const dateFormat = migration.executedAt.getDate().toString().padStart(2, "0") + "." +
-      migration.executedAt.getMonth().toString().padStart(2, "0") + "." +
-      migration.executedAt.getFullYear();
-
-    const timeFormat = migration.executedAt.getHours().toString().padStart(2, "0") + ":" +
-      migration.executedAt.getMinutes().toString().padStart(2, "0") + ":" +
-      migration.executedAt.getSeconds().toString().padStart(2, "0");
-
+    const { dateFormat, timeFormat } = formatDate(migration.executedAt);
     console.log(`${migration.state} was migrated on ${dateFormat} at ${timeFormat}`);
 
-    await pool.end();
+    await client.end();
   });
 
 migrationCommand
   .command("log")
-  .summary("shows database change log")
+  .summary("shows database topology change history")
   .option("-s, --schema <string>", "specify database schema for migration entries table", "public")
   .action(async (opts) => {
     const pool = new Pool({ connectionString: config.DB_URL });
@@ -137,19 +131,24 @@ migrationCommand
       }
 
       const noFormat = migration.id.toString().padStart(3, '0');
-
-      const dateFormat = migration.executedAt.getDate().toString().padStart(2, "0") + "." +
-        migration.executedAt.getMonth().toString().padStart(2, "0") + "." +
-        migration.executedAt.getFullYear();
-
-      const timeFormat = migration.executedAt.getHours().toString().padStart(2, "0") + ":" +
-        migration.executedAt.getMinutes().toString().padStart(2, "0") + ":" +
-        migration.executedAt.getSeconds().toString().padStart(2, "0");
+      const { dateFormat, timeFormat } = formatDate(migration.executedAt);
 
       console.log(`${noFormat}. ${migration.state} (${migration.type}) was migrated on ${dateFormat} at ${timeFormat}`);
     }
 
     await pool.end();
+  });
+
+migrationCommand
+  .command("tidy")
+  .summary("clears database topology change history")
+  .option("-s, --schema <string>", "specify database schema for migration entries table", "public")
+  .action(async (opts) => {
+    const client = new Client({ connectionString: config.DB_URL });
+    await client.connect();
+    const { rowCount } = await client.query(`DELETE FROM ${opts.schema}.schema_migrations WHERE operation_id NOT IN (SELECT operation_id FROM ${opts.schema}.schema_migrations ORDER BY operation_id DESC LIMIT 1);`);
+    await client.end();
+    console.log(`Removed ${rowCount} entries`);
   });
 
 program.parse(process.argv);
