@@ -180,3 +180,21 @@ describe("anime service", () => {
     await expect(service.deleteAnime(fake.db, id)).rejects.toMatchObject({ collection: AnimeErrors, statusCode: 404 });
   });
 });
+
+
+describe("anime cover URL regression", () => {
+  test("passes coverUrl through creation and public row mapping", async () => {
+    const fake = fakeDb();
+    const coverUrl = "https://example.com/covers/anime.webp";
+    const result = await service.createAnime(fake.db, { slug: "valid", titleEn: "Title", coverUrl });
+    expect(byName(fake.calls, "CreateAnime")?.values[5]).toBe(coverUrl);
+    expect(result.coverUrl).toBe("cover");
+    expect(result).not.toHaveProperty("coverId");
+  });
+
+  test("allows clearing a cover URL with an empty string on update", async () => {
+    const fake = fakeDb();
+    await service.updateAnime(fake.db, id, { coverUrl: "" });
+    expect(byName(fake.calls, "UpdateAnimeById")?.values[5]).toBe("");
+  });
+});
