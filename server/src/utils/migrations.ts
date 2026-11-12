@@ -215,7 +215,7 @@ export class Migrator {
   public async up() {
     await pgWrapClient(this.db, async client => {
       await pgWrapLock(client, async client => {
-        let currentMigrationState = (await Migrator.getMigration(client))?.state ?? null;
+        let currentMigrationState = (await Migrator.getMigration(client, this.schema))?.state ?? null;
         const upMigrations = await Promise.all(
           this.migrationFiles
             .filter(migration => currentMigrationState === null || migration.timestamp > currentMigrationState)
@@ -262,7 +262,7 @@ export class Migrator {
   public async down() {
     await pgWrapClient(this.db, async client => {
       await pgWrapLock(client, async client => {
-        let currentMigrationState = (await Migrator.getMigration(client))?.state ?? null;
+        let currentMigrationState = (await Migrator.getMigration(client, this.schema))?.state ?? null;
         console.log("[Migrations] current state:", currentMigrationState);
 
         if (currentMigrationState === null) {

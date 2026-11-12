@@ -36,7 +36,7 @@ program
     await webserver._fastifyRegisterModules(fastify);
     
     if (options.migration) {
-      const migrator = new Migrator(fastify.pg, "./db/migrations")
+      const migrator = new Migrator(fastify.pg, config.MIGRATIONS_DIRECTORY)
       await migrator.ensureMigrationsTable();
       await migrator.up();
     }
@@ -73,7 +73,7 @@ migrationCommand
   .summary("upgrade database to the latest present migration")
   .option("-s, --schema <string>", "specify database schema for migration entries table", "public")
   .option("-n, --no-create", "disable auto-creation entries table")
-  .option("-d, --directory <path>", "specify migrations directory", "./db/migrations")
+  .option("-d, --directory <path>", "specify migrations directory", config.MIGRATIONS_DIRECTORY)
   .action(async (opts) => {
     const pool = new Pool({ connectionString: config.DB_URL });
     const migrator = new Migrator(pool, opts.directory, opts.schema);
@@ -90,7 +90,7 @@ migrationCommand
   .command("down")
   .summary("downgrade database latest migration")
   .option("-s, --schema <string>", "specify database schema for migration entries table", "public")
-  .option("-d, --directory <path>", "specify migrations directory", "./db/migrations")
+  .option("-d, --directory <path>", "specify migrations directory", config.MIGRATIONS_DIRECTORY)
   .action(async (opts) => {
     const pool = new Pool({ connectionString: config.DB_URL });
     const migrator = new Migrator(pool, opts.directory, opts.schema);
