@@ -173,3 +173,17 @@ export const UpdateCommentSchema = {
         500: ErrorResponse,
     },
 } as const;
+
+export const DeleteCommentSchema = {
+    tags: [TAG_COMMENT],
+    summary: "Delete comment",
+    description: "Permanently deletes a comment. Allowed for the comment author, moderators, and administrators.",
+    params: CommentRequestParams,
+    response: {
+        204: Type.Null({ description: "Comment removed successfully" }),
+        400: ErrorResponse,
+        403: ErrorResponse,
+        404: ErrorResponse,
+        500: ErrorResponse,
+    },
+} as const;

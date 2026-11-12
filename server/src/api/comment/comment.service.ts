@@ -127,3 +127,31 @@ export const updateComment = async (
         },
     };
 };
+
+export const deleteComment = async (
+    client: Pool,
+    animeId: string,
+    commentId: string,
+    userId: string,
+    isPrivileged: boolean
+): Promise<void> => {
+    let deleted: commentsSqlc.DeleteCommentRow | null;
+
+    try {
+        deleted = await commentsSqlc.deleteComment(client, {
+            commentId,
+            animeId,
+            authorId: userId,
+            isPrivileged,
+        });
+    } catch (e: any) {
+        if (e?.code === "22P02" || e?.code === "22003") {
+            throw CommentErrors.error("comment-db-invalid-error").withDetails(e);
+        }
+        throw CommentErrors.error("comment-db-error").withDetails(e);
+    }
+
+    if (!deleted) {
+        throw CommentErrors.error("comment-not-found");
+    }
+};

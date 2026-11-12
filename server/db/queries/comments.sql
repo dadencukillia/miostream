@@ -77,3 +77,14 @@ SELECT
 FROM updated_comment uc
 INNER JOIN public.users u
     ON u.user_id = uc.author_id;
+
+-- name: DeleteComment :one
+DELETE FROM public.comments
+WHERE
+    comment_id = @comment_id::bigint
+    AND anime_id = @anime_id::uuid
+    AND (
+        @is_privileged::boolean
+        OR author_id = @author_id::uuid
+    )
+RETURNING comment_id;

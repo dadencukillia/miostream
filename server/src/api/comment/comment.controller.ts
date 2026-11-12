@@ -73,3 +73,26 @@ export const updateComment = async (
 
     return reply.status(200).send(comment);
 };
+
+export const deleteComment = async (
+    request: FastifyRequest<{
+        Params: dto.CommentRequestParamsType;
+    }>,
+    reply: FastifyReply<{
+        Params: dto.CommentRequestParamsType;
+        Reply: dto.DeleteCommentReturnType;
+    }>
+) => {
+    const role = request.auth?.role;
+    const isPrivileged = role === "admin" || role === "moderator";
+
+    await services.deleteComment(
+        request.server.pg,
+        request.params.animeId,
+        request.params.commentId,
+        request.auth!.userId,
+        isPrivileged
+    );
+
+    return reply.status(204).send(null);
+};

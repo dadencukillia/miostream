@@ -22,3 +22,4 @@ export type UpdateCommentRequestPayloadType = Static<typeof commentSchema.Update
 export type GetCommentsReturnType = CommentsResponseType | ErrorResponseType;
 export type PostCommentReturnType = CommentResponseType | ErrorResponseType;
 export type UpdateCommentReturnType = CommentResponseType | ErrorResponseType;
+export type DeleteCommentReturnType = null | ErrorResponseType;

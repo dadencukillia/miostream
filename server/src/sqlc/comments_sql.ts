@@ -194,3 +194,40 @@ export async function updateComment(client: Client, args: UpdateCommentArgs): Pr
     };
 }
 
+export const deleteCommentQuery = `-- name: DeleteComment :one
+DELETE FROM public.comments
+WHERE
+    comment_id = $1::bigint
+    AND anime_id = $2::uuid
+    AND (
+        $3::boolean
+        OR author_id = $4::uuid
+    )
+RETURNING comment_id`;
+
+export interface DeleteCommentArgs {
+    commentId: string;
+    animeId: string;
+    isPrivileged: boolean;
+    authorId: string;
+}
+
+export interface DeleteCommentRow {
+    commentId: string;
+}
+
+export async function deleteComment(client: Client, args: DeleteCommentArgs): Promise<DeleteCommentRow | null> {
+    const result = await client.query({
+        text: deleteCommentQuery,
+        values: [args.commentId, args.animeId, args.isPrivileged, args.authorId],
+        rowMode: "array"
+    });
+    if (result.rows.length !== 1) {
+        return null;
+    }
+    const row = result.rows[0];
+    return {
+        commentId: row[0]
+    };
+}
+
