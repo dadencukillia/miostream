@@ -9,3 +9,7 @@ export const isSafeHttpUrl = (urlString: string): boolean => {
         return false;
     }
 };
+
+export const joinUrls = (a: string, b: string): string => {
+  return a.replace(/\/$/, "") + "/" + b.replace(/^\//, "");
+}
