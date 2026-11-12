@@ -20,7 +20,7 @@ export const getComments = async (
             maxCount,
         });
     } catch (e: any) {
-        if (e?.code === "22P02") {
+        if (e?.code === "22P02" || e?.code === "22003") {
             throw CommentErrors.error("comment-db-invalid-error").withDetails(e);
         }
         throw CommentErrors.error("comment-db-error").withDetails(e);
@@ -65,7 +65,7 @@ export const postComment = async (
         if (e?.code === "23503") {
             throw CommentErrors.error("comment-db-data-not-found").withDetails(e);
         }
-        if (e?.code === "23514" || e?.code === "22P02" || e?.code === "22001") {
+        if (e?.code === "23514" || e?.code === "22P02" || e?.code === "22003" || e?.code === "22001") {
             throw CommentErrors.error("comment-db-invalid-error").withDetails(e);
         }
         throw CommentErrors.error("comment-db-error").withDetails(e);
@@ -84,6 +84,46 @@ export const postComment = async (
             userId: created.userId,
             nickname: created.nickname,
             avatarId: created.avatarId,
+        },
+    };
+};
+
+export const updateComment = async (
+    client: Pool,
+    animeId: string,
+    commentId: string,
+    authorId: string,
+    data: dto.UpdateCommentRequestPayloadType
+): Promise<dto.CommentResponseType> => {
+    let updated: commentsSqlc.UpdateCommentRow | null;
+
+    try {
+        updated = await commentsSqlc.updateComment(client, {
+            commentId,
+            animeId,
+            authorId,
+            content: data.content.trim(),
+        });
+    } catch (e: any) {
+        if (e?.code === "23514" || e?.code === "22P02" || e?.code === "22003" || e?.code === "22001") {
+            throw CommentErrors.error("comment-db-invalid-error").withDetails(e);
+        }
+        throw CommentErrors.error("comment-db-error").withDetails(e);
+    }
+
+    if (!updated) {
+        throw CommentErrors.error("comment-not-found");
+    }
+
+    return {
+        commentId: String(updated.commentId),
+        content: updated.content,
+        createdAt: updated.createdAt,
+        isEdited: updated.isEdited,
+        author: {
+            userId: updated.userId,
+            nickname: updated.nickname,
+            avatarId: updated.avatarId,
         },
     };
 };

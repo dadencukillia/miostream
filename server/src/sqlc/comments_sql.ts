@@ -127,3 +127,70 @@ export async function createComment(client: Client, args: CreateCommentArgs): Pr
     };
 }
 
+export const updateCommentQuery = `-- name: UpdateComment :one
+WITH updated_comment AS (
+    UPDATE public.comments
+    SET
+        content = $1::text,
+        is_edited = TRUE
+    WHERE
+        comment_id = $2::bigint
+        AND anime_id = $3::uuid
+        AND author_id = $4::uuid
+    RETURNING
+        comment_id,
+        author_id,
+        content,
+        created_at,
+        is_edited
+)
+SELECT
+    uc.comment_id,
+    uc.content,
+    uc.created_at,
+    uc.is_edited,
+    u.user_id,
+    u.nickname,
+    u.avatar_id
+FROM updated_comment uc
+INNER JOIN public.users u
+    ON u.user_id = uc.author_id`;
+
+export interface UpdateCommentArgs {
+    content: string;
+    commentId: string;
+    animeId: string;
+    authorId: string;
+}
+
+export interface UpdateCommentRow {
+    commentId: string;
+    content: string;
+    createdAt: Date;
+    isEdited: boolean;
+    userId: string;
+    nickname: string;
+    avatarId: string | null;
+}
+
+export async function updateComment(client: Client, args: UpdateCommentArgs): Promise<UpdateCommentRow | null> {
+    const result = await client.query({
+        text: updateCommentQuery,
+        values: [args.content, args.commentId, args.animeId, args.authorId],
+        rowMode: "array"
+    });
+    if (result.rows.length !== 1) {
+        return null;
+    }
+    const row = result.rows[0];
+    return {
+        commentId: row[0],
+        content: row[1],
+        createdAt: row[2],
+        isEdited: row[3],
+        userId: row[4],
+        nickname: row[5],
+        avatarId: row[6]
+    };
+}
+

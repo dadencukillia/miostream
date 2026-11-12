@@ -47,3 +47,29 @@ export const postComment = async (
 
     return reply.status(201).send(comment);
 };
+
+export const updateComment = async (
+    request: FastifyRequest<{
+        Params: dto.CommentRequestParamsType;
+        Body: dto.UpdateCommentRequestPayloadType;
+    }>,
+    reply: FastifyReply<{
+        Params: dto.CommentRequestParamsType;
+        Body: dto.UpdateCommentRequestPayloadType;
+        Reply: dto.UpdateCommentReturnType;
+    }>
+) => {
+    if (request.body.content.trim().length === 0) {
+        throw CommentErrors.error("comment-invalid");
+    }
+
+    const comment = await services.updateComment(
+        request.server.pg,
+        request.params.animeId,
+        request.params.commentId,
+        request.auth!.userId,
+        request.body
+    );
+
+    return reply.status(200).send(comment);
+};

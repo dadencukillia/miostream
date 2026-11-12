@@ -48,3 +48,32 @@ SELECT
 FROM inserted_comment ic
 INNER JOIN public.users u ON
     u.user_id = ic.author_id;
+
+-- name: UpdateComment :one
+WITH updated_comment AS (
+    UPDATE public.comments
+    SET
+        content = @content::text,
+        is_edited = TRUE
+    WHERE
+        comment_id = @comment_id::bigint
+        AND anime_id = @anime_id::uuid
+        AND author_id = @author_id::uuid
+    RETURNING
+        comment_id,
+        author_id,
+        content,
+        created_at,
+        is_edited
+)
+SELECT
+    uc.comment_id,
+    uc.content,
+    uc.created_at,
+    uc.is_edited,
+    u.user_id,
+    u.nickname,
+    u.avatar_id
+FROM updated_comment uc
+INNER JOIN public.users u
+    ON u.user_id = uc.author_id;

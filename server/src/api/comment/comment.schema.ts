@@ -64,6 +64,21 @@ export const AnimeIdCommentRequestParams = Type.Object({
     additionalProperties: false
 });
 
+export const CommentRequestParams = Type.Object({
+    animeId: Type.String({
+        format: "uuid",
+        description: "Anime UUID",
+        examples: ["a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"]
+    }),
+    commentId: Type.String({
+        pattern: "^[1-9][0-9]*$",
+        description: "Unique comment ID (bigint string)",
+        examples: ["42"]
+    })
+}, {
+    additionalProperties: false
+});
+
 // Request Queries
 export const GetCommentsRequestQueries = Type.Object({
     cursor: Type.Optional(Type.String({
@@ -99,6 +114,23 @@ export const PostCommentRequestPayload = Type.Object({
     ]
 });
 
+export const UpdateCommentRequestPayload = Type.Object({
+    content: Type.String({
+        minLength: 1,
+        maxLength: 2000,
+        description: "Updated comment text content (1-2000 non-whitespace characters)",
+        examples: ["Updated thoughts after rewatching the episode!"]
+    })
+}, {
+    additionalProperties: false,
+    description: "Payload for updating an existing comment",
+    examples: [
+        {
+            content: "Updated thoughts after rewatching the episode!"
+        }
+    ]
+});
+
 // Fastify Route Schemas
 export const GetCommentsSchema = {
     tags: [TAG_COMMENT],
@@ -122,6 +154,20 @@ export const PostCommentSchema = {
     body: PostCommentRequestPayload,
     response: {
         201: CommentResponse,
+        400: ErrorResponse,
+        404: ErrorResponse,
+        500: ErrorResponse,
+    },
+} as const;
+
+export const UpdateCommentSchema = {
+    tags: [TAG_COMMENT],
+    summary: "Update comment",
+    description: "Updates the text content of an existing comment owned by the authenticated user.",
+    params: CommentRequestParams,
+    body: UpdateCommentRequestPayload,
+    response: {
+        200: CommentResponse,
         400: ErrorResponse,
         404: ErrorResponse,
         500: ErrorResponse,

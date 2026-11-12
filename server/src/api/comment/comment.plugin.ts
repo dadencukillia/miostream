@@ -12,8 +12,8 @@ const modulePlugin: FastifyPluginAsync = async (fastify: FastifyInstance, _opts:
     CommentErrors.setupErrorHandler(fastify);
 
     fastify.get("/", { schema: schemas.GetCommentsSchema }, controllers.getComments);
-
     fastify.post("/", { schema: schemas.PostCommentSchema, preHandler: requireAuth }, controllers.postComment);
+    fastify.put("/:commentId", { schema: schemas.UpdateCommentSchema, preHandler: requireAuth }, controllers.updateComment);
 };
 
 export default modulePlugin;
