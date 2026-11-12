@@ -73,7 +73,7 @@ SELECT
     "created_at",
     "updated_at"
 FROM public.users
-WHERE "nickname" = @nickname::text
+WHERE lower("nickname") = lower(@nickname::text)
 LIMIT 1;
 
 -- name: GetUserByEmail :one

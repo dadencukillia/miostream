@@ -190,7 +190,7 @@ SELECT
     "created_at",
     "updated_at"
 FROM public.users
-WHERE "nickname" = $1::text
+WHERE lower("nickname") = lower($1::text)
 LIMIT 1`;
 
 export interface GetUserByNicknameArgs {
