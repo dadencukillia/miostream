@@ -1,4 +1,5 @@
 import type { FastifyRequest, FastifyReply } from "fastify";
+import { CommentErrors } from "./comment.errors";
 import * as dto from "./comment.dto";
 import * as services from "./comment.service";
 
@@ -20,4 +21,29 @@ export const getComments = async (
     );
 
     return reply.status(200).send(result);
+};
+
+export const postComment = async (
+    request: FastifyRequest<{
+        Params: dto.AnimeIdCommentRequestParamsType;
+        Body: dto.PostCommentRequestPayloadType;
+    }>,
+    reply: FastifyReply<{
+        Params: dto.AnimeIdCommentRequestParamsType;
+        Body: dto.PostCommentRequestPayloadType;
+        Reply: dto.PostCommentReturnType;
+    }>
+) => {
+    if (request.body.content.trim().length === 0) {
+        throw CommentErrors.error("comment-invalid");
+    }
+
+    const comment = await services.postComment(
+        request.server.pg,
+        request.params.animeId,
+        request.auth!.userId,
+        request.body
+    );
+
+    return reply.status(201).send(comment);
 };

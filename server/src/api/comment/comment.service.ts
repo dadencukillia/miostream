@@ -46,3 +46,44 @@ export const getComments = async (
         nextCursor,
     };
 };
+
+export const postComment = async (
+    client: Pool,
+    animeId: string,
+    authorId: string,
+    data: dto.PostCommentRequestPayloadType
+): Promise<dto.CommentResponseType> => {
+    let created: commentsSqlc.CreateCommentRow | null;
+
+    try {
+        created = await commentsSqlc.createComment(client, {
+            animeId,
+            authorId,
+            content: data.content.trim(),
+        });
+    } catch (e: any) {
+        if (e?.code === "23503") {
+            throw CommentErrors.error("comment-db-data-not-found").withDetails(e);
+        }
+        if (e?.code === "23514" || e?.code === "22P02" || e?.code === "22001") {
+            throw CommentErrors.error("comment-db-invalid-error").withDetails(e);
+        }
+        throw CommentErrors.error("comment-db-error").withDetails(e);
+    }
+
+    if (!created) {
+        throw CommentErrors.error("comment-db-error");
+    }
+
+    return {
+        commentId: String(created.commentId),
+        content: created.content,
+        createdAt: created.createdAt,
+        isEdited: created.isEdited,
+        author: {
+            userId: created.userId,
+            nickname: created.nickname,
+            avatarId: created.avatarId,
+        },
+    };
+};

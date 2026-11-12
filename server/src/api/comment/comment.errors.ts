@@ -1,6 +1,6 @@
 import { ErrorsSet } from "@utils/errorsCollection";
 
-export const CommentErrors = new ErrorsSet('user', {
+export const CommentErrors = new ErrorsSet('comment', {
     // DB
     "comment-db-invalid-error": [400, "data does not satisfy database"],
     "comment-db-data-not-found": [404, "referenced data does not exist"],

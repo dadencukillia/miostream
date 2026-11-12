@@ -81,6 +81,24 @@ export const GetCommentsRequestQueries = Type.Object({
     additionalProperties: false
 });
 
+// Request Payloads
+export const PostCommentRequestPayload = Type.Object({
+    content: Type.String({
+        minLength: 1,
+        maxLength: 2000,
+        description: "Comment text content (1-2000 non-whitespace characters)",
+        examples: ["Great episode, the animation quality is top-notch!"]
+    })
+}, {
+    additionalProperties: false,
+    description: "Payload for creating a new comment",
+    examples: [
+        {
+            content: "Great episode, the animation quality is top-notch!"
+        }
+    ]
+});
+
 // Fastify Route Schemas
 export const GetCommentsSchema = {
     tags: [TAG_COMMENT],
@@ -90,6 +108,20 @@ export const GetCommentsSchema = {
     querystring: GetCommentsRequestQueries,
     response: {
         200: CommentsResponse,
+        400: ErrorResponse,
+        404: ErrorResponse,
+        500: ErrorResponse,
+    },
+} as const;
+
+export const PostCommentSchema = {
+    tags: [TAG_COMMENT],
+    summary: "Create comment",
+    description: "Creates a new comment for the specified anime on behalf of the authenticated user.",
+    params: AnimeIdCommentRequestParams,
+    body: PostCommentRequestPayload,
+    response: {
+        201: CommentResponse,
         400: ErrorResponse,
         404: ErrorResponse,
         500: ErrorResponse,

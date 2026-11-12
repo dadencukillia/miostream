@@ -60,3 +60,70 @@ export async function getCommentsByAnimeId(client: Client, args: GetCommentsByAn
     });
 }
 
+export const createCommentQuery = `-- name: CreateComment :one
+WITH inserted_comment AS (
+    INSERT INTO public.comments(
+        anime_id,
+        author_id,
+        content
+    ) VALUES (
+        $1::uuid,
+        $2::uuid,
+        $3::text
+    )
+    RETURNING
+        comment_id,
+        author_id,
+        content,
+        created_at,
+        is_edited
+)
+SELECT
+    ic.comment_id,
+    ic.content,
+    ic.created_at,
+    ic.is_edited,
+    u.user_id,
+    u.nickname,
+    u.avatar_id
+FROM inserted_comment ic
+INNER JOIN public.users u ON
+    u.user_id = ic.author_id`;
+
+export interface CreateCommentArgs {
+    animeId: string;
+    authorId: string;
+    content: string;
+}
+
+export interface CreateCommentRow {
+    commentId: string;
+    content: string;
+    createdAt: Date;
+    isEdited: boolean;
+    userId: string;
+    nickname: string;
+    avatarId: string | null;
+}
+
+export async function createComment(client: Client, args: CreateCommentArgs): Promise<CreateCommentRow | null> {
+    const result = await client.query({
+        text: createCommentQuery,
+        values: [args.animeId, args.authorId, args.content],
+        rowMode: "array"
+    });
+    if (result.rows.length !== 1) {
+        return null;
+    }
+    const row = result.rows[0];
+    return {
+        commentId: row[0],
+        content: row[1],
+        createdAt: row[2],
+        isEdited: row[3],
+        userId: row[4],
+        nickname: row[5],
+        avatarId: row[6]
+    };
+}
+

@@ -13,5 +13,9 @@ export type AnimeIdCommentRequestParamsType = Static<typeof commentSchema.AnimeI
 // Request Queries
 export type GetCommentsRequestQueriesType = Static<typeof commentSchema.GetCommentsRequestQueries>;
 
+// Request Payloads
+export type PostCommentRequestPayloadType = Static<typeof commentSchema.PostCommentRequestPayload>;
+
 // Controller Return Types
 export type GetCommentsReturnType = CommentsResponseType | ErrorResponseType;
+export type PostCommentReturnType = CommentResponseType | ErrorResponseType;
