@@ -82,8 +82,8 @@ describe("user routes", () => {
         expect(response.json()).toMatchObject({ ok: false });
     });
 
-    test("reject invalid registration payload", async () => {
-        const response = await fastify.inject({
+    test("reject invalid registration payload and reserved nicknames", async () => {
+        const invalidPayload = await fastify.inject({
             path: "/user",
             method: "POST",
             payload: {
@@ -93,28 +93,62 @@ describe("user routes", () => {
             },
         });
 
-        expect(response.statusCode).toBe(400);
-        expect(response.json()).toMatchObject({ ok: false });
+        expect(invalidPayload.statusCode).toBe(400);
+        expect(invalidPayload.json()).toMatchObject({ ok: false });
+
+        const reservedNickname = await fastify.inject({
+            path: "/user",
+            method: "POST",
+            payload: {
+                nickname: "Links",
+                fullName: "Reserved Nick",
+                email: "reserved@miostream.dev",
+                password: "password123",
+            },
+        });
+
+        expect(reservedNickname.statusCode).toBe(400);
+        expect(reservedNickname.json()).toMatchObject({ ok: false });
     });
 
-    test("get user by id", async () => {
-        const unauth = await fastify.inject({
+    test("get user by id and nickname (public)", async () => {
+        const byCanonicalId = await fastify.inject({
             path: `/user/${userId}`,
             method: "GET",
         });
-        expect(unauth.statusCode).toBe(403);
-
-        const response = await fastify.inject({
-            path: `/user/${userId}`,
-            method: "GET",
-            headers: { authorization: "Bearer admin" },
-        });
-
-        expect(response.statusCode).toBe(200);
-        expect(response.json()).toMatchObject({
+        expect(byCanonicalId.statusCode).toBe(200);
+        expect(byCanonicalId.json()).toMatchObject({
             userId,
             nickname: "tester_route",
         });
+
+        const compactUpperId = userId.replace(/-/g, "").toUpperCase();
+        const byCompactId = await fastify.inject({
+            path: `/user/${compactUpperId}`,
+            method: "GET",
+        });
+        expect(byCompactId.statusCode).toBe(200);
+        expect(byCompactId.json()).toMatchObject({
+            userId,
+            nickname: "tester_route",
+        });
+
+        const byNickname = await fastify.inject({
+            path: "/user/tester_route",
+            method: "GET",
+        });
+        expect(byNickname.statusCode).toBe(200);
+        expect(byNickname.json()).toMatchObject({
+            userId,
+            nickname: "tester_route",
+        });
+
+        const notFound = await fastify.inject({
+            path: "/user/non_existent_user",
+            method: "GET",
+        });
+        expect(notFound.statusCode).toBe(404);
+        expect(notFound.json()).toMatchObject({ ok: false });
     });
 
     test("update user status and role (admin only)", async () => {
@@ -145,18 +179,24 @@ describe("user routes", () => {
         expect(roleResponse.json()).toMatchObject({ userRole: "admin" });
     });
 
-    test("list user links", async () => {
+    test("list user links (public)", async () => {
         const response = await fastify.inject({
             path: `/user/${userId}/links`,
             method: "GET",
-            headers: { authorization: "Bearer admin" },
         });
 
         expect(response.statusCode).toBe(200);
         expect(response.json()).toEqual([]);
     });
 
-    test("delete user", async () => {
+    test("delete user (admin only)", async () => {
+        const forbiddenDelete = await fastify.inject({
+            path: `/user/${userId}`,
+            method: "DELETE",
+            headers: { authorization: "Bearer user" },
+        });
+        expect(forbiddenDelete.statusCode).toBe(403);
+
         const response = await fastify.inject({
             path: `/user/${userId}`,
             method: "DELETE",
@@ -166,11 +206,16 @@ describe("user routes", () => {
         expect(response.statusCode).toBe(204);
         expect(response.body).toBe("");
 
-        const check = await fastify.inject({
+        const checkById = await fastify.inject({
             path: `/user/${userId}`,
             method: "GET",
-            headers: { authorization: "Bearer admin" },
         });
-        expect(check.statusCode).toBe(404);
+        expect(checkById.statusCode).toBe(404);
+
+        const checkByNickname = await fastify.inject({
+            path: "/user/tester_route",
+            method: "GET",
+        });
+        expect(checkByNickname.statusCode).toBe(404);
     });
 });
