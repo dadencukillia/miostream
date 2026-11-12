@@ -37,7 +37,14 @@ export async function createListUnit(
 		if (error?.code === "23505") {
 			throw new ListAlreadyExistsError("list unit already exists");
 		}
-		throw new ListInvalidError("invalid list unit data");
+		if (error?.code === "23503") {
+			throw new ListNotFoundError("anime not found");
+		}
+		const clientDataErrors = new Set(["22P02", "23502", "23514"]);
+		if (clientDataErrors.has(error?.code)) {
+			throw new ListInvalidError("invalid list unit data");
+		}
+		throw error;
 	}
 }
 export async function updateListUnit(
