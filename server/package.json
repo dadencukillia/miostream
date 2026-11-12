@@ -20,6 +20,7 @@
     "@fastify/swagger": "^9.9.2",
     "@img/sharp-wasm32": "^0.35.5",
     "@scalar/fastify-api-reference": "^1.78.1",
+    "commander": "^15.1.0",
     "fastify": "^5.12.4",
     "fastify-plugin": "^6.0.0",
     "jsonwebtoken": "^9.0.3",

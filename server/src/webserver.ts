@@ -46,7 +46,7 @@ const webServerModules = {
 // Config
 
 export interface WebServerConfiguration {
-  modules?: (keyof typeof webServerModules|FastifyWebServerModule)[],
+  modules?: (keyof typeof webServerModules|FastifyWebServerModule|null)[],
   port?: number
 }
 
@@ -67,7 +67,9 @@ export class FastifyWebServer {
       port: config.port ?? defaultWebServerConfiguration.port
     };
 
-    this._modules = this._config.modules.map(e => {
+    this._modules = this._config.modules
+      .filter(e => e != null)
+      .map(e => {
       return typeof e === "string"
         ? webServerModules[e]
         : Object.freeze(e);
@@ -118,7 +120,7 @@ export class FastifyWebServer {
     process.on('SIGTERM', shutdown);
 
     try {
-      await fastify.listen({ port: 8080, host: '0.0.0.0' });
+      await fastify.listen({ port: this._config.port, host: '0.0.0.0' });
     } catch (err) {
       fastify.log.error(err);
       process.exit(1);
