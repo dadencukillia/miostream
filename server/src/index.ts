@@ -61,7 +61,7 @@ program
       port: options.port
     });
 
-    webserver.run();
+    await webserver.run();
   });
 
 const migrationCommand = program
@@ -104,6 +104,7 @@ migrationCommand
   .option("-s, --schema <string>", "specify database schema for migration entries table", "public")
   .action(async (opts) => {
     const client = new Client({ connectionString: config.DB_URL });
+    await client.connect();
     const migration = await Migrator.getMigration(client, opts.schema, 0);
 
     if (!migration) {
@@ -153,4 +154,4 @@ migrationCommand
     console.log(`Removed ${rowCount} entries`);
   });
 
-program.parse(process.argv);
+await program.parseAsync(process.argv);

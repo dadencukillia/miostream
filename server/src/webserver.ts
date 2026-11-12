@@ -102,7 +102,11 @@ export class FastifyWebServer {
    * @returns An array of unique connection instances.
    */
   private connectionsList(): Connection<any>[] {
-    return Array.from(new Set(...this._modules.map(e => e.connections)));
+    return Array.from(new Set(
+      this._modules
+        .map(e => e.connections)
+        .flat(1)
+    ));
   }
 
   /**
