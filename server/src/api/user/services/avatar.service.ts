@@ -2,12 +2,7 @@ import sharp from "sharp";
 import type { Pool } from "pg";
 import type { FastifyBaseLogger } from "fastify";
 import type { S3Client } from "@aws-sdk/client-s3";
-import {
-    AvatarS3Error,
-    AvatarCouldntReachDBError,
-    AvatarAlreadyNoAvatarError,
-    AvatarInvalidImageError
-} from "../user.errors";
+import { AvatarErrors, UserErrors } from "../user.errors";
 import {
     removeAvatarById,
     setAvatarById
@@ -15,12 +10,11 @@ import {
 import {
     updateUserAvatarReturningOld
 } from "@sqlc/users_sql";
-import type { UserResponseDto } from "../user.schema";
+import * as dto from "../user.dto";
 
 const AVATAR_WIDTH = 256;
 const AVATAR_HEIGHT = 256;
 const WEBP_QUALITY = 80;
-
 
 export async function updateUserAvatarImage(
     s3: S3Client,
@@ -28,7 +22,7 @@ export async function updateUserAvatarImage(
     logger: FastifyBaseLogger,
     userId: string,
     imageContent: Buffer
-): Promise<UserResponseDto> {
+): Promise<dto.UserResponseType> {
     const newAvatarId = crypto.randomUUID();
 
     // Process image
@@ -42,7 +36,7 @@ export async function updateUserAvatarImage(
             .toBuffer();
     } catch (e) {
         logger.error(e);
-        throw new AvatarInvalidImageError("invalid image");
+        throw AvatarErrors.error("invalid-image").withDetails(e);
     }
 
     // Store new avatar file
@@ -51,7 +45,7 @@ export async function updateUserAvatarImage(
         await setAvatarById(s3, newAvatarId, webpImage);
     } catch (e) {
         logger.error(e);
-        throw new AvatarS3Error("couldn't store new avatar");
+        throw AvatarErrors.error("new-avatar-s3-store").withDetails(e);
     }
 
     // Update avatar in the database
@@ -63,13 +57,15 @@ export async function updateUserAvatarImage(
                 userId: userId,
                 newAvatarId: newAvatarId
             });
-            if (dbResponse == null) {
-              throw new Error("database user not found");
-            }
         } catch (e) {
             logger.error(e);
             await removeAvatarById(s3, newAvatarId);
-            throw new AvatarCouldntReachDBError("database avatar id update went wrong");
+            throw AvatarErrors.error("update-avatar-db").withDetails(e);
+        }
+
+        if (dbResponse == null) {
+            await removeAvatarById(s3, newAvatarId);
+            throw UserErrors.error("user-not-found");
         }
     }
 
@@ -80,7 +76,7 @@ export async function updateUserAvatarImage(
             await removeAvatarById(s3, dbResponse.oldAvatarId);
         } catch (e) {
             logger.error(e);
-            throw new AvatarS3Error("couldn't remove old avatar in the file storage")
+            throw AvatarErrors.error("avatar-s3-remove").withDetails(e);
         }
     }
 
@@ -93,7 +89,7 @@ export async function resetUserAvatar(
     db: Pool,
     logger: FastifyBaseLogger,
     userId: string
-): Promise<UserResponseDto> {
+): Promise<dto.UserResponseType> {
     // Update avatar id in database, return old
 
     let dbResponse;
@@ -103,16 +99,17 @@ export async function resetUserAvatar(
             userId: userId,
             newAvatarId: null
         });
-        if (dbResponse == null) {
-          throw new Error("database user not found");
-        }
     } catch (e) {
         logger.error(e);
-        throw new AvatarCouldntReachDBError("couldn't reset user avatar");
+        throw AvatarErrors.error("update-avatar-db").withDetails(e);
+    }
+
+    if (dbResponse == null) {
+        throw UserErrors.error("user-not-found");
     }
 
     if (dbResponse.oldAvatarId == null) {
-        throw new AvatarAlreadyNoAvatarError("already no avatar");
+        throw AvatarErrors.error("already-no-avatar");
     }
 
     // Remove old avatar image file in S3
@@ -121,7 +118,7 @@ export async function resetUserAvatar(
         await removeAvatarById(s3, dbResponse.oldAvatarId);
     } catch (e) {
         logger.error(e);
-        throw new AvatarS3Error("couldn't remove a file in the file storage");
+        throw AvatarErrors.error("avatar-s3-remove").withDetails(e);
     }
 
     const { oldAvatarId, ...toReturn } = dbResponse;
