@@ -8,6 +8,7 @@ export type UserStatusType = (typeof userSchema.USER_STATUS)[number];
 // Responses
 export type ErrorResponseType = Static<typeof userSchema.ErrorResponse>;
 export type UserResponseType = Static<typeof userSchema.UserResponse>;
+export type PublicUserResponseType = Static<typeof userSchema.PublicUserResponse>;
 export type UserLinkResponseType = Static<typeof userSchema.UserLinkResponse>;
 export type UserLinkListResponseType = UserLinkResponseType[];
 
@@ -29,8 +30,8 @@ export type UpdateUserLinkRequestPayloadType = Static<typeof userSchema.UpdateUs
 
 // Controller Return Types
 export type CreateUserReturnType = UserResponseType | ErrorResponseType;
-export type GetUserReturnType = UserResponseType | ErrorResponseType;
-export type GetUserByIdReturnType = UserResponseType | ErrorResponseType;
+export type GetUserReturnType = PublicUserResponseType | ErrorResponseType;
+export type GetUserByIdReturnType = PublicUserResponseType | ErrorResponseType;
 export type UpdateUserProfileReturnType = UserResponseType | ErrorResponseType;
 export type UpdateUserAvatarReturnType = UserResponseType | ErrorResponseType;
 export type DeleteUserAvatarReturnType = null | ErrorResponseType;

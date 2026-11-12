@@ -92,6 +92,11 @@ export const UserResponse = Type.Object({
     description: "Detailed user profile data, including account settings and standing"
 });
 
+export const PublicUserResponse = Type.Omit(UserResponse, ["email"], {
+    additionalProperties: false,
+    description: "Public user profile data, excluding private contact information"
+});
+
 export const UserLinkResponse = Type.Object({
     userLinkId: BigIntIdResponseType,
     userId: Type.String({
@@ -324,7 +329,7 @@ export const GetUserSchema = {
     description: "Retrieves public profile details by user UUID (canonical or compact) or unique nickname.",
     params: UserIdentifierRequestParams,
     response: {
-        200: UserResponse,
+        200: PublicUserResponse,
         400: ErrorResponse,
         404: ErrorResponse,
         500: ErrorResponse,
@@ -337,7 +342,7 @@ export const GetUserByIdSchema = {
     description: "Retrieves public profile details for the specified user UUID.",
     params: UserIdRequestParams,
     response: {
-        200: UserResponse,
+        200: PublicUserResponse,
         400: ErrorResponse,
         404: ErrorResponse,
         500: ErrorResponse,

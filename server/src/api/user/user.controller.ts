@@ -33,7 +33,8 @@ export const getUser = async (
         ? await services.getUserById(request.server.pg, normalizeUuid(identifier)!)
         : await services.getUserByNickname(request.server.pg, identifier);
 
-    return reply.status(200).send(user);
+    const { email: _, ...publicUser } = user;
+    return reply.status(200).send(publicUser);
 };
 
 export const deleteUser = async (
