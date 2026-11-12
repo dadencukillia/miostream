@@ -22,4 +22,6 @@ beforeAll(async () => {
   await migrator.up();
 
   await fastify.close();
+}, {
+  timeout: 0
 });
