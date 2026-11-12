@@ -11,10 +11,10 @@ export const getComments = async (
     const maxCount = query.limit ?? 20;
     const lastLoadedId = query.cursor ?? "0";
 
-    let rows: commentsSqlc.GetCommentsByAnimeIdRow[];
+    let commentsRaw: commentsSqlc.GetCommentsByAnimeIdRow[];
 
     try {
-        rows = await commentsSqlc.getCommentsByAnimeId(client, {
+        commentsRaw = await commentsSqlc.getCommentsByAnimeId(client, {
             animeId,
             lastLoadedId,
             maxCount,
@@ -26,20 +26,20 @@ export const getComments = async (
         throw CommentErrors.error("comment-db-error").withDetails(e);
     }
 
-    const comments: dto.CommentResponseType[] = rows.map((row) => ({
-        commentId: String(row.commentId),
-        content: row.content,
-        createdAt: row.createdAt,
-        isEdited: row.isEdited,
+    const comments: dto.CommentResponseType[] = commentsRaw.map((cr) => ({
+        commentId: String(cr.commentId),
+        content: cr.content,
+        createdAt: cr.createdAt,
+        isEdited: cr.isEdited,
         author: {
-            userId: row.userId,
-            nickname: row.nickname,
-            avatarId: row.avatarId,
+            userId: cr.userId,
+            nickname: cr.nickname,
+            avatarId: cr.avatarId,
         },
     }));
 
-    const lastRow = rows.length === maxCount ? rows[rows.length - 1] : undefined;
-    const nextCursor = lastRow ? String(lastRow.commentId) : null;
+    const lastComment = commentsRaw.length === maxCount ? commentsRaw[commentsRaw.length - 1] : undefined;
+    const nextCursor = lastComment ? String(lastComment.commentId) : null;
 
     return {
         comments,
