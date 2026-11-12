@@ -9,9 +9,15 @@ import { openapiJSONPlugin, openapiUIPlugin } from "./openapi";
 
 // Modules
 
+/**
+ * Represents a modular web server component/plugin definition.
+ */
 export interface FastifyWebServerModule {
+  /** The URL prefix path where the module will be mounted. */
   endpoint: string,
+  /** List of database or external service connections required by this module. */
   connections: Connection<any>[],
+  /** The Fastify plugin asynchronous function. */
   plugin: FastifyPluginAsync,
 }
 
@@ -45,8 +51,13 @@ const webServerModules = {
 
 // Config
 
+/**
+ * Configuration options for the FastifyWebServer instance.
+ */
 export interface WebServerConfiguration {
+  /** List of modules to load (can be module keys, custom module objects, or null/undefined to skip). */
   modules?: (keyof typeof webServerModules|FastifyWebServerModule|null)[],
+  /** The network port on which the web server will listen. */
   port?: number
 }
 
@@ -57,10 +68,19 @@ const defaultWebServerConfiguration: Required<WebServerConfiguration> = {
 
 // Web server
 
+/**
+ * A modular Fastify web server wrapper responsible for lifecycle management,
+ * dynamic plugin registration, and connection pool orchestration.
+ */
 export class FastifyWebServer {
   private readonly _config: Required<WebServerConfiguration>;
   private readonly _modules: Readonly<FastifyWebServerModule>[];
 
+  /**
+   * Creates an instance of FastifyWebServer.
+   * 
+   * @param config - Optional configuration object to override default modules or port settings.
+   */
   public constructor(config: WebServerConfiguration = defaultWebServerConfiguration) {
     this._config = {
       modules: config.modules ?? defaultWebServerConfiguration.modules,
@@ -76,10 +96,20 @@ export class FastifyWebServer {
     });
   }
 
+  /**
+   * Collects and de-duplicates all required database/service connections across active modules.
+   * 
+   * @returns An array of unique connection instances.
+   */
   private connectionsList(): Connection<any>[] {
     return Array.from(new Set(...this._modules.map(e => e.connections)));
   }
 
+  /**
+   * Instantiates and configures a pure, uninitialized Fastify instance with custom AJV settings and logging.
+   * 
+   * @returns A configured `FastifyInstance`.
+   */
   public _pureFastifyInstance(): FastifyInstance {
     return Fastify({
       logger: true,
@@ -93,6 +123,12 @@ export class FastifyWebServer {
     });
   }
 
+  /**
+   * Registers required connections (like PostgreSQL or S3) via the connector plugin.
+   * 
+   * @param fastify - The Fastify instance to register connections into.
+   * @param connections - Optional explicit list of connections to register. Defaults to all module-required connections.
+   */
   public async _fastifyRegisterConnections(fastify: FastifyInstance, connections?: Connection<any>[]) {
     await fastify.register(connector, {
       retries: 3,
@@ -101,6 +137,11 @@ export class FastifyWebServer {
     });
   }
 
+  /**
+   * Registers all active modules into the Fastify instance with their respective prefixes.
+   * 
+   * @param fastify - The Fastify instance where modules will be registered.
+   */
   public async _fastifyRegisterModules(fastify: FastifyInstance) {
     for (const module of this._modules) {
       await fastify.register(module.plugin, {
@@ -109,6 +150,11 @@ export class FastifyWebServer {
     }
   }
 
+  /**
+   * Binds process signal listeners (SIGINT, SIGTERM) for graceful shutdown and starts listening on the configured port.
+   * 
+   * @param fastify - The initialized Fastify instance to run.
+   */
   public async _fastifyRun(fastify: FastifyInstance) {
     const shutdown = async () => {
       fastify.log.info('Stopping server...');
@@ -127,6 +173,9 @@ export class FastifyWebServer {
     }
   }
 
+  /**
+   * Runs the complete web server lifecycle: creates the Fastify instance, registers connections, loads modules, and starts listening.
+   */
   public async run() {
     const fastify = this._pureFastifyInstance();
     await this._fastifyRegisterConnections(fastify);

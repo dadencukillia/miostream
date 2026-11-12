@@ -1,4 +1,4 @@
-import { Migrator } from "@utils/migrations";
+import { MIGRATIONS_TABLE, Migrator } from "@utils/migrations";
 import { FastifyWebServer } from "./webserver";
 import { Command } from 'commander';
 import * as config from "@config";
@@ -13,6 +13,7 @@ program
 program
   .command("serve")
   .summary("run backend server")
+  .description("Scalar endpoint is /openapi/scalar\nJSON specification endpoint is /openapi/json\nYAML specification endpoint is /openapi/yaml\nHealthcheck endpoint is /healthcheck")
   .option("--no-migration", "turn off auto-migration")
   .option("-p, --port <number>", "server listening port", "8080")
   .option("--openapi", "enable endpoint with YAML/JSON OpenAPI specification")
@@ -46,6 +47,7 @@ program
 program
   .command("openapi")
   .summary("run openapi endpoints only")
+  .description("Scalar endpoint is /openapi/scalar\nJSON specification endpoint is /openapi/json\nYAML specification endpoint is /openapi/yaml")
   .option("--no-scalar", "disable Scalar OpenAPI specification endpoint")
   .option("-p, --port <number>", "server listening port", "8080")
   .option("--healthcheck", "enable healthcheck endpoint")
@@ -68,7 +70,7 @@ const migrationCommand = program
 
 migrationCommand
   .command("up")
-  .summary("upgrade database to the latest migration")
+  .summary("upgrade database to the latest present migration")
   .option("-s, --schema <string>", "specify database schema for migration entries table", "public")
   .option("-n, --no-create", "disable auto-creation entries table")
   .option("-d, --directory <path>", "specify migrations directory", "./db/migrations")
@@ -98,7 +100,7 @@ migrationCommand
 
 migrationCommand
   .command("state")
-  .summary("shows current database state")
+  .summary("show current database state")
   .option("-s, --schema <string>", "specify database schema for migration entries table", "public")
   .action(async (opts) => {
     const client = new Client({ connectionString: config.DB_URL });
@@ -117,7 +119,7 @@ migrationCommand
 
 migrationCommand
   .command("log")
-  .summary("shows database topology change history")
+  .summary("show database topology change history")
   .option("-s, --schema <string>", "specify database schema for migration entries table", "public")
   .action(async (opts) => {
     const pool = new Pool({ connectionString: config.DB_URL });
@@ -141,12 +143,12 @@ migrationCommand
 
 migrationCommand
   .command("tidy")
-  .summary("clears database topology change history")
+  .summary("clear database topology change history leaving the latest entry")
   .option("-s, --schema <string>", "specify database schema for migration entries table", "public")
   .action(async (opts) => {
     const client = new Client({ connectionString: config.DB_URL });
     await client.connect();
-    const { rowCount } = await client.query(`DELETE FROM ${opts.schema}.schema_migrations WHERE operation_id NOT IN (SELECT operation_id FROM ${opts.schema}.schema_migrations ORDER BY operation_id DESC LIMIT 1);`);
+    const { rowCount } = await client.query(`DELETE FROM ${opts.schema}.${MIGRATIONS_TABLE} WHERE operation_id NOT IN (SELECT operation_id FROM ${opts.schema}.${MIGRATIONS_TABLE} ORDER BY operation_id DESC LIMIT 1);`);
     await client.end();
     console.log(`Removed ${rowCount} entries`);
   });

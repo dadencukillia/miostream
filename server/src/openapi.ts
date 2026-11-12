@@ -3,8 +3,10 @@ import Fastify, { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fasti
 import api from "./api/api.plugin";
 import cdn from "./cdn/cdn.plugin";
 import scalarPlugin from '@scalar/fastify-api-reference';
-import { joinUrls } from "@utils/urls";
 
+/**
+ * A Fastify plugin that generates OpenAPI specifications (JSON and YAML formats) for API and CDN modules.
+ */
 export const openapiJSONPlugin: FastifyPluginAsync = async (fastify, _opts) => {
   const fastifyInstance = Fastify();
   await fastifyInstance.register(fastifySwagger, {
@@ -52,6 +54,10 @@ export const openapiJSONPlugin: FastifyPluginAsync = async (fastify, _opts) => {
   });
 };
 
+/**
+ * A Fastify plugin that mounts the Scalar API Reference UI,
+ * linking it to the OpenAPI JSON specification endpoint.
+ */
 export const openapiUIPlugin: FastifyPluginAsync = async (fastify, _opts) => {
   await fastify.register(scalarPlugin, {
     routePrefix: "/scalar",

@@ -4,6 +4,7 @@ import type { Client, Pool } from "pg";
 
 const UPGRADE_PART_LINE = "-- migrate:up";
 const DOWNGRADE_PART_LINE = "-- migrate:down";
+export const MIGRATIONS_TABLE = "schema_migrations";
 
 async function pgWrapClient<T>(pg: Pool, callback: (client: Client) => Promise<T>, fallback?: (e: unknown) => void): Promise<T> {
   const client = await pg.connect();
@@ -199,7 +200,7 @@ export class Migrator {
    */
   public async ensureMigrationsTable() {
     await this.db.query(`
-      CREATE TABLE IF NOT EXISTS ${this.schema}.schema_migrations(
+      CREATE TABLE IF NOT EXISTS ${this.schema}.${MIGRATIONS_TABLE}(
         operation_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
         executed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
         from_migration BIGINT NOT NULL,
@@ -241,7 +242,7 @@ export class Migrator {
           );
 
           await pgWrapTransaction(client, async client => {
-            await client.query(`INSERT INTO ${this.schema}.schema_migrations(from_migration, to_migration) VALUES($1, $2);`, [currentMigrationStateSQL, migration.timestamp]);
+            await client.query(`INSERT INTO ${this.schema}.${MIGRATIONS_TABLE}(from_migration, to_migration) VALUES($1, $2);`, [currentMigrationStateSQL, migration.timestamp]);
             await client.query(migration.parts.up);
             currentMigrationState = migration.timestamp;
             console.log(`[Migrations] ${migration.timestamp} ✔`);
@@ -286,7 +287,7 @@ export class Migrator {
         const downMigrationContent = (await downMigration.parse()).down;
 
         await pgWrapTransaction(client, async client => {
-          await client.query(`INSERT INTO ${this.schema}.schema_migrations(from_migration, to_migration) VALUES($1, $2);`, [currentMigrationState, prevMigration]);
+          await client.query(`INSERT INTO ${this.schema}.${MIGRATIONS_TABLE}(from_migration, to_migration) VALUES($1, $2);`, [currentMigrationState, prevMigration]);
           await client.query(downMigrationContent);
           console.log(`[Migrations] rollback ${currentMigrationState} ✔`);
         }, () => console.error(`[Migrations] rollback ${currentMigrationState} ✘`));
@@ -296,10 +297,24 @@ export class Migrator {
     }, () => console.log("[Migrations] failed."));
   }
 
+  /**
+   * Retrieves a migration history record from the database with offset from the latest.
+   * 
+   * @param skip - The number of migration records to skip from the latest entry (used for pagination or history traversal).
+   * @returns A promise that resolves to an object containing the migration details (`id`, `executedAt`, `state`, and `type`), or `null` if no record is found.
+   */
   public async getMigration(skip: number = 0) {
     return Migrator.getMigration(this.db, this.schema, skip);
   }
 
+  /**
+   * Retrieves a migration history record from the database with offset from the latest.
+   * 
+   * @param db - The PostgreSQL connection pool or client used to execute the query.
+   * @param schema - The database schema where the migrations table resides (defaults to "public").
+   * @param skip - The number of migration records to skip from the latest entry (used for pagination or history traversal).
+   * @returns A promise that resolves to an object containing the migration details (`id`, `executedAt`, `state`, and `type`), or `null` if no record is found.
+   */
   public static async getMigration(db: Pool|Client, schema: string = "public", skip: number = 0): Promise<{
     id: number,
     executedAt: Date,
@@ -307,7 +322,7 @@ export class Migrator {
     type: "up"|"down"
   }|null> {
     const queryResult = await db.query(
-      `SELECT operation_id, executed_at, from_migration, to_migration FROM ${schema}.schema_migrations ORDER BY operation_id DESC LIMIT 1 OFFSET $1;`,
+      `SELECT operation_id, executed_at, from_migration, to_migration FROM ${schema}.${MIGRATIONS_TABLE} ORDER BY operation_id DESC LIMIT 1 OFFSET $1;`,
       [ skip ]
     );
 
