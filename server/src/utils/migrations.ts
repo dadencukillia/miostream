@@ -209,31 +209,12 @@ export class Migrator {
   }
 
   /**
-   * Retrieves the current migration timestamp state from the database.
-   * 
-   * @param db - Active PostgreSQL pool or client connection.
-   * @returns The latest applied migration timestamp, or `null` if no migrations have been executed.
-   */
-  public async getDatabaseMigrationState(db: Pool|Client): Promise<number|null> {
-    const queryResult = await db.query(
-      `SELECT to_migration FROM ${this.schema}.schema_migrations ORDER BY operation_id DESC LIMIT 1;`
-    );
-
-    if (queryResult.rows.length === 0) return null;
-    const lastMigrationEntry = queryResult.rows[0];
-
-    const toMigration = Number(lastMigrationEntry["to_migration"]);
-    if (toMigration === -1 || Number.isNaN(toMigration)) return null;
-    return toMigration;
-  }
-
-  /**
    * Executes all pending upward migrations sequentially within transactions, protected by an advisory lock.
    */
   public async up() {
     await pgWrapClient(this.db, async client => {
       await pgWrapLock(client, async client => {
-        let currentMigrationState = await this.getDatabaseMigrationState(client);
+        let currentMigrationState = (await Migrator.getMigration(client))?.state ?? null;
         const upMigrations = await Promise.all(
           this.migrationFiles
             .filter(migration => currentMigrationState === null || migration.timestamp > currentMigrationState)
@@ -280,7 +261,7 @@ export class Migrator {
   public async down() {
     await pgWrapClient(this.db, async client => {
       await pgWrapLock(client, async client => {
-        const currentMigrationState = await this.getDatabaseMigrationState(client);
+        let currentMigrationState = (await Migrator.getMigration(client))?.state ?? null;
         console.log("[Migrations] current state:", currentMigrationState);
 
         if (currentMigrationState === null) {
@@ -313,5 +294,32 @@ export class Migrator {
         console.log(`[Migrations] current state: ${prevMigration === -1 ? null : prevMigration}.`);
       });
     }, () => console.log("[Migrations] failed."));
+  }
+
+  public async getMigration(skip: number = 0) {
+    return Migrator.getMigration(this.db, this.schema, skip);
+  }
+
+  public static async getMigration(db: Pool|Client, schema: string = "public", skip: number = 0): Promise<{
+    state: number|null,
+    lastChanged: Date
+  }|null> {
+    const queryResult = await db.query(
+      `SELECT to_migration, executed_at FROM ${schema}.schema_migrations ORDER BY operation_id DESC LIMIT 1 OFFSET $1;`,
+      [ skip ]
+    );
+
+    if (queryResult.rows.length === 0) return null;
+    const migrationEntry = queryResult.rows[0];
+
+    let toMigration: number|null = Number(migrationEntry["to_migration"]);
+    if (toMigration === -1 || Number.isNaN(toMigration)) toMigration = null;
+
+    const executedAt = new Date(migrationEntry["executed_at"]);
+
+    return {
+      state: toMigration,
+      lastChanged: executedAt
+    };
   }
 }
