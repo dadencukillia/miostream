@@ -76,11 +76,11 @@ export async function updateListUnit(
 	}
 
 	const sql = `UPDATE public.anime_list_units SET ${fields.join(", ")} WHERE user_id = $1::uuid AND anime_id = $2::uuid RETURNING user_id, anime_id, watched_episodes, repeat_times, started_watching, list_unit_status, grade`;
-	const result = await db.query(sql, [userId, animeId, ...values]);
+	const result = await db.query({ text: sql, values: [userId, animeId, ...values], rowMode: "array" });
 	if (result.rows.length === 0) {
 		throw new ListNotFoundError("list unit not found");
 	}
-	const row = result.rows[0];
+	const row = result.rows[0] as any;
 	return {
 		userId: row[0],
 		animeId: row[1],
@@ -93,10 +93,7 @@ export async function updateListUnit(
 }
 
 export async function deleteListUnit(db: Pool, userId: string, animeId: string): Promise<void> {
-	const result = await db.query(
-		`DELETE FROM public.anime_list_units WHERE user_id = $1::uuid AND anime_id = $2::uuid`,
-		[userId, animeId],
-	);
+	const result = await db.query({ text: `DELETE FROM public.anime_list_units WHERE user_id = $1::uuid AND anime_id = $2::uuid`, values: [userId, animeId], rowMode: "array" });
 	if ((result as any).rowCount === 0) {
 		throw new ListNotFoundError("list unit not found");
 	}
