@@ -29,6 +29,7 @@ services:
 
   backend:
     image: ghcr.io/${GITHUB_REPO}/backend:${IMAGES_TAG:-latest}
+    command: serve
     environment:
       DB_PASS_FILE: /run/secrets/db_pass
       GOOGLE_CLIENT_SECRET_FILE: /run/secrets/google_client_secret

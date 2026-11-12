@@ -1,22 +1,27 @@
-import fastify from "fastify";
-import connector from "@utils/connector";
-import { PostgresConnection } from "@/connections/pg";
 import { beforeAll } from "bun:test";
+import { Migrator } from "@utils/migrations";
+import * as config from "@config";
+import { FastifyWebServer } from "@/webserver";
+import { PostgresConnection } from "@/connections/pg";
 
 // Migrates database before testing
 
 beforeAll(async () => {
-  const fastifyInstance = fastify({
-    logger: false,
-    pluginTimeout: 0,
-  });
+  const server = new FastifyWebServer({ modules: [] });
+  const fastify = server._pureFastifyInstance();
+  await server._fastifyRegisterConnections(fastify, [
+    PostgresConnection
+  ]);
+  await fastify.ready();
 
-  fastifyInstance.register(connector, {
-    connections: [PostgresConnection],
-    interval: 1_000,
-    retries: 3,
-  });
+  const migrator = new Migrator(
+    fastify.pg,
+    config.MIGRATIONS_DIRECTORY
+  );
+  await migrator.ensureMigrationsTable();
+  await migrator.up();
 
-  await fastifyInstance.ready();
-  await fastifyInstance.close();
+  await fastify.close();
+}, {
+  timeout: 0
 });

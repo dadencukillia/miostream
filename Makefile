@@ -39,7 +39,7 @@ dev_backend:
 	. ./apply_env.sh test dev && \
 	cd server && \
 	POSTGRES_HOST=localhost:5432 REDIS_HOST=localhost:6379 RUSTFS_HOST=localhost:9000 \
-	bun serve
+	bun backend serve
 
 dev_shell:
 	./sqlc version 1> /dev/null

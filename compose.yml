@@ -15,6 +15,7 @@ services:
   backend:
     image: ghcr.io/${GITHUB_REPO}/backend:${IMAGES_TAG:-latest}
     build: server
+    command: serve
     restart: always
     environment:
       DB_PASS_FILE: /run/secrets/db_pass

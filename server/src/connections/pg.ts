@@ -2,13 +2,6 @@ import { Pool } from "pg";
 import type { Connection } from "@utils/connector";
 import * as config from "@config";
 import assert from "node:assert";
-import { Migrator } from "@utils/migrations";
-
-async function migrateDB(db: Pool) {
-  const migrator = new Migrator(db, "./db/migrations");
-  await migrator.ensureMigrationsTable();
-  await migrator.up();
-}
 
 export const PostgresConnection: Connection<Pool> = {
   /**
@@ -42,8 +35,6 @@ export const PostgresConnection: Connection<Pool> = {
       await pool.end();
       assert(false);
     }
-
-    await migrateDB(pool);
 
     return pool;
   },
