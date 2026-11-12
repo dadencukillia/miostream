@@ -1,160 +1,140 @@
 import type { FastifyRequest, FastifyReply } from "fastify";
-import { UserInvalidError } from "./user.errors";
-import type {
-    UserIdParamDto,
-    UserLinkParamDto,
-    UserResponseDto,
-    UserLinkResponseDto,
-    UserLinkListResponseDto,
-    CreateUserDto,
-    UpdateUserProfileDto,
-    UpdateUserAvatarDto,
-    UpdateUserCustomizationDto,
-    UpdateUserPasswordDto,
-    UpdateUserStatusDto,
-    UpdateUserRoleDto,
-    CreateUserLinkDto,
-    UpdateUserLinkDto
-} from './user.schema';
+import { UserErrors } from "./user.errors";
+import * as dto from "./user.dto";
 import * as services from "./services/user.service";
 import * as avatarServices from "./services/avatar.service";
 import { isSafeHttpUrl } from "@utils/urls";
 import { isValidTimezone } from "@utils/timezones";
+import { isUuid, normalizeUuid } from "@utils/uuid";
+import { isReservedNickname } from "@utils/nickname";
 
 export const createUser = async (
-    request: FastifyRequest<{ Body: CreateUserDto }>,
-    reply: FastifyReply<{ Body: CreateUserDto; Reply: UserResponseDto }>
+    request: FastifyRequest<{ Body: dto.CreateUserRequestPayloadType }>,
+    reply: FastifyReply<{ Body: dto.CreateUserRequestPayloadType; Reply: dto.CreateUserReturnType }>
 ) => {
     // TODO(auth): take googleId/email from a verified Google ID token, not from body.
-    const { password, googleId, timezone } = request.body;
+    const { password, googleId, timezone, nickname } = request.body;
 
-    if (!password && !googleId) {
-        throw new UserInvalidError('Either password or googleId must be provided for registration');
-    }
-
-    if (timezone && !isValidTimezone(timezone)) {
-        throw new UserInvalidError(`Invalid IANA timezone: '${timezone}'`);
-    }
+    if (!password && !googleId) throw UserErrors.error("user-invalid");
+    if (timezone && !isValidTimezone(timezone)) throw UserErrors.error("user-invalid");
+    if (isUuid(nickname) || isReservedNickname(nickname)) throw UserErrors.error("user-invalid");
 
     const user = await services.createUser(request.server.pg, request.body);
     return reply.status(201).send(user);
 };
 
-export const getUserById = async (
-    request: FastifyRequest<{ Params: UserIdParamDto }>,
-    reply: FastifyReply<{ Params: UserIdParamDto; Reply: UserResponseDto }>
+export const getUser = async (
+    request: FastifyRequest<{ Params: dto.UserIdentifierRequestParamsType }>,
+    reply: FastifyReply<{ Params: dto.UserIdentifierRequestParamsType; Reply: dto.GetUserReturnType }>
 ) => {
-    const user = await services.getUserById(request.server.pg, request.params.userId);
-    return reply.status(200).send(user);
+    const { identifier } = request.params;
+
+    const user = isUuid(identifier)
+        ? await services.getUserById(request.server.pg, normalizeUuid(identifier)!)
+        : await services.getUserByNickname(request.server.pg, identifier);
+
+    const { email: _, ...publicUser } = user;
+    return reply.status(200).send(publicUser);
 };
 
 export const deleteUser = async (
-    request: FastifyRequest<{ Params: UserIdParamDto }>,
-    reply: FastifyReply<{ Params: UserIdParamDto; Reply: undefined }>
+    request: FastifyRequest<{}>,
+    reply: FastifyReply<{ Reply: dto.DeleteUserReturnType }>
 ) => {
-    // TODO(auth): revoke user sessions after deletion.
-    // TODO(admin): forbid deleting the last admin.
+    await services.deleteUserById(request.server.pg, request.auth!.userId);
+    return reply.status(204).send(null);
+};
+
+export const deleteUserById = async (
+    request: FastifyRequest<{ Params: dto.UserIdRequestParamsType }>,
+    reply: FastifyReply<{ Params: dto.UserIdRequestParamsType; Reply: dto.DeleteUserByIdReturnType }>
+) => {
     await services.deleteUserById(request.server.pg, request.params.userId);
-    return reply.status(204).send();
+    return reply.status(204).send(null);
 };
 
 export const updateUserProfile = async (
-    request: FastifyRequest<{ Params: UserIdParamDto; Body: UpdateUserProfileDto }>,
-    reply: FastifyReply<{ Params: UserIdParamDto; Body: UpdateUserProfileDto; Reply: UserResponseDto }>
+    request: FastifyRequest<{ Body: dto.UpdateUserProfileRequestPayloadType }>,
+    reply: FastifyReply<{ Body: dto.UpdateUserProfileRequestPayloadType; Reply: dto.UpdateUserProfileReturnType }>
 ) => {
     const { timezone, nickname, fullName } = request.body;
 
-    if (!isValidTimezone(timezone)) {
-        throw new UserInvalidError(`Invalid IANA timezone: '${timezone}'`);
-    }
-
-    if (nickname.trim().length === 0 || fullName.trim().length === 0) {
-        throw new UserInvalidError('Nickname and full name cannot consist only of whitespace');
-    }
+    if (!isValidTimezone(timezone)) throw UserErrors.error("user-invalid");
+    if (nickname.trim().length === 0 || fullName.trim().length === 0) throw UserErrors.error("user-invalid");
+    if (isUuid(nickname) || isReservedNickname(nickname)) throw UserErrors.error("user-invalid");
 
     const user = await services.updateUserProfile(
         request.server.pg,
-        request.params.userId,
+        request.auth!.userId,
         request.body
     );
     return reply.status(200).send(user);
 };
 
 export const updateUserAvatar = async (
-    request: FastifyRequest<{ Params: UserIdParamDto; Body: UpdateUserAvatarDto }>,
-    reply: FastifyReply<{ Params: UserIdParamDto; Body: UpdateUserAvatarDto; Reply: UserResponseDto }>
+    request: FastifyRequest<{ Body: dto.UpdateUserAvatarRequestPayloadType }>,
+    reply: FastifyReply<{ Body: dto.UpdateUserAvatarRequestPayloadType; Reply: dto.UpdateUserAvatarReturnType }>
 ) => {
     const user = await avatarServices.updateUserAvatarImage(
-        request.server.s3, request.server.pg,
+        request.server.s3,
+        request.server.pg,
         request.log,
-        request.params.userId,
+        request.auth!.userId,
         Buffer.from(request.body, "base64")
     );
     return reply.status(200).send(user);
 };
 
 export const deleteUserAvatar = async (
-    request: FastifyRequest<{ Params: UserIdParamDto; Body: UpdateUserAvatarDto }>,
-    reply: FastifyReply<{ Params: UserIdParamDto; Body: UpdateUserAvatarDto; Reply: UserResponseDto }>
+    request: FastifyRequest<{}>,
+    reply: FastifyReply<{ Reply: dto.DeleteUserAvatarReturnType }>
 ) => {
-    const user = await avatarServices.resetUserAvatar(
-        request.server.s3, request.server.pg,
+    await avatarServices.resetUserAvatar(
+        request.server.s3,
+        request.server.pg,
         request.log,
-        request.params.userId
+        request.auth!.userId
     );
-    return reply.status(200).send(user);
+    return reply.status(204).send(null);
 };
 
 export const updateUserCustomization = async (
-    request: FastifyRequest<{ Params: UserIdParamDto; Body: UpdateUserCustomizationDto }>,
-    reply: FastifyReply<{ Params: UserIdParamDto; Body: UpdateUserCustomizationDto; Reply: UserResponseDto }>
+    request: FastifyRequest<{ Body: dto.UpdateUserCustomizationRequestPayloadType }>,
+    reply: FastifyReply<{ Body: dto.UpdateUserCustomizationRequestPayloadType; Reply: dto.UpdateUserCustomizationReturnType }>
 ) => {
     const { profileFrameUrl, profileBackgroundUrl } = request.body;
 
-    if (profileFrameUrl === undefined && profileBackgroundUrl === undefined) {
-        throw new UserInvalidError('At least one customization field must be specified');
-    }
-
-    if (profileFrameUrl && !isSafeHttpUrl(profileFrameUrl)) {
-        throw new UserInvalidError('Profile frame URL must use http or https protocol');
-    }
-
-    if (profileBackgroundUrl && !isSafeHttpUrl(profileBackgroundUrl)) {
-        throw new UserInvalidError('Profile background URL must use http or https protocol');
-    }
+    if (profileFrameUrl === undefined && profileBackgroundUrl === undefined) throw UserErrors.error("user-invalid");
+    if (profileFrameUrl && !isSafeHttpUrl(profileFrameUrl)) throw UserErrors.error("user-invalid");
+    if (profileBackgroundUrl && !isSafeHttpUrl(profileBackgroundUrl)) throw UserErrors.error("user-invalid");
 
     const user = await services.updateUserCustomization(
         request.server.pg,
-        request.params.userId,
+        request.auth!.userId,
         request.body
     );
     return reply.status(200).send(user);
 };
 
 export const updateUserPassword = async (
-    request: FastifyRequest<{ Params: UserIdParamDto; Body: UpdateUserPasswordDto }>,
-    reply: FastifyReply<{ Params: UserIdParamDto; Body: UpdateUserPasswordDto; Reply: undefined }>
+    request: FastifyRequest<{ Body: dto.UpdateUserPasswordRequestPayloadType }>,
+    reply: FastifyReply<{ Body: dto.UpdateUserPasswordRequestPayloadType; Reply: dto.UpdateUserPasswordReturnType }>
 ) => {
     const { oldPassword, newPassword } = request.body;
-    // TODO(auth): revoke all other sessions/tokens after password change.
-
-    if (oldPassword === newPassword) {
-        throw new UserInvalidError('New password must be different from the old password');
-    }
+    if (oldPassword === newPassword) throw UserErrors.error("user-invalid");
 
     await services.updateUserPassword(
         request.server.pg,
-        request.params.userId,
+        request.auth!.userId,
         request.body
     );
-    return reply.status(204).send();
+    return reply.status(204).send(null);
 };
 
 export const updateUserStatus = async (
-    request: FastifyRequest<{ Params: UserIdParamDto; Body: UpdateUserStatusDto }>,
-    reply: FastifyReply<{ Params: UserIdParamDto; Body: UpdateUserStatusDto; Reply: UserResponseDto }>
+    request: FastifyRequest<{ Params: dto.UserIdRequestParamsType; Body: dto.UpdateUserStatusRequestPayloadType }>,
+    reply: FastifyReply<{ Params: dto.UserIdRequestParamsType; Body: dto.UpdateUserStatusRequestPayloadType; Reply: dto.UpdateUserStatusReturnType }>
 ) => {
-    // TODO(admin): forbid self-ban; revoke sessions on ban/deactivation;
     const user = await services.updateUserStatus(
         request.server.pg,
         request.params.userId,
@@ -164,10 +144,9 @@ export const updateUserStatus = async (
 };
 
 export const updateUserRole = async (
-    request: FastifyRequest<{ Params: UserIdParamDto; Body: UpdateUserRoleDto }>,
-    reply: FastifyReply<{ Params: UserIdParamDto; Body: UpdateUserRoleDto; Reply: UserResponseDto }>
+    request: FastifyRequest<{ Params: dto.UserIdRequestParamsType; Body: dto.UpdateUserRoleRequestPayloadType }>,
+    reply: FastifyReply<{ Params: dto.UserIdRequestParamsType; Body: dto.UpdateUserRoleRequestPayloadType; Reply: dto.UpdateUserRoleReturnType }>
 ) => {
-    // TODO(admin): forbid self-demotion and removing the last admin;
     const user = await services.updateUserRole(
         request.server.pg,
         request.params.userId,
@@ -177,44 +156,48 @@ export const updateUserRole = async (
 };
 
 export const createUserLink = async (
-    request: FastifyRequest<{ Params: UserIdParamDto; Body: CreateUserLinkDto }>,
-    reply: FastifyReply<{ Params: UserIdParamDto; Body: CreateUserLinkDto; Reply: UserLinkResponseDto }>
+    request: FastifyRequest<{ Body: dto.CreateUserLinkRequestPayloadType }>,
+    reply: FastifyReply<{ Body: dto.CreateUserLinkRequestPayloadType; Reply: dto.CreateUserLinkReturnType }>
 ) => {
     const { userLinkUrl } = request.body;
 
-    if (!isSafeHttpUrl(userLinkUrl)) {
-        throw new UserInvalidError('Link URL must use http or https protocol');
-    }
+    if (!isSafeHttpUrl(userLinkUrl)) throw UserErrors.error("user-invalid");
 
     const link = await services.createUserLink(
         request.server.pg,
-        request.params.userId,
+        request.auth!.userId,
         userLinkUrl
     );
     return reply.status(201).send(link);
 };
 
 export const listUserLinks = async (
-    request: FastifyRequest<{ Params: UserIdParamDto }>,
-    reply: FastifyReply<{ Params: UserIdParamDto; Reply: UserLinkListResponseDto }>
+    request: FastifyRequest<{}>,
+    reply: FastifyReply<{ Reply: dto.ListUserLinksReturnType }>
+) => {
+    const links = await services.listUserLinksByUserId(request.server.pg, request.auth!.userId);
+    return reply.status(200).send(links);
+};
+
+export const listUserLinksByUserId = async (
+    request: FastifyRequest<{ Params: dto.UserIdRequestParamsType }>,
+    reply: FastifyReply<{ Params: dto.UserIdRequestParamsType; Reply: dto.ListUserLinksReturnType }>
 ) => {
     const links = await services.listUserLinksByUserId(request.server.pg, request.params.userId);
     return reply.status(200).send(links);
 };
 
 export const updateUserLink = async (
-    request: FastifyRequest<{ Params: UserLinkParamDto; Body: UpdateUserLinkDto }>,
-    reply: FastifyReply<{ Params: UserLinkParamDto; Body: UpdateUserLinkDto; Reply: UserLinkResponseDto }>
+    request: FastifyRequest<{ Params: dto.UserLinkIdRequestParamsType; Body: dto.UpdateUserLinkRequestPayloadType }>,
+    reply: FastifyReply<{ Params: dto.UserLinkIdRequestParamsType; Body: dto.UpdateUserLinkRequestPayloadType; Reply: dto.UpdateUserLinkReturnType }>
 ) => {
     const { userLinkUrl } = request.body;
 
-    if (!isSafeHttpUrl(userLinkUrl)) {
-        throw new UserInvalidError('Link URL must use http or https protocol');
-    }
+    if (!isSafeHttpUrl(userLinkUrl)) throw UserErrors.error("user-invalid");
 
     const link = await services.updateUserLink(
         request.server.pg,
-        request.params.userId,
+        request.auth!.userId,
         request.params.userLinkId,
         userLinkUrl
     );
@@ -222,13 +205,13 @@ export const updateUserLink = async (
 };
 
 export const deleteUserLink = async (
-    request: FastifyRequest<{ Params: UserLinkParamDto }>,
-    reply: FastifyReply<{ Params: UserLinkParamDto; Reply: undefined }>
+    request: FastifyRequest<{ Params: dto.UserLinkIdRequestParamsType }>,
+    reply: FastifyReply<{ Params: dto.UserLinkIdRequestParamsType; Reply: dto.DeleteUserLinkReturnType }>
 ) => {
     await services.deleteUserLinkById(
         request.server.pg,
-        request.params.userId,
+        request.auth!.userId,
         request.params.userLinkId
     );
-    return reply.status(204).send();
+    return reply.status(204).send(null);
 };

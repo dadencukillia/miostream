@@ -1,177 +1,198 @@
 import connector from "@utils/connector";
 import { S3Connection } from "@/connections/s3";
 import { PostgresConnection } from "@/connections/pg";
-import { afterAll, beforeAll, describe, expect } from "bun:test";
-import Fastify, { FastifyInstance } from "fastify";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import Fastify, { type FastifyInstance } from "fastify";
 import path from "node:path";
 import userPlugin from "@/api/user/user.plugin";
 import cdnPlugin from "@/cdn/cdn.plugin";
-import test from "node:test";
+import { grantAuthMiddleware } from "@/api/auth/auth.middleware";
 
 const avatarPicture = await Bun.file(path.join(import.meta.dir, "avatar.png")).bytes();
 
 describe("user avatars", async () => {
-  let fastify: FastifyInstance;
-  let userId: string = "";
+	let fastify: FastifyInstance;
+	let userId: string = "";
+	let authUserId: string = "";
 
-  beforeAll(async () => {
-    fastify = Fastify({
-      logger: true,
-      pluginTimeout: 0,
-      ajv: {
-        customOptions: {
-          unicodeRegExp: true,
-          removeAdditional: false,
-        }
-      },
-    });
+	beforeAll(async () => {
+		fastify = Fastify({
+			logger: true,
+			pluginTimeout: 0,
+			ajv: {
+				customOptions: {
+					unicodeRegExp: true,
+					removeAdditional: false,
+				}
+			},
+		});
 
-    await fastify.register(connector, {
-      retries: 3,
-      interval: 15 * 1000,
-      connections: [
-        S3Connection,
-        PostgresConnection,
-      ],
-    });
+		await fastify.register(connector, {
+			retries: 3,
+			interval: 15 * 1000,
+			connections: [
+				S3Connection,
+				PostgresConnection,
+			],
+		});
 
-    await fastify.register(userPlugin, { prefix: "/users" });
-    await fastify.register(cdnPlugin, { prefix: "/cdn" });
+		await fastify.register(userPlugin, { prefix: "/user" });
+		await fastify.register(cdnPlugin, { prefix: "/cdn" });
 
-    await fastify.pg.query("DELETE FROM public.users;");
-  });
+		fastify.get("/_test_auth", { preHandler: grantAuthMiddleware() as any }, async (req) => ({
+			userId: req.auth?.userId,
+		}));
+		const authResponse = await fastify.inject({
+			path: "/_test_auth",
+			method: "GET",
+			headers: {
+				authorization: "Bearer user"
+			}
+		});
+		authUserId = authResponse.json<{ userId: string }>().userId;
 
-  afterAll(async () => {
-    await fastify.pg.query("DELETE FROM public.users;");
-    await fastify.close();
-  });
+		await fastify.pg.query("DELETE FROM public.users;");
+	});
 
-  test("create user", async () => {
-    const userData = {
-      nickname: "tester",
-      fullName: "Jack Jackson",
-      email: "test@miostream.dev"
-    };
-    const response = await fastify.inject({
-      path: "/users",
-      method: "POST",
-      payload: {
-        ...userData,
-        password: "12345678"
-      },
-      headers: {
-        "content-type": "application/json"
-      }
-    });
-    const responsePayload = response.json<{ userId: string, nickname: string, fullName: string, email: string }>();
+	afterAll(async () => {
+		await fastify.pg.query("DELETE FROM public.users;");
+		await fastify.close();
+	});
 
-    userId = responsePayload.userId;
+	test("create user", async () => {
+		const userData = {
+			nickname: "tester",
+			fullName: "Jack Jackson",
+			email: "test@miostream.dev"
+		};
+		const response = await fastify.inject({
+			path: "/user",
+			method: "POST",
+			payload: {
+				...userData,
+				password: "12345678"
+			},
+			headers: {
+				"content-type": "application/json"
+			}
+		});
+		const responsePayload = response.json<{ userId: string, nickname: string, fullName: string, email: string }>();
 
-    expect(responsePayload).toMatchObject({
-      ...userData,
-      avatarId: null
-    });
-  });
+		await fastify.pg.query("UPDATE public.users SET user_id = $1 WHERE user_id = $2;", [authUserId, responsePayload.userId]);
+		userId = authUserId;
 
-  test("attach avatar to user", async () => {
-    const response = await fastify.inject({
-      path: `/users/${userId}/avatar`,
-      method: "PUT",
-      payload: JSON.stringify(avatarPicture.toBase64()),
-      headers: {
-        "content-type": "application/json"
-      }
-    });
+		expect(responsePayload).toMatchObject({
+			...userData,
+			avatarId: null
+		});
+	});
 
-    const responsePayload = response.json<{ userId: string, avatarId: string }>();
-    expect(responsePayload.userId).toBe(userId);
-    expect(responsePayload.avatarId).toBeString();
-    const firstAvatarId = responsePayload.avatarId;
+	test("attach avatar to user", async () => {
+		const response = await fastify.inject({
+			path: "/user/avatar",
+			method: "PUT",
+			payload: JSON.stringify(avatarPicture.toBase64()),
+			headers: {
+				"content-type": "application/json",
+				authorization: "Bearer user"
+			}
+		});
 
-    {
-      const response = await fastify.inject({
-        path: `/users/${userId}/avatar`,
-        method: "PUT",
-        payload: JSON.stringify(avatarPicture.toBase64()),
-        headers: {
-          "content-type": "application/json"
-        }
-      });
+		const responsePayload = response.json<{ userId: string, avatarId: string }>();
+		expect(responsePayload.userId).toBe(userId);
+		expect(responsePayload.avatarId).toBeString();
+		const firstAvatarId = responsePayload.avatarId;
 
-      const responsePayload = response.json<{ userId: string, avatarId: string }>();
-      expect(responsePayload.userId).toBe(userId);
-      expect(responsePayload.avatarId).toBeString();
-      expect(responsePayload.avatarId).not.toBe(firstAvatarId);
-    }
-  });
+		{
+			const response = await fastify.inject({
+				path: "/user/avatar",
+				method: "PUT",
+				payload: JSON.stringify(avatarPicture.toBase64()),
+				headers: {
+					"content-type": "application/json",
+					authorization: "Bearer user"
+				}
+			});
 
-  test("reset user avatar", async () => {
-    // Reset first, must be success
+			const responsePayload = response.json<{ userId: string, avatarId: string }>();
+			expect(responsePayload.userId).toBe(userId);
+			expect(responsePayload.avatarId).toBeString();
+			expect(responsePayload.avatarId).not.toBe(firstAvatarId);
+		}
+	});
 
-    {
-      const response = await fastify.inject({
-        path: `/users/${userId}/avatar`,
-        method: "DELETE",
-      });
+	test("reset user avatar", async () => {
+		// Reset first, must be success
 
-      const responsePayload = response.json<{ userId: string, avatarId: string }>();
-      expect(responsePayload.userId).toBe(userId);
-      expect(responsePayload.avatarId).toBeNull();
-      expect(response.statusCode).toEqual(200);
-    }
+		{
+			const response = await fastify.inject({
+				path: "/user/avatar",
+				method: "DELETE",
+				headers: {
+					authorization: "Bearer user"
+				}
+			});
 
-    // Reset second time, must return error
-    // something like "there already no avatar"
+			expect(response.statusCode).toEqual(204);
+		}
 
-    {
-      const response = await fastify.inject({
-        path: `/users/${userId}/avatar`,
-        method: "DELETE",
-      });
-      expect(response.statusCode).toEqual(409);
-    }
+		// Reset second time, must return error
+		// something like "there already no avatar"
 
-    // Put a new avatar
+		{
+			const response = await fastify.inject({
+				path: "/user/avatar",
+				method: "DELETE",
+				headers: {
+					authorization: "Bearer user"
+				}
+			});
+			expect(response.statusCode).toEqual(409);
+		}
 
-    const response = await fastify.inject({
-      path: `/users/${userId}/avatar`,
-      method: "PUT",
-      payload: JSON.stringify(avatarPicture.toBase64()),
-      headers: {
-        "content-type": "application/json"
-      }
-    });
-    const responsePayload = response.json<{ userId: string, avatarId: string }>();
-    expect(responsePayload.userId).toBe(userId);
-    expect(responsePayload.avatarId).toBeString();
+		// Put a new avatar
 
-    // Check CDN image availability
+		const response = await fastify.inject({
+			path: "/user/avatar",
+			method: "PUT",
+			payload: JSON.stringify(avatarPicture.toBase64()),
+			headers: {
+				"content-type": "application/json",
+				authorization: "Bearer user"
+			}
+		});
+		const responsePayload = response.json<{ userId: string, avatarId: string }>();
+		expect(responsePayload.userId).toBe(userId);
+		expect(responsePayload.avatarId).toBeString();
 
-    const avatarId = responsePayload.avatarId;
-    const avatarImageResponse = await fastify.inject({
-      path: `/cdn/avatar/${avatarId}.webp`,
-      method: "GET"
-    });
-    expect(avatarImageResponse.statusCode).toEqual(200);
-    expect(avatarImageResponse.headers["content-type"]).toEqual("image/webp");
+		// Check CDN image availability
 
-    // Reset and recheck availability
+		const avatarId = responsePayload.avatarId;
+		const avatarImageResponse = await fastify.inject({
+			path: `/cdn/avatar/${avatarId}.webp`,
+			method: "GET"
+		});
+		expect(avatarImageResponse.statusCode).toEqual(200);
+		expect(avatarImageResponse.headers["content-type"]).toEqual("image/webp");
 
-    {
-      const response = await fastify.inject({
-        path: `/users/${userId}/avatar`,
-        method: "DELETE",
-      });
+		// Reset and recheck availability
 
-      const responsePayload = response.json<{ userId: string, avatarId: string }>();
-      expect(responsePayload.userId).toBe(userId);
-      expect(responsePayload.avatarId).toBeNull();
+		{
+			const response = await fastify.inject({
+				path: "/user/avatar",
+				method: "DELETE",
+				headers: {
+					authorization: "Bearer user"
+				}
+			});
 
-      const avatarImageResponse = await fastify.inject({
-        path: `/cdn/avatar/${avatarId}.webp`,
-        method: "GET"
-      });
-      expect(avatarImageResponse.statusCode).toEqual(404);
-    }
-  });
+			expect(response.statusCode).toEqual(204);
+
+			const avatarImageResponse = await fastify.inject({
+				path: `/cdn/avatar/${avatarId}.webp`,
+				method: "GET"
+			});
+			expect(avatarImageResponse.statusCode).toEqual(404);
+		}
+	});
 });

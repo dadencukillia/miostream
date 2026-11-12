@@ -1,69 +1,40 @@
-import type { FastifyPluginAsync, FastifyError, FastifyInstance, FastifyPluginOptions } from 'fastify';
-import { UserError } from './user.errors';
-import * as schemas from './user.schema';
-import * as controllers from './user.controller';
+import type { FastifyPluginAsync, FastifyInstance, FastifyPluginOptions, FastifyRequest, FastifyReply } from "fastify";
+import * as schemas from "./user.schema";
+import * as controllers from "./user.controller";
+import { UserErrors, AvatarErrors } from "./user.errors";
+import { grantAuthMiddleware } from "@/api/auth/auth.middleware";
+
+type AuthHook = (req: FastifyRequest<any>, reply: FastifyReply<any>) => Promise<void | unknown>;
+
+const requireAdmin = grantAuthMiddleware({ userHasRole: ["admin"] }) as AuthHook;
+const requireAuth = grantAuthMiddleware() as AuthHook;
 
 const modulePlugin: FastifyPluginAsync = async (fastify: FastifyInstance, _opts: FastifyPluginOptions) => {
-    // TODO(auth): add authentication hook (401) and reject banned/deactivated users.
-    // TODO(auth): add module augmentation for request.user ({ id, role, status }).
+    UserErrors.setupErrorHandler(fastify, [UserErrors, AvatarErrors], true, true);
 
-    fastify.setErrorHandler<FastifyError>((error, request, reply) => {
-        if (reply.sent) return;
+    // Public routes
+    fastify.post("/", { schema: schemas.CreateUserSchema }, controllers.createUser);
+    fastify.get("/:identifier", { schema: schemas.GetUserSchema }, controllers.getUser);
+    fastify.get("/:userId/links", { schema: schemas.ListUserLinksByUserIdSchema }, controllers.listUserLinksByUserId);
+    
+    // Authenticated user routes
+    fastify.patch("/profile", { schema: schemas.UpdateUserProfileSchema, preHandler: requireAuth }, controllers.updateUserProfile);
+    fastify.put("/avatar", { schema: schemas.UpdateUserAvatarSchema, preHandler: requireAuth }, controllers.updateUserAvatar);
+    fastify.delete("/avatar", { schema: schemas.DeleteUserAvatarSchema, preHandler: requireAuth }, controllers.deleteUserAvatar);
+    fastify.patch("/customization", { schema: schemas.UpdateUserCustomizationSchema, preHandler: requireAuth }, controllers.updateUserCustomization);
+    fastify.patch("/password", { schema: schemas.UpdateUserPasswordSchema, preHandler: requireAuth }, controllers.updateUserPassword);
+    fastify.delete("/", { schema: schemas.DeleteUserSchema, preHandler: requireAuth }, controllers.deleteUser);
 
-        if (error.validation) {
-            return reply.status(400).send({
-                ok: false,
-                message: error.message
-            });
-        }
+    // Authenticated user links routes
+    fastify.post("/links", { schema: schemas.CreateUserLinkSchema, preHandler: requireAuth }, controllers.createUserLink);
+    fastify.get("/links", { schema: schemas.ListUserLinksSchema, preHandler: requireAuth }, controllers.listUserLinks);
+    fastify.put("/links/:userLinkId", { schema: schemas.UpdateUserLinkSchema, preHandler: requireAuth }, controllers.updateUserLink);
+    fastify.delete("/links/:userLinkId", { schema: schemas.DeleteUserLinkSchema, preHandler: requireAuth }, controllers.deleteUserLink);
 
-        if (error instanceof UserError) {
-            if (error.status >= 500) {
-                request.log.error({ err: error }, error.message);
-            }
-            return reply.status(error.status).send({ ok: false, message: error.message });
-        }
-
-        if (error.statusCode && error.statusCode >= 400 && !Number.isNaN(error.statusCode)) {
-            return reply.status(error.statusCode).send({ ok: false, message: error.message });
-        }
-
-        request.log.error({ err: error }, 'Unhandled server error');
-        return reply.status(500).send({
-            ok: false,
-            message: 'Unexpected error'
-        });
-    });
-
-    // TODO(auth): public registration; add rate limit.
-    fastify.post('/', { schema: schemas.createUserRouteSchema }, controllers.createUser);
-
-    // TODO(auth): self or admin; decide whether profile is public (then split response schema).
-    fastify.get('/:userId', { schema: schemas.getUserByIdRouteSchema }, controllers.getUserById);
-
-    // TODO(auth): self only for profile, avatar, customization and password.
-    // TODO(auth): rate limit password route.
-    fastify.patch('/:userId/profile', { schema: schemas.updateUserProfileRouteSchema }, controllers.updateUserProfile);
-
-    fastify.put('/:userId/avatar', { schema: schemas.updateUserAvatarRouteSchema }, controllers.updateUserAvatar);
-    fastify.delete('/:userId/avatar', { schema: schemas.deleteUserAvatarSchema }, controllers.deleteUserAvatar);
-
-    fastify.patch('/:userId/customization', { schema: schemas.updateUserCustomizationRouteSchema }, controllers.updateUserCustomization);
-    fastify.patch('/:userId/password', { schema: schemas.updateUserPasswordRouteSchema }, controllers.updateUserPassword);
-    // TODO(admin): admin only for status and role.
-    fastify.patch('/:userId/status', { schema: schemas.updateUserStatusRouteSchema }, controllers.updateUserStatus);
-    fastify.patch('/:userId/role', { schema: schemas.updateUserRoleRouteSchema }, controllers.updateUserRole);
-
-    // TODO(auth): self or admin.
-    fastify.delete('/:userId', { schema: schemas.deleteUserRouteSchema }, controllers.deleteUser);
-
-    // TODO(auth): self only for create/update/delete; GET depends on profile visibility.
-    fastify.post('/:userId/links', { schema: schemas.createUserLinkRouteSchema }, controllers.createUserLink);
-    fastify.get('/:userId/links', { schema: schemas.listUserLinksRouteSchema }, controllers.listUserLinks);
-    fastify.put('/:userId/links/:userLinkId', { schema: schemas.updateUserLinkRouteSchema }, controllers.updateUserLink);
-    fastify.delete('/:userId/links/:userLinkId', { schema: schemas.deleteUserLinkRouteSchema }, controllers.deleteUserLink);
-
-    // TODO(admin): add admin-only GET / (user list) with pagination and filters.
+    // Admin routes
+    fastify.patch("/:userId/status", { schema: schemas.UpdateUserStatusSchema, preHandler: requireAdmin }, controllers.updateUserStatus);
+    fastify.patch("/:userId/role", { schema: schemas.UpdateUserRoleSchema, preHandler: requireAdmin }, controllers.updateUserRole);
+    fastify.delete("/:userId", { schema: schemas.DeleteUserByIdSchema, preHandler: requireAdmin }, controllers.deleteUserById);
 };
 
 export default modulePlugin;
