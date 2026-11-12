@@ -17,6 +17,16 @@ const modulePlugin: FastifyPluginAsync = async (fastify: FastifyInstance, _opts:
 		schema: schemas.CreateListUnitSchema,
 		preHandler: grantAuthMiddleware() as any,
 	}, controllers.createListUnit);
+
+	fastify.patch("/:animeId", {
+		schema: schemas.UpdateListUnitSchema,
+		preHandler: grantAuthMiddleware() as any,
+	}, controllers.updateListUnit);
+
+	fastify.delete("/:animeId", {
+		schema: schemas.DeleteListUnitSchema,
+		preHandler: grantAuthMiddleware() as any,
+	}, controllers.deleteListUnit);
 };
 
 export default modulePlugin;

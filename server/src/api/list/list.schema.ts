@@ -50,3 +50,39 @@ export const CreateListUnitSchema = {
 		500: ErrorResponse,
 	},
 } as const;
+export const UpdateListUnitRequestPayload = Type.Object(
+	{
+		watchedEpisodes: Type.Optional(Type.Integer({ minimum: 0 })),
+		repeatTimes: Type.Optional(Type.Integer({ minimum: 0 })),
+		startedWatching: Type.Optional(Type.String({ format: "date" })),
+		listUnitStatus: Type.Optional(StringEnum(LIST_UNIT_STATUSES)),
+		grade: Type.Optional(Type.Union([Type.Integer({ minimum: -5, maximum: 5 }), Type.Null()])),
+	},
+	{ additionalProperties: false },
+);
+
+export const UpdateListUnitSchema = {
+	tags: ["list"],
+	summary: "Update a list unit",
+	description: "Updates fields of a list unit for the authenticated user. Omitted fields are unchanged.",
+	params: Type.Object({ animeId: Type.String({ format: "uuid" }) }, { additionalProperties: false }),
+	body: UpdateListUnitRequestPayload,
+	response: {
+		200: ListUnitResponse,
+		400: ErrorResponse,
+		404: ErrorResponse,
+		500: ErrorResponse,
+	},
+} as const;
+
+export const DeleteListUnitSchema = {
+	tags: ["list"],
+	summary: "Delete a list unit",
+	description: "Permanently removes a list unit for the authenticated user.",
+	params: Type.Object({ animeId: Type.String({ format: "uuid" }) }, { additionalProperties: false }),
+	response: {
+		204: Type.Null(),
+		404: ErrorResponse,
+		500: ErrorResponse,
+	},
+} as const;

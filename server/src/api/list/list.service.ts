@@ -1,7 +1,7 @@
 import type { Pool } from "pg";
 import { createListUnit as createListUnitQuery } from "@/sqlc/list_units_sql";
-import type { CreateListUnitRequestPayloadType, ListUnitResponseType } from "./list.dto";
-import { ListAlreadyExistsError, ListInvalidError } from "./list.errors";
+import type { CreateListUnitRequestPayloadType, ListUnitResponseType, UpdateListUnitRequestPayloadType } from "./list.dto";
+import { ListAlreadyExistsError, ListInvalidError, ListNotFoundError } from "./list.errors";
 
 export async function createListUnit(
 	db: Pool,
@@ -38,5 +38,66 @@ export async function createListUnit(
 			throw new ListAlreadyExistsError("list unit already exists");
 		}
 		throw new ListInvalidError("invalid list unit data");
+	}
+}
+export async function updateListUnit(
+	db: Pool,
+	userId: string,
+	animeId: string,
+	input: UpdateListUnitRequestPayloadType,
+): Promise<ListUnitResponseType> {
+	const fields: string[] = [];
+	const values: any[] = [];
+	let idx = 3; // $1 = userId, $2 = animeId
+
+	if (input.watchedEpisodes !== undefined) {
+		fields.push(`watched_episodes = $${idx++}::int`);
+		values.push(input.watchedEpisodes);
+	}
+	if (input.repeatTimes !== undefined) {
+		fields.push(`repeat_times = $${idx++}::int`);
+		values.push(input.repeatTimes);
+	}
+	if (input.startedWatching !== undefined) {
+		fields.push(`started_watching = $${idx++}::date`);
+		values.push(input.startedWatching);
+	}
+	if (input.listUnitStatus !== undefined) {
+		fields.push(`list_unit_status = $${idx++}::anime_list_unit_status_enum`);
+		values.push(input.listUnitStatus);
+	}
+	if (input.grade !== undefined) {
+		fields.push(`grade = $${idx++}::smallint`);
+		values.push(input.grade);
+	}
+
+	if (fields.length === 0) {
+		throw new ListInvalidError("invalid list unit data");
+	}
+
+	const sql = `UPDATE public.anime_list_units SET ${fields.join(", ")} WHERE user_id = $1::uuid AND anime_id = $2::uuid RETURNING user_id, anime_id, watched_episodes, repeat_times, started_watching, list_unit_status, grade`;
+	const result = await db.query(sql, [userId, animeId, ...values]);
+	if (result.rows.length === 0) {
+		throw new ListNotFoundError("list unit not found");
+	}
+	const row = result.rows[0];
+	return {
+		userId: row[0],
+		animeId: row[1],
+		watchedEpisodes: row[2],
+		repeatTimes: row[3],
+		startedWatching: row[4],
+		listUnitStatus: row[5] as "finished" | "watching" | "delayed" | "dropped",
+		grade: row[6],
+	};
+}
+
+export async function deleteListUnit(db: Pool, userId: string, animeId: string): Promise<void> {
+	const result = await db.query(
+		`DELETE FROM public.anime_list_units WHERE user_id = $1::uuid AND anime_id = $2::uuid`,
+		[userId, animeId],
+	);
+	if ((result as any).rowCount === 0) {
+		throw new ListNotFoundError("list unit not found");
 	}
 }
