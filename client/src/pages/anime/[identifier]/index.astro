@@ -2,8 +2,13 @@
 import AppShell from "@layouts/appShell.astro";
 import HtmlLayout from "@layouts/htmlLayout.astro";
 import { Badge } from "@ui/badge";
-import ChildIcon from "~icons/hugeicons/child";
 import * as animeConfig from "./config";
+import { formatSpan } from "@utils/time";
+import { convScore10toSymetric5 } from "@utils/score";
+
+import ChildIcon from "~icons/hugeicons/child";
+import InLoveIcon from "~icons/hugeicons/in-love";
+import PlayIcon from "~icons/hugeicons/play";
 
 const { identifier } = Astro.params;
 
@@ -41,13 +46,16 @@ const animeInfo: AnimeInfo = {
   ageRestriction: "r",
   animeStatus: "finished",
   animeFormat: "tv",
-  score: 8.48,
+  score: 8.45,
   genres: ["action", "award_winning", "fantasy", "supernatural", "school", "shounen"]
 };
 
 const ageRestrictionParams = animeConfig.ageRestriction[animeInfo.ageRestriction];
 const animeStatusParams = animeConfig.animeStatus[animeInfo.animeStatus];
 const animeFormatParams = animeConfig.animeFormats[animeInfo.animeFormat];
+
+const totalWatchMinutes = animeInfo.avgEpisodeDuration * animeInfo.episodesCount;
+const totalWatchFormat = formatSpan(totalWatchMinutes);
 ---
 
 <HtmlLayout title={ `${ animeInfo.titleUa } — MioStream` }>
@@ -89,6 +97,24 @@ const animeFormatParams = animeConfig.animeFormats[animeInfo.animeFormat];
             { animeStatusParams.label }
           </Badge>
 
+          <Badge
+            variant="ghost"
+            title="Середня оцінка від -5 до 5"
+          >
+            <InLoveIcon />
+            { convScore10toSymetric5(animeInfo.score) }
+          </Badge>
+
+          <Badge 
+            variant="ghost"
+            title={ totalWatchMinutes + " хв = " + totalWatchFormat }
+          >
+            <PlayIcon />
+            { animeInfo.episodesCount } × { animeInfo.avgEpisodeDuration } хв
+          </Badge>
+        </div>
+
+        <div class="mt-2 gap-1 flex flex-row flex-wrap">
           { animeInfo.genres.map((v) => (
             <Badge variant="secondary">{ animeConfig.genresMap[v] }</Badge>
           )) }
