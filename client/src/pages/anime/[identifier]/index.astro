@@ -7,8 +7,8 @@ import { formatSpan } from "@utils/time";
 import { convScore10toSymetric5 } from "@utils/score";
 
 import ChildIcon from "~icons/hugeicons/child";
-import InLoveIcon from "~icons/hugeicons/in-love";
 import PlayIcon from "~icons/hugeicons/play";
+import WavingHandIcon from "~icons/hugeicons/waving-hand-02";
 
 const { identifier } = Astro.params;
 
@@ -45,8 +45,8 @@ const animeInfo: AnimeInfo = {
   episodesCount: 24,
   ageRestriction: "r",
   animeStatus: "finished",
-  animeFormat: "tv",
-  score: 8.45,
+  animeFormat: "ova",
+  score: 1,
   genres: ["action", "award_winning", "fantasy", "supernatural", "school", "shounen"]
 };
 
@@ -56,6 +56,10 @@ const animeFormatParams = animeConfig.animeFormats[animeInfo.animeFormat];
 
 const totalWatchMinutes = animeInfo.avgEpisodeDuration * animeInfo.episodesCount;
 const totalWatchFormat = formatSpan(totalWatchMinutes);
+
+const scoreVal = Math.max(-5, Math.min(5, convScore10toSymetric5(animeInfo.score)));
+const ScoreIcon = animeConfig.getIconByScore(scoreVal);
+const scoreColor = animeConfig.getColorByScore(scoreVal);
 ---
 
 <HtmlLayout title={ `${ animeInfo.titleUa } — MioStream` }>
@@ -67,7 +71,7 @@ const totalWatchFormat = formatSpan(totalWatchMinutes);
       </div>
 
       {/* info section */}
-      <div class="w-full lg:max-w-[300px] xl:max-w-[400px] lg:border-l my-3 p-3">
+      <div class="w-full lg:max-w-[300px] xl:max-w-[400px] my-3 py-3 px-container lg:px-3">
 
         <img
           class="rounded-xl w-full h-[300px] lg:h-auto lg:aspect-square object-cover object-top sm:object-center"
@@ -98,11 +102,12 @@ const totalWatchFormat = formatSpan(totalWatchMinutes);
           </Badge>
 
           <Badge
-            variant="ghost"
+            variant="secondary"
             title="Середня оцінка від -5 до 5"
+            style={{ backgroundColor: scoreColor }}
           >
-            <InLoveIcon />
-            { convScore10toSymetric5(animeInfo.score) }
+            <ScoreIcon />
+            { scoreVal }
           </Badge>
 
           <Badge 
@@ -123,6 +128,11 @@ const totalWatchFormat = formatSpan(totalWatchMinutes);
         <div class="mt-4 flex flex-row gap-2 items-center text-muted-foreground">
           <animeFormatParams.icon />
           <h3>{ animeFormatParams.label }</h3>
+        </div>
+
+        <div class="flex flex-row gap-2 items-center text-muted-foreground">
+          <WavingHandIcon />
+          <h3>Зроблено { animeInfo.productionStudio } в { animeInfo.yearReleased } році</h3>
         </div>
 
         <p class="mt-2 text-sm text-secondary-foreground">{ animeInfo.animeDescription }</p>

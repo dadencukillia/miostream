@@ -3,6 +3,9 @@ import BeachIcon from "~icons/hugeicons/beach-02";
 import FilmRollIcon from "~icons/hugeicons/film-roll-02";
 import MusicIcon from "~icons/hugeicons/music-3";
 import FileUnknownIcon from "~icons/hugeicons/file-unknown";
+import ThumbsUpIcon from "~icons/hugeicons/thumbs-up";
+import ThumbsDownIcon from "~icons/hugeicons/thumbs-down";
+import NeutralIcon from "~icons/hugeicons/neutral";
 
 // Age restriction
 
@@ -174,7 +177,7 @@ export const animeFormats: Record<string, AnimeFormatConfig> = {
     icon: FilmRollIcon
   },
 	"special": {
-    label: "Спец серії",
+    label: "Спеціальні серії",
     icon: BeachIcon
   },
 	"music": {
@@ -186,3 +189,28 @@ export const animeFormats: Record<string, AnimeFormatConfig> = {
     icon: FileUnknownIcon
   },
 };
+
+// Score
+
+export const getIconByScore = (score: number): (_props: Record<string, any>) => any => {
+  if (Math.abs(score) < 1.5) {
+    return NeutralIcon;
+  }
+
+  if (score < 0) return ThumbsDownIcon;
+  return ThumbsUpIcon;
+};
+
+export const getColorByScore = (score: number): string => {
+  const maxBrightness = 100;
+  const r = -Math.min(0, score) / 5 * maxBrightness;
+  const g = Math.max(0, score) / 5 * maxBrightness;
+  const brightness = (r + g) / 2;
+  const b = maxBrightness - brightness;
+
+  const rHex = Math.round(r).toString(16).padStart(2, "0");
+  const gHex = Math.round(g).toString(16).padStart(2, "0");
+  const bHex = Math.round(b).toString(16).padStart(2, "0");
+
+  return `#${rHex}${gHex}${bHex}`;
+}
