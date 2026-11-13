@@ -55,7 +55,6 @@
     --card-foreground: oklch(0.145 0 0);
     --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.145 0 0);
-    /* Яскраво-рожевий (hot pink) */
     --primary: oklch(0.64 0.265 354);
     --primary-foreground: oklch(0.99 0.005 350);
     --secondary: oklch(0.965 0.02 350);

@@ -1,0 +1,107 @@
+---
+import AppShell from "@layouts/appShell.astro";
+import HtmlLayout from "@layouts/htmlLayout.astro";
+import { Badge } from "@ui/badge";
+import ChildIcon from "~icons/hugeicons/child";
+import * as animeConfig from "./config";
+
+const { identifier } = Astro.params;
+
+interface AnimeInfo {
+  animeId: string,
+  slug: string,
+  titleUa: string,
+  titleEn: string,
+  titleOriginal: string,
+  animeDescription: string,
+  coverUrl: string,
+  productionStudio: string,
+  yearReleased: number,
+  avgEpisodeDuration: number,
+  episodesCount: number,
+  ageRestriction: string,
+  animeStatus: string,
+  animeFormat: string,
+  score: number,
+  genres: string[]
+};
+
+const animeInfo: AnimeInfo = {
+  animeId: identifier!,
+  slug: "jujutsu-kaisen",
+  titleUa: "Магічна битва",
+  titleEn: "Jujutsu Kaisen",
+  titleOriginal: "呪術廻戦",
+  animeDescription: "Рятуючи друзів від монстрів, старшокласник Ітадорі Юджі ковтає проклятий палець і стає вмістилищем могутнього демона Сукуни. Замість негайної страти юнак отримує шанс вступити до школи магів, щоб зібрати всі артефакти прокляття та знищити їх разом із собою.",
+  coverUrl: "https://img.hikka.io/insecure/rs:fit:480:686:0:0/plain/https://cdn.hikka.io/content/anime/jujutsu-kaisen-3c90f8/j6q8tohk59EM8je8HpWKTg.jpg",
+  productionStudio: "MAPPA",
+  yearReleased: 2020,
+  avgEpisodeDuration: 23,
+  episodesCount: 24,
+  ageRestriction: "r",
+  animeStatus: "finished",
+  animeFormat: "tv",
+  score: 8.48,
+  genres: ["action", "award_winning", "fantasy", "supernatural", "school", "shounen"]
+};
+
+const ageRestrictionParams = animeConfig.ageRestriction[animeInfo.ageRestriction];
+const animeStatusParams = animeConfig.animeStatus[animeInfo.animeStatus];
+const animeFormatParams = animeConfig.animeFormats[animeInfo.animeFormat];
+---
+
+<HtmlLayout title={ `${ animeInfo.titleUa } — MioStream` }>
+  <AppShell>
+    <div class="flex flex-col lg:flex-row w-full">
+
+      {/* player, comments section */}
+      <div class="flex-1">
+      </div>
+
+      {/* info section */}
+      <div class="w-full lg:max-w-[300px] xl:max-w-[400px] lg:border-l my-3 p-3">
+
+        <img
+          class="rounded-xl w-full h-[300px] lg:h-auto lg:aspect-square object-cover object-top sm:object-center"
+          src={ animeInfo.coverUrl }
+          alt={ animeInfo.titleEn + " cover" }
+        >
+
+        <h1 class="mt-2 text-4xl font-bold">{ animeInfo.titleUa }</h1>
+        <h2 class="text-muted-foreground line-clamp-2">
+          <span>{ animeInfo.titleEn }</span> · <span>{ animeInfo.titleOriginal }</span>
+        </h2>
+
+        <div class="mt-2 gap-1 flex flex-row flex-wrap">
+          <Badge
+            variant="secondary"
+            title={ ageRestrictionParams.summary }
+            style={{ backgroundColor: ageRestrictionParams.color }}
+          >
+            <ChildIcon />
+            { ageRestrictionParams.label }
+          </Badge>
+
+          <Badge
+            variant="secondary"
+            style={{ backgroundColor: animeStatusParams.color }}
+          >
+            { animeStatusParams.label }
+          </Badge>
+
+          { animeInfo.genres.map((v) => (
+            <Badge variant="secondary">{ animeConfig.genresMap[v] }</Badge>
+          )) }
+        </div>
+
+        <div class="mt-4 flex flex-row gap-2 items-center text-muted-foreground">
+          <animeFormatParams.icon />
+          <h3>{ animeFormatParams.label }</h3>
+        </div>
+
+        <p class="mt-2 text-sm text-secondary-foreground">{ animeInfo.animeDescription }</p>
+      </div>
+
+    </div>
+  </AppShell>
+</HtmlLayout>
