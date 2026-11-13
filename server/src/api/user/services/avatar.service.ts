@@ -11,7 +11,7 @@ import {
     updateUserAvatarReturningOld
 } from "@sqlc/users_sql";
 import * as dto from "../user.dto";
-import { toUserWithoutOldAvatarModel } from "../user.model";
+import { toUserModel, toUserWithoutOldAvatarModel } from "../user.model";
 
 const AVATAR_WIDTH = 256;
 const AVATAR_HEIGHT = 256;
@@ -81,7 +81,7 @@ export async function updateUserAvatarImage(
         }
     }
 
-    return toUserWithoutOldAvatarModel(dbResponse);
+    return toUserModel(toUserWithoutOldAvatarModel(dbResponse));
 }
 
 export async function resetUserAvatar(
@@ -121,5 +121,5 @@ export async function resetUserAvatar(
         throw AvatarErrors.error("avatar-s3-remove").withDetails(e);
     }
 
-    return toUserWithoutOldAvatarModel(dbResponse);
+    return toUserModel(toUserWithoutOldAvatarModel(dbResponse));
 }

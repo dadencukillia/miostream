@@ -7,7 +7,7 @@ import { isSafeHttpUrl } from "@utils/urls";
 import { isValidTimezone } from "@utils/timezones";
 import { isUuid, normalizeUuid } from "@utils/uuid";
 import { isReservedNickname } from "@utils/nickname";
-import { toPublicUserModel } from "./user.model";
+import { toPublicUserModel, toUserModel } from "./user.model";
 
 export const createUser = async (
     request: FastifyRequest<{ Body: dto.CreateUserRequestPayloadType }>,
@@ -21,7 +21,7 @@ export const createUser = async (
     if (isUuid(nickname) || isReservedNickname(nickname)) throw UserErrors.error("user-invalid");
 
     const user = await services.createUser(request.server.pg, request.body);
-    return reply.status(201).send(user);
+    return reply.status(201).send(toUserModel(user));
 };
 
 export const getUser = async (
@@ -34,7 +34,7 @@ export const getUser = async (
         ? await services.getUserById(request.server.pg, normalizeUuid(identifier)!)
         : await services.getUserByNickname(request.server.pg, identifier);
 
-    return reply.status(200).send(toPublicUserModel(user));
+    return reply.status(200).send(toPublicUserModel(toUserModel(user)));
 };
 
 export const deleteUser = async (
@@ -68,7 +68,7 @@ export const updateUserProfile = async (
         request.auth!.userId,
         request.body
     );
-    return reply.status(200).send(user);
+    return reply.status(200).send(toUserModel(user));
 };
 
 export const updateUserAvatar = async (
@@ -113,7 +113,7 @@ export const updateUserCustomization = async (
         request.auth!.userId,
         request.body
     );
-    return reply.status(200).send(user);
+    return reply.status(200).send(toUserModel(user));
 };
 
 export const updateUserPassword = async (
@@ -140,7 +140,7 @@ export const updateUserStatus = async (
         request.params.userId,
         request.body.userStatus
     );
-    return reply.status(200).send(user);
+    return reply.status(200).send(toUserModel(user));
 };
 
 export const updateUserRole = async (
@@ -152,7 +152,7 @@ export const updateUserRole = async (
         request.params.userId,
         request.body.userRole
     );
-    return reply.status(200).send(user);
+    return reply.status(200).send(toUserModel(user));
 };
 
 export const createUserLink = async (
