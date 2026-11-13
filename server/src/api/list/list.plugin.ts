@@ -11,6 +11,7 @@ const requireAuth = grantAuthMiddleware() as AuthHook;
 const modulePlugin: FastifyPluginAsync = async (fastify: FastifyInstance, _opts: FastifyPluginOptions) => {
 	ListErrors.setupErrorHandler(fastify, [ListErrors], true);
 
+	fastify.get("/:userId", { schema: schemas.getListUnitsSchema }, controllers.getListUnits);
 	fastify.post("/", { schema: schemas.CreateListUnitSchema, preHandler: requireAuth }, controllers.createListUnit);
 	fastify.patch("/:animeId", { schema: schemas.UpdateListUnitSchema, preHandler: requireAuth }, controllers.updateListUnit);
 	fastify.delete("/:animeId", { schema: schemas.DeleteListUnitSchema, preHandler: requireAuth }, controllers.deleteListUnit);

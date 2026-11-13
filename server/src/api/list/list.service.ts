@@ -1,9 +1,11 @@
 import type { Pool } from "pg";
 import { createListUnit as createListUnitQuery } from "@/sqlc/list_units_sql";
 import { ListErrors } from "./list.errors";
-import type { 
+import type {
   CreateListUnitRequestPayloadType,
+  GetListUnitsRequestQueriesType,
   ListUnitResponseType,
+  ListUnitsPageResponseType,
   UpdateListUnitRequestPayloadType
 } from "./list.dto";
 
@@ -108,4 +110,55 @@ export async function deleteListUnit(db: Pool, userId: string, animeId: string):
 	if ((result as any).rowCount === 0) {
 		throw ListErrors.error("list-not-found");
 	}
+}
+
+export async function getListUnits(
+	db: Pool,
+	userId: string,
+	query: GetListUnitsRequestQueriesType,
+): Promise<ListUnitsPageResponseType> {
+	const page = query.page ?? 1;
+	const limit = query.limit ?? 20;
+	const offset = (page - 1) * limit;
+	const status = query.status ?? null;
+
+	const countResult = await db.query(
+		`SELECT COUNT(*)::int AS total FROM public.anime_list_units WHERE user_id = $1::uuid AND ($2::anime_list_unit_status_enum IS NULL OR list_unit_status = $2::anime_list_unit_status_enum)`,
+		[userId, status],
+	);
+	const total = countResult.rows[0]?.[0] ?? 0;
+
+	const itemsResult = await db.query(
+		`SELECT lu.anime_id, a.slug, a.title_ua, a.title_en, a.cover_url, lu.watched_episodes, lu.repeat_times, lu.started_watching, lu.list_unit_status, lu.grade
+		 FROM public.anime_list_units lu
+		 JOIN public.animes a ON a.anime_id = lu.anime_id
+		 WHERE lu.user_id = $1::uuid
+		   AND ($2::anime_list_unit_status_enum IS NULL OR lu.list_unit_status = $2::anime_list_unit_status_enum)
+		 ORDER BY lu.started_watching DESC, a.title_ua ASC
+		 LIMIT $3::int OFFSET $4::int`,
+		[userId, status, limit, offset],
+	);
+
+	const items = (itemsResult.rows as any[]).map((row) => ({
+		animeId: row[0],
+		slug: row[1],
+		titleUa: row[2],
+		titleEn: row[3],
+		coverUrl: row[4],
+		watchedEpisodes: row[5],
+		repeatTimes: row[6],
+		startedWatching: row[7],
+		listUnitStatus: row[8] as "finished" | "watching" | "delayed" | "dropped",
+		grade: row[9],
+	}));
+
+	return {
+		items,
+		pagination: {
+			page,
+			limit,
+			total,
+			totalPages: Math.ceil(total / limit),
+		},
+	};
 }

@@ -62,3 +62,23 @@ export const deleteListUnit = async (
 
 	return reply.status(204).send(null);
 };
+
+export const getListUnits = async (
+	request: FastifyRequest<{
+		Params: { userId: string };
+		Querystring: dto.GetListUnitsRequestQueriesType;
+	}>,
+	reply: FastifyReply<{
+		Params: { userId: string };
+		Querystring: dto.GetListUnitsRequestQueriesType;
+		Reply: dto.ListUnitsPageResponseType;
+	}>
+) => {
+	const result = await listService.getListUnits(
+		request.server.pg,
+		request.params.userId,
+		request.query
+	);
+
+	return reply.status(200).send(result);
+};
