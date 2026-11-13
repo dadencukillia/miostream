@@ -1,5 +1,7 @@
 import Type from "typebox";
 
+export const TAG_LIST = "list";
+
 export const LIST_UNIT_STATUSES = ["finished", "watching", "delayed", "dropped"] as const;
 
 const StringEnum = <T extends readonly string[]>(values: T) =>
@@ -39,7 +41,7 @@ export const ErrorResponse = Type.Object(
 );
 
 export const CreateListUnitSchema = {
-	tags: ["list"],
+	tags: [TAG_LIST],
 	summary: "Create a list unit",
 	description: "Creates a list unit for the authenticated user. Defaults are applied for missing fields.",
 	body: CreateListUnitRequestPayload,
@@ -62,7 +64,7 @@ export const UpdateListUnitRequestPayload = Type.Object(
 );
 
 export const UpdateListUnitSchema = {
-	tags: ["list"],
+	tags: [TAG_LIST],
 	summary: "Update a list unit",
 	description: "Updates fields of a list unit for the authenticated user. Omitted fields are unchanged.",
 	params: Type.Object({ animeId: Type.String({ format: "uuid" }) }, { additionalProperties: false }),
@@ -76,7 +78,7 @@ export const UpdateListUnitSchema = {
 } as const;
 
 export const DeleteListUnitSchema = {
-	tags: ["list"],
+	tags: [TAG_LIST],
 	summary: "Delete a list unit",
 	description: "Permanently removes a list unit for the authenticated user.",
 	params: Type.Object({ animeId: Type.String({ format: "uuid" }) }, { additionalProperties: false }),
