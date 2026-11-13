@@ -13,6 +13,9 @@ import GenreBadgesLine, { animeGenres } from "@components/features/anime/info/ge
 import FormatLabel, { animeFormats } from "@components/features/anime/info/formatLabel.astro";
 import ProductionLabel from "@components/features/anime/info/productionLabel.astro";
 
+import AnimePlayer from "@components/features/anime/player/player";
+import AnimeEpisodes from "@components/features/anime/player/episodes";
+
 import ArrowRightDoubleIcon from "~icons/hugeicons/arrow-right-double";
 import ArrowLeftDoubleIcon from "~icons/hugeicons/arrow-left-double";
 
@@ -61,10 +64,111 @@ const score5 = convScore10toSymetric5(animeInfo.score);
 
 <HtmlLayout title={ `${ animeInfo.titleUa } — MioStream` }>
   <AppShell>
-    <div class="flex flex-col lg:flex-row w-full">
+    <div class="flex flex-col-reverse lg:flex-row w-full">
 
       {/* player, comments section */}
-      <div class="flex-1">
+
+      <div class="flex-1 pt-3 pb-7 lg:mt-5 px-container">
+        <AnimeEpisodes episodes={[
+  {
+    localizationStudio: "ShoDo",
+    localizationType: "dub",
+    episodeName: "Серія 1: Маг і сталевий палець",
+    sourceUrl: "https://example.com/stream/jujutsu-kaisen/1/dub"
+  },
+  {
+    localizationStudio: "Awuro",
+    localizationType: "sub",
+    episodeName: "Серія 1: Маг і сталевий палець",
+    sourceUrl: "https://example.com/stream/jujutsu-kaisen/1/sub"
+  },
+  {
+    localizationStudio: "Цікава ідея",
+    localizationType: "dub",
+    episodeName: "Серія 2: Для себе",
+    sourceUrl: "https://example.com/stream/jujutsu-kaisen/2/dub"
+  },
+  {
+    localizationStudio: "Treba Translation",
+    localizationType: "sub",
+    episodeName: "Серія 2: Для себе",
+    sourceUrl: "https://example.com/stream/jujutsu-kaisen/2/sub"
+  },
+  {
+    localizationStudio: "ShoDo",
+    localizationType: "dub",
+    episodeName: "Серія 3: Дівчина з металевим характером",
+    sourceUrl: "https://example.com/stream/jujutsu-kaisen/3/dub"
+  },
+  {
+    localizationStudio: "AniRev",
+    localizationType: "sub",
+    episodeName: "Серія 3: Дівчина з металевим характером",
+    sourceUrl: "https://example.com/stream/jujutsu-kaisen/3/sub"
+  },
+  {
+    localizationStudio: "DubClub",
+    localizationType: "dub",
+    episodeName: "Серія 4: Умовно засуджений нуль",
+    sourceUrl: "https://example.com/stream/jujutsu-kaisen/4/dub"
+  },
+  {
+    localizationStudio: "Awuro",
+    localizationType: "sub",
+    episodeName: "Серія 4: Умовно засуджений нуль",
+    sourceUrl: "https://example.com/stream/jujutsu-kaisen/4/sub"
+  },
+  {
+    localizationStudio: "Tak Treba Production",
+    localizationType: "dub",
+    episodeName: "Серія 5: Залізне покарання",
+    sourceUrl: "https://example.com/stream/jujutsu-kaisen/5/dub"
+  },
+  {
+    localizationStudio: "Цікава ідея",
+    localizationType: "sub",
+    episodeName: "Серія 5: Залізне покарання",
+    sourceUrl: "https://example.com/stream/jujutsu-kaisen/5/sub"
+  },
+  {
+    localizationStudio: "ShoDo",
+    localizationType: "dub",
+    episodeName: "Серія 6: Після дощу",
+    sourceUrl: "https://example.com/stream/jujutsu-kaisen/6/dub"
+  },
+  {
+    localizationStudio: "Treba Translation",
+    localizationType: "sub",
+    episodeName: "Серія 6: Після дощу",
+    sourceUrl: "https://example.com/stream/jujutsu-kaisen/6/sub"
+  },
+  {
+    localizationStudio: "DubClub",
+    localizationType: "dub",
+    episodeName: "Серія 7: Штурм",
+    sourceUrl: "https://example.com/stream/jujutsu-kaisen/7/dub"
+  },
+  {
+    localizationStudio: "AniRev",
+    localizationType: "sub",
+    episodeName: "Серія 7: Штурм",
+    sourceUrl: "https://example.com/stream/jujutsu-kaisen/7/sub"
+  },
+  {
+    localizationStudio: "Awuro",
+    localizationType: "dub",
+    episodeName: "Серія 8: Нудна ніч",
+    sourceUrl: "https://example.com/stream/jujutsu-kaisen/8/dub"
+  },
+  {
+    localizationStudio: "Цікава ідея",
+    localizationType: "sub",
+    episodeName: "Серія 8: Нудна ніч",
+    sourceUrl: "https://example.com/stream/jujutsu-kaisen/8/sub"
+  }
+         ]} client:load>
+          <AnimePlayer sourceUrl="" />
+        </AnimeEpisodes>
       </div>
 
       {/* info section */}
