@@ -7,6 +7,7 @@ import { isSafeHttpUrl } from "@utils/urls";
 import { isValidTimezone } from "@utils/timezones";
 import { isUuid, normalizeUuid } from "@utils/uuid";
 import { isReservedNickname } from "@utils/nickname";
+import { toPublicUserModel } from "./user.model";
 
 export const createUser = async (
     request: FastifyRequest<{ Body: dto.CreateUserRequestPayloadType }>,
@@ -33,8 +34,7 @@ export const getUser = async (
         ? await services.getUserById(request.server.pg, normalizeUuid(identifier)!)
         : await services.getUserByNickname(request.server.pg, identifier);
 
-    const { email: _, ...publicUser } = user;
-    return reply.status(200).send(publicUser);
+    return reply.status(200).send(toPublicUserModel(user));
 };
 
 export const deleteUser = async (

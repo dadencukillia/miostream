@@ -336,19 +336,6 @@ export const GetUserSchema = {
     },
 } as const;
 
-export const GetUserByIdSchema = {
-    tags: [TAG_USER],
-    summary: "Get user by ID",
-    description: "Retrieves public profile details for the specified user UUID.",
-    params: UserIdRequestParams,
-    response: {
-        200: PublicUserResponse,
-        400: ErrorResponse,
-        404: ErrorResponse,
-        500: ErrorResponse,
-    },
-} as const;
-
 export const UpdateUserProfileSchema = {
     tags: [TAG_USER],
     summary: "Update user profile",
