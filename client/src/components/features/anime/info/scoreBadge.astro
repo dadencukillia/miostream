@@ -1,0 +1,58 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+import { Badge } from "@ui/badge";
+
+import ThumbsUpIcon from "~icons/hugeicons/thumbs-up";
+import ThumbsDownIcon from "~icons/hugeicons/thumbs-down";
+import NeutralIcon from "~icons/hugeicons/neutral";
+
+// Config
+
+export const getIconByScore = (score: number): (_props: Record<string, any>) => any => {
+  if (Math.abs(score) < 1.5) {
+    return NeutralIcon;
+  }
+
+  if (score < 0) return ThumbsDownIcon;
+  return ThumbsUpIcon;
+};
+
+export const getColorByScore = (score: number): string => {
+  const maxBrightness = 100;
+  const r = -Math.min(0, score) / 5 * maxBrightness;
+  const g = Math.max(0, score) / 5 * maxBrightness;
+  const brightness = (r + g) / 2;
+  const b = maxBrightness - brightness;
+
+  const rHex = Math.round(r).toString(16).padStart(2, "0");
+  const gHex = Math.round(g).toString(16).padStart(2, "0");
+  const bHex = Math.round(b).toString(16).padStart(2, "0");
+
+  return `#${rHex}${gHex}${bHex}`;
+}
+
+// Props
+
+interface Props extends HTMLAttributes<"span"> {
+  score5: number
+};
+
+const { score5, class: className, ...spanAttrs } = Astro.props;
+
+// Values
+
+const scoreValue = Math.max(-5, Math.min(5, score5));
+const ScoreIcon = getIconByScore(scoreValue);
+const scoreColor = getColorByScore(scoreValue);
+---
+
+<Badge
+  variant="secondary"
+  title="Середня оцінка від -5 до 5"
+  style={{ backgroundColor: scoreColor }}
+  className={ className }
+  { ...spanAttrs }
+>
+  <ScoreIcon />
+  { Math.round(scoreValue) }
+</Badge>

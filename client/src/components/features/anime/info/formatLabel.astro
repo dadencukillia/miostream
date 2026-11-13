@@ -1,0 +1,65 @@
+---
+import type { HTMLAttributes } from "astro/types";
+import { cn } from "cn";
+
+import ComputerVideoIcon from "~icons/hugeicons/computer-video";
+import BeachIcon from "~icons/hugeicons/beach-02";
+import FilmRollIcon from "~icons/hugeicons/film-roll-02";
+import MusicIcon from "~icons/hugeicons/music-3";
+import FileUnknownIcon from "~icons/hugeicons/file-unknown";
+
+// Config
+
+interface AnimeFormatConfig {
+  label: string,
+  icon: (_props: Record<string, any>) => any
+};
+
+export const animeFormats = {
+  "tv": {
+    label: "TV серіал",
+    icon: ComputerVideoIcon
+  } as AnimeFormatConfig,
+	"ova": {
+    label: "OVA серії",
+    icon: BeachIcon
+  } as AnimeFormatConfig,
+	"ona": {
+    label: "OVA серії",
+    icon: BeachIcon
+  } as AnimeFormatConfig,
+	"movie": {
+    label: "Фільм",
+    icon: FilmRollIcon
+  } as AnimeFormatConfig,
+	"special": {
+    label: "Спеціальні серії",
+    icon: BeachIcon
+  } as AnimeFormatConfig,
+	"music": {
+    label: "Пісня",
+    icon: MusicIcon
+  } as AnimeFormatConfig,
+	"other": {
+    label: "Інше",
+    icon: FileUnknownIcon
+  } as AnimeFormatConfig
+} as const;
+
+// Props
+
+interface Props extends HTMLAttributes<"div"> {
+  animeFormat: keyof typeof animeFormats
+}
+
+const { animeFormat, class: className, ...divAttrs } = Astro.props;
+
+// Values
+
+const formatValues = animeFormats[animeFormat];
+---
+
+<div class={cn("flex flex-row gap-2 items-center text-muted-foreground", className)} { ...divAttrs }>
+  <formatValues.icon />
+  <h3>{ formatValues.label }</h3>
+</div>

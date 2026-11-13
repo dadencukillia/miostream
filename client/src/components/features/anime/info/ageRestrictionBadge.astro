@@ -1,0 +1,65 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+import { Badge } from "@ui/badge";
+
+import BabyIcon from "~icons/hugeicons/baby-01";
+
+// Config
+
+interface RestrictionConfig {
+  label: string,
+  color: string,
+  summary: string,
+};
+
+export const restrictions = {
+  g: {
+    label: "G",
+    color: "#15803d",
+    summary: "Для всіх вікових категорій"
+  } as RestrictionConfig,
+  pg: {
+    label: "PG",
+    color: "#1d4ed8",
+    summary: "Рекомендується присутність батьків"
+  } as RestrictionConfig,
+  pg13: {
+    label: "PG-13",
+    color: "#b45309",
+    summary: "Особлива увага батьків"
+  } as RestrictionConfig,
+  r: {
+    label: "R",
+    color: "#c2410c",
+    summary: "Особам до 17 років перегляд дозволено лише в супроводі батьків або дорослого опікуна"
+  } as RestrictionConfig,
+  nc17: {
+    label: "NC-17",
+    color: "#b91c1c",
+    summary: "Тільки для дорослих"
+  } as RestrictionConfig
+} as const;
+
+// Props
+
+interface Props extends HTMLAttributes<"span"> {
+  restriction: keyof typeof restrictions
+};
+
+const { restriction, class: className, ...spanAttrs } = Astro.props;
+
+// Values
+
+const restrictionValues = restrictions[restriction];
+---
+
+<Badge
+  variant="secondary"
+  title={ restrictionValues.summary }
+  style={{ backgroundColor: restrictionValues.color }}
+  className={ className }
+  { ...spanAttrs }
+>
+  <BabyIcon />
+  { restrictionValues.label }
+</Badge>

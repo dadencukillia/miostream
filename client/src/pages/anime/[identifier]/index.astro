@@ -1,14 +1,20 @@
 ---
 import AppShell from "@layouts/appShell.astro";
 import HtmlLayout from "@layouts/htmlLayout.astro";
-import { Badge } from "@ui/badge";
-import * as animeConfig from "./config";
-import { formatSpan } from "@utils/time";
 import { convScore10toSymetric5 } from "@utils/score";
+import { Button } from "@ui/button";
 
-import ChildIcon from "~icons/hugeicons/child";
-import PlayIcon from "~icons/hugeicons/play";
-import WavingHandIcon from "~icons/hugeicons/waving-hand-02";
+import TitleSection from "@components/features/anime/info/titleSection.astro";
+import AgeRestrictionBadge, { restrictions } from "@components/features/anime/info/ageRestrictionBadge.astro";
+import StatusBadge, { animeStatuses } from "@components/features/anime/info/statusBadge.astro";
+import ScoreBadge from "@components/features/anime/info/scoreBadge.astro";
+import EpisodesBadge from "@components/features/anime/info/episodesBadge.astro";
+import GenreBadgesLine, { animeGenres } from "@components/features/anime/info/genreBadgesLine";
+import FormatLabel, { animeFormats } from "@components/features/anime/info/formatLabel.astro";
+import ProductionLabel from "@components/features/anime/info/productionLabel.astro";
+
+import ArrowRightDoubleIcon from "~icons/hugeicons/arrow-right-double";
+import ArrowLeftDoubleIcon from "~icons/hugeicons/arrow-left-double";
 
 const { identifier } = Astro.params;
 
@@ -24,11 +30,11 @@ interface AnimeInfo {
   yearReleased: number,
   avgEpisodeDuration: number,
   episodesCount: number,
-  ageRestriction: string,
-  animeStatus: string,
-  animeFormat: string,
+  ageRestriction: keyof typeof restrictions,
+  animeStatus: keyof typeof animeStatuses,
+  animeFormat: keyof typeof animeFormats,
   score: number,
-  genres: string[]
+  genres: (typeof animeGenres[number])[]
 };
 
 const animeInfo: AnimeInfo = {
@@ -46,20 +52,11 @@ const animeInfo: AnimeInfo = {
   ageRestriction: "r",
   animeStatus: "finished",
   animeFormat: "ova",
-  score: 1,
-  genres: ["action", "award_winning", "fantasy", "supernatural", "school", "shounen"]
+  score: 8.5,
+  genres: ["action", "award_winning", "fantasy", "supernatural", "school", "shounen", "survival", "otaku_culture", "parody", "performing_arts", "pets", "team_sports", "time_travel", "urban_fantasy"]
 };
 
-const ageRestrictionParams = animeConfig.ageRestriction[animeInfo.ageRestriction];
-const animeStatusParams = animeConfig.animeStatus[animeInfo.animeStatus];
-const animeFormatParams = animeConfig.animeFormats[animeInfo.animeFormat];
-
-const totalWatchMinutes = animeInfo.avgEpisodeDuration * animeInfo.episodesCount;
-const totalWatchFormat = formatSpan(totalWatchMinutes);
-
-const scoreVal = Math.max(-5, Math.min(5, convScore10toSymetric5(animeInfo.score)));
-const ScoreIcon = animeConfig.getIconByScore(scoreVal);
-const scoreColor = animeConfig.getColorByScore(scoreVal);
+const score5 = convScore10toSymetric5(animeInfo.score);
 ---
 
 <HtmlLayout title={ `${ animeInfo.titleUa } — MioStream` }>
@@ -71,69 +68,44 @@ const scoreColor = animeConfig.getColorByScore(scoreVal);
       </div>
 
       {/* info section */}
-      <div class="w-full lg:max-w-[300px] xl:max-w-[400px] my-3 py-3 px-container lg:px-3">
+
+      <Button 
+        id="toggleAnimeInfoBar"
+        variant="secondary"
+        className="fixed mt-5 right-0 translate-x-[-10%] aspect-square w-auto h-auto hidden">
+        <ArrowLeftDoubleIcon />
+      </Button>
+
+      <div id="animeInfoBar" class="w-full lg:max-w-[300px] xl:max-w-[400px] my-3 py-3 px-container lg:px-3">
+        <div class="hidden lg:hidden" /> {/* loads up lg:hidden tailwindcss class */}
+
+        <Button 
+          id="toggleAnimeInfoBar"
+          variant="secondary"
+          className="absolute translate-x-[-50%] aspect-square w-auto h-auto hidden lg:block">
+          <ArrowRightDoubleIcon />
+        </Button>
 
         <img
           class="rounded-xl w-full h-[300px] lg:h-auto lg:aspect-square object-cover object-top sm:object-center"
           src={ animeInfo.coverUrl }
-          alt={ animeInfo.titleEn + " cover" }
-        >
+          alt={ animeInfo.titleEn + " cover" }>
 
-        <h1 class="mt-2 text-4xl font-bold">{ animeInfo.titleUa }</h1>
-        <h2 class="text-muted-foreground line-clamp-2">
-          <span>{ animeInfo.titleEn }</span> · <span>{ animeInfo.titleOriginal }</span>
-        </h2>
+        <TitleSection ua={ animeInfo.titleUa } en={ animeInfo.titleEn } original={ animeInfo.titleOriginal } />
 
         <div class="mt-2 gap-1 flex flex-row flex-wrap">
-          <Badge
-            variant="secondary"
-            title={ ageRestrictionParams.summary }
-            style={{ backgroundColor: ageRestrictionParams.color }}
-          >
-            <ChildIcon />
-            { ageRestrictionParams.label }
-          </Badge>
-
-          <Badge
-            variant="secondary"
-            style={{ backgroundColor: animeStatusParams.color }}
-          >
-            { animeStatusParams.label }
-          </Badge>
-
-          <Badge
-            variant="secondary"
-            title="Середня оцінка від -5 до 5"
-            style={{ backgroundColor: scoreColor }}
-          >
-            <ScoreIcon />
-            { scoreVal }
-          </Badge>
-
-          <Badge 
-            variant="ghost"
-            title={ totalWatchMinutes + " хв = " + totalWatchFormat }
-          >
-            <PlayIcon />
-            { animeInfo.episodesCount } × { animeInfo.avgEpisodeDuration } хв
-          </Badge>
+          <AgeRestrictionBadge restriction={ animeInfo.ageRestriction } />
+          <StatusBadge animeStatus={ animeInfo.animeStatus } />
+          <ScoreBadge score5={ score5 } />
+          <EpisodesBadge episodesCount={ animeInfo.episodesCount } avgEpisodeDuration={ animeInfo.avgEpisodeDuration } />
         </div>
 
         <div class="mt-2 gap-1 flex flex-row flex-wrap">
-          { animeInfo.genres.map((v) => (
-            <Badge variant="secondary">{ animeConfig.genresMap[v] }</Badge>
-          )) }
+          <GenreBadgesLine genres={ animeInfo.genres } limit={ 9 } client:load />
         </div>
 
-        <div class="mt-4 flex flex-row gap-2 items-center text-muted-foreground">
-          <animeFormatParams.icon />
-          <h3>{ animeFormatParams.label }</h3>
-        </div>
-
-        <div class="flex flex-row gap-2 items-center text-muted-foreground">
-          <WavingHandIcon />
-          <h3>Зроблено { animeInfo.productionStudio } в { animeInfo.yearReleased } році</h3>
-        </div>
+        <FormatLabel class="mt-5" animeFormat={ animeInfo.animeFormat } />
+        <ProductionLabel studio={ animeInfo.productionStudio } yearReleased={ animeInfo.yearReleased } />
 
         <p class="mt-2 text-sm text-secondary-foreground">{ animeInfo.animeDescription }</p>
       </div>
@@ -141,3 +113,11 @@ const scoreColor = animeConfig.getColorByScore(scoreVal);
     </div>
   </AppShell>
 </HtmlLayout>
+
+<script>
+  document.querySelectorAll("#toggleAnimeInfoBar").forEach(e => e.addEventListener("click", () => {
+    document.querySelector("#animeInfoBar")?.classList.toggle("lg:hidden");
+
+    document.querySelectorAll("#toggleAnimeInfoBar").forEach(e => e.classList.toggle("lg:block"));
+  }));
+</script>

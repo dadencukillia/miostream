@@ -1,0 +1,20 @@
+---
+import type { HTMLAttributes } from "astro/types";
+import { cn } from "cn";
+
+import WavingHandIcon from "~icons/hugeicons/waving-hand-02";
+
+// Props
+
+interface Props extends HTMLAttributes<"div"> {
+  studio: string,
+  yearReleased: number
+}
+
+const { studio, yearReleased, class: className, ...divAttrs } = Astro.props;
+---
+
+<div class={cn("flex flex-row gap-2 items-center text-muted-foreground", className)} { ...divAttrs }>
+  <WavingHandIcon />
+  <h3>Зроблено { studio } в { yearReleased } році</h3>
+</div>

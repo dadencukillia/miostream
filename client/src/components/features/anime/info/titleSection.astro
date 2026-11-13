@@ -1,0 +1,18 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+
+interface Props extends HTMLAttributes<"div"> {
+  ua: string,
+  en: string,
+  original: string
+};
+
+const { ua, en, original, ...divAttrs } = Astro.props;
+---
+
+<div { ...divAttrs }>
+  <h1 class="mt-2 text-4xl font-bold">{ ua }</h1>
+  <h2 class="text-muted-foreground line-clamp-2">
+    <span>{ en }</span> · <span>{ original }</span>
+  </h2>
+</div>
