@@ -1,19 +1,10 @@
 import type { FastifyPluginAsync, FastifyError, FastifyInstance, FastifyPluginOptions } from "fastify";
-import { AnimeError } from "./anime.errors";
+import { AnimeErrors } from "./anime.errors";
 import * as schemas from "./anime.schema";
 import * as controllers from "./anime.controller";
 
 const modulePlugin: FastifyPluginAsync = async (fastify: FastifyInstance, _opts: FastifyPluginOptions) => {
-  fastify.setErrorHandler((error, request, reply) => {
-    if (error instanceof AnimeError) {
-      return reply.status(error.status).send({ ok: false, message: error.message });
-    }
-    if ((error as any).validation) {
-      return reply.status(400).send({ ok: false, message: (error as any).message });
-    }
-    request.log.error(error);
-    return reply.status(500).send({ ok: false, message: "unknown error" });
-  });
+  AnimeErrors.setupErrorHandler(fastify, [AnimeErrors], true);
 
   fastify.get("/", { schema: schemas.ListAnimesSchema }, controllers.listAnimes);
   fastify.get("/slug/:slug", { schema: schemas.GetAnimeBySlugSchema }, controllers.getAnimeBySlug);
