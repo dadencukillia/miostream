@@ -122,29 +122,42 @@ export async function getListUnits(
 	const offset = (page - 1) * limit;
 	const status = query.status ?? null;
 
-	const countResult = await db.query(
-		`SELECT COUNT(*)::int AS total FROM public.anime_list_units WHERE user_id = $1::uuid AND ($2::anime_list_unit_status_enum IS NULL OR list_unit_status = $2::anime_list_unit_status_enum)`,
-		[userId, status],
-	);
+	const orderBy = {
+		startedWatching: "lu.started_watching DESC, a.title_ua ASC",
+		grade: "lu.grade DESC NULLS LAST, a.title_ua ASC",
+		title: "a.title_ua ASC",
+	};
+	const sort = query.sort ?? "startedWatching";
+	if (!Object.hasOwn(orderBy, sort)) {
+		throw ListErrors.error("list-invalid");
+	}
+
+	const countResult = await db.query({
+		text: `SELECT COUNT(*)::int AS total FROM public.anime_list_units WHERE user_id = $1::uuid AND ($2::anime_list_unit_status_enum IS NULL OR list_unit_status = $2::anime_list_unit_status_enum)`,
+		values: [userId, status],
+		rowMode: "array",
+	});
 	const total = countResult.rows[0]?.[0] ?? 0;
 
-	const itemsResult = await db.query(
-		`SELECT lu.anime_id, a.slug, a.title_ua, a.title_en, a.cover_url, lu.watched_episodes, lu.repeat_times, lu.started_watching, lu.list_unit_status, lu.grade
+	const itemsResult = await db.query({
+		text: `SELECT lu.anime_id, a.slug, a.title_ua, a.title_en, a.cover_id, lu.watched_episodes, lu.repeat_times, lu.started_watching, lu.list_unit_status, lu.grade
 		 FROM public.anime_list_units lu
 		 JOIN public.animes a ON a.anime_id = lu.anime_id
 		 WHERE lu.user_id = $1::uuid
 		   AND ($2::anime_list_unit_status_enum IS NULL OR lu.list_unit_status = $2::anime_list_unit_status_enum)
-		 ORDER BY lu.started_watching DESC, a.title_ua ASC
+		 ORDER BY ${orderBy[sort as keyof typeof orderBy]}
 		 LIMIT $3::int OFFSET $4::int`,
-		[userId, status, limit, offset],
-	);
+		values: [userId, status, limit, offset],
+		rowMode: "array",
+	});
 
 	const items = (itemsResult.rows as any[]).map((row) => ({
 		animeId: row[0],
 		slug: row[1],
 		titleUa: row[2],
 		titleEn: row[3],
-		coverUrl: row[4],
+		// Cover URL resolution is not available yet.
+		coverUrl: "",
 		watchedEpisodes: row[5],
 		repeatTimes: row[6],
 		startedWatching: row[7],

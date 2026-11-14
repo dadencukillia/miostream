@@ -60,7 +60,8 @@ export const toAnime = (row: AnimeRecord): AnimeResponseType => ({
 	titleEn: row.titleEn,
 	titleOriginal: row.titleOriginal,
 	animeDescription: row.animeDescription,
-  // TODO: receive coverUrl from coverId
+	// Preserve the stored reference until cover URL resolution is available.
+	coverId: row.coverId,
 	coverUrl: "",
 	productionStudio: row.productionStudio,
 	malId: row.malId === null ? null : Number(row.malId),

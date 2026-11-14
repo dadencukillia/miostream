@@ -94,7 +94,7 @@ export const GetListUnitsRequestQueries = Type.Object({
 	page: Type.Optional(Type.Integer({ minimum: 1, default: 1 })),
 	limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100, default: 20 })),
 	status: Type.Optional(StringEnum(LIST_UNIT_STATUSES)),
-	sort: Type.Optional(Type.String({ description: "Sort field: startedWatching, grade, title" })),
+	sort: Type.Optional(StringEnum(["startedWatching", "grade", "title"] as const)),
 }, { additionalProperties: false });
 
 export const ListUnitWithAnimeResponse = Type.Object({

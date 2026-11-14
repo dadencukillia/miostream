@@ -53,6 +53,7 @@ describe("anime service", () => {
       ageRestriction: "unknown", animeStatus: "unknown", animeFormat: "unknown", available: false,
       genres: ["action", "unknown", "drama"],
     });
+    expect(anime.coverId).toBe("4f2f627b-cec4-48ca-ae1e-1c59b1fccd7c");
     expect(anime).toMatchObject({ malId: 123, anilistId: null, ageRestriction: null, animeStatus: null, animeFormat: "other", available: false, genres: ["action", "drama"] });
   });
 
