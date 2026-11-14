@@ -8,6 +8,8 @@ function readSecret(name: string, fileName: string, fallback: string) {
 	return path ? readFileSync(path, "utf-8").trim() : fallback;
 }
 
+export const MIGRATIONS_DIRECTORY = "./db/migrations";
+
 // Services host
 export const POSTGRES_HOST = process.env.POSTGRES_HOST ?? "localhost:5432";
 export const REDIS_HOST = process.env.REDIS_HOST ?? "localhost:6379";

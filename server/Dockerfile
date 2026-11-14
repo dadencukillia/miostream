@@ -15,4 +15,4 @@ COPY db/migrations ./db/migrations/
 USER bun
 EXPOSE 8080
 
-ENTRYPOINT ["bun", "serve"]
+ENTRYPOINT ["bun", "backend"]

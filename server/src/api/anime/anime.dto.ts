@@ -4,9 +4,9 @@ import type {
 	ANIME_SORTS,
 	ANIME_STATUSES,
 	AnimeIdRequestParams,
+	AnimeIdOrSlugRequestParams,
 	AnimeListResponse,
 	AnimeResponse,
-	AnimeSlugRequestParams,
 	CreateAnimeRequestPayload,
 	GENRES,
 	ListAnimesRequestQueries,
@@ -22,7 +22,7 @@ export type ListAnimesRequestQueriesType = Type.Static<typeof ListAnimesRequestQ
 export type AnimeListResponseType = Type.Static<typeof AnimeListResponse>;
 export type PaginationResponseType = Type.Static<typeof PaginationResponse>;
 export type AnimeIdRequestParamsType = Type.Static<typeof AnimeIdRequestParams>;
-export type AnimeSlugRequestParamsType = Type.Static<typeof AnimeSlugRequestParams>;
+export type AnimeIdOrSlugRequestParamsType = Type.Static<typeof AnimeIdOrSlugRequestParams>;
 
 export type AnimeFormatType = (typeof ANIME_FORMATS)[number];
 export type AnimeStatusType = (typeof ANIME_STATUSES)[number];
@@ -32,7 +32,6 @@ export type AnimeSortType = (typeof ANIME_SORTS)[number];
 
 // Normalized filters used by the service/repository layer
 export interface AnimeListFilterType {
-	search: string | null;
 	genre: GenreType | null;
 	status: AnimeStatusType | null;
 	format: AnimeFormatType | null;

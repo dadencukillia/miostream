@@ -4,6 +4,7 @@ import type { Client, Pool } from "pg";
 
 const UPGRADE_PART_LINE = "-- migrate:up";
 const DOWNGRADE_PART_LINE = "-- migrate:down";
+export const MIGRATIONS_TABLE = "schema_migrations";
 
 async function pgWrapClient<T>(pg: Pool, callback: (client: Client) => Promise<T>, fallback?: (e: unknown) => void): Promise<T> {
   const client = await pg.connect();
@@ -199,7 +200,7 @@ export class Migrator {
    */
   public async ensureMigrationsTable() {
     await this.db.query(`
-      CREATE TABLE IF NOT EXISTS ${this.schema}.schema_migrations(
+      CREATE TABLE IF NOT EXISTS ${this.schema}.${MIGRATIONS_TABLE}(
         operation_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
         executed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
         from_migration BIGINT NOT NULL,
@@ -209,31 +210,12 @@ export class Migrator {
   }
 
   /**
-   * Retrieves the current migration timestamp state from the database.
-   * 
-   * @param db - Active PostgreSQL pool or client connection.
-   * @returns The latest applied migration timestamp, or `null` if no migrations have been executed.
-   */
-  public async getDatabaseMigrationState(db: Pool|Client): Promise<number|null> {
-    const queryResult = await db.query(
-      `SELECT to_migration FROM ${this.schema}.schema_migrations ORDER BY operation_id DESC LIMIT 1;`
-    );
-
-    if (queryResult.rows.length === 0) return null;
-    const lastMigrationEntry = queryResult.rows[0];
-
-    const toMigration = Number(lastMigrationEntry["to_migration"]);
-    if (toMigration === -1 || Number.isNaN(toMigration)) return null;
-    return toMigration;
-  }
-
-  /**
    * Executes all pending upward migrations sequentially within transactions, protected by an advisory lock.
    */
   public async up() {
     await pgWrapClient(this.db, async client => {
       await pgWrapLock(client, async client => {
-        let currentMigrationState = await this.getDatabaseMigrationState(client);
+        let currentMigrationState = (await Migrator.getMigration(client, this.schema))?.state ?? null;
         const upMigrations = await Promise.all(
           this.migrationFiles
             .filter(migration => currentMigrationState === null || migration.timestamp > currentMigrationState)
@@ -260,7 +242,7 @@ export class Migrator {
           );
 
           await pgWrapTransaction(client, async client => {
-            await client.query(`INSERT INTO ${this.schema}.schema_migrations(from_migration, to_migration) VALUES($1, $2);`, [currentMigrationStateSQL, migration.timestamp]);
+            await client.query(`INSERT INTO ${this.schema}.${MIGRATIONS_TABLE}(from_migration, to_migration) VALUES($1, $2);`, [currentMigrationStateSQL, migration.timestamp]);
             await client.query(migration.parts.up);
             currentMigrationState = migration.timestamp;
             console.log(`[Migrations] ${migration.timestamp} ✔`);
@@ -280,7 +262,7 @@ export class Migrator {
   public async down() {
     await pgWrapClient(this.db, async client => {
       await pgWrapLock(client, async client => {
-        const currentMigrationState = await this.getDatabaseMigrationState(client);
+        let currentMigrationState = (await Migrator.getMigration(client, this.schema))?.state ?? null;
         console.log("[Migrations] current state:", currentMigrationState);
 
         if (currentMigrationState === null) {
@@ -305,7 +287,7 @@ export class Migrator {
         const downMigrationContent = (await downMigration.parse()).down;
 
         await pgWrapTransaction(client, async client => {
-          await client.query(`INSERT INTO ${this.schema}.schema_migrations(from_migration, to_migration) VALUES($1, $2);`, [currentMigrationState, prevMigration]);
+          await client.query(`INSERT INTO ${this.schema}.${MIGRATIONS_TABLE}(from_migration, to_migration) VALUES($1, $2);`, [currentMigrationState, prevMigration]);
           await client.query(downMigrationContent);
           console.log(`[Migrations] rollback ${currentMigrationState} ✔`);
         }, () => console.error(`[Migrations] rollback ${currentMigrationState} ✘`));
@@ -313,5 +295,58 @@ export class Migrator {
         console.log(`[Migrations] current state: ${prevMigration === -1 ? null : prevMigration}.`);
       });
     }, () => console.log("[Migrations] failed."));
+  }
+
+  /**
+   * Retrieves a migration history record from the database with offset from the latest.
+   * 
+   * @param skip - The number of migration records to skip from the latest entry (used for pagination or history traversal).
+   * @returns A promise that resolves to an object containing the migration details (`id`, `executedAt`, `state`, and `type`), or `null` if no record is found.
+   */
+  public async getMigration(skip: number = 0) {
+    return Migrator.getMigration(this.db, this.schema, skip);
+  }
+
+  /**
+   * Retrieves a migration history record from the database with offset from the latest.
+   * 
+   * @param db - The PostgreSQL connection pool or client used to execute the query.
+   * @param schema - The database schema where the migrations table resides (defaults to "public").
+   * @param skip - The number of migration records to skip from the latest entry (used for pagination or history traversal).
+   * @returns A promise that resolves to an object containing the migration details (`id`, `executedAt`, `state`, and `type`), or `null` if no record is found.
+   */
+  public static async getMigration(db: Pool|Client, schema: string = "public", skip: number = 0): Promise<{
+    id: number,
+    executedAt: Date,
+    state: number|null,
+    type: "up"|"down"
+  }|null> {
+    const queryResult = await db.query(
+      `SELECT operation_id, executed_at, from_migration, to_migration FROM ${schema}.${MIGRATIONS_TABLE} ORDER BY operation_id DESC LIMIT 1 OFFSET $1;`,
+      [ skip ]
+    );
+
+    if (queryResult.rows.length === 0) return null;
+    const migrationEntry = queryResult.rows[0];
+
+    const processDBMigrationState = (dbMigration: number|null|string): number|null => {
+      const migration = Number(dbMigration);
+      if (migration === -1 || Number.isNaN(migration)) return null;
+      return migration;
+    }
+
+    const id = Number(migrationEntry["operation_id"]);
+    const executedAt = new Date(migrationEntry["executed_at"]);
+    const fromMigration: number|null = processDBMigrationState(migrationEntry["from_migration"]);
+    const toMigration: number|null = processDBMigrationState(migrationEntry["to_migration"]);
+
+    const type: "up"|"down" = (toMigration ?? 0) > (fromMigration ?? 0) ? "up" : "down";
+
+    return {
+      id: id,
+      executedAt: executedAt,
+      state: toMigration,
+      type: type
+    };
   }
 }

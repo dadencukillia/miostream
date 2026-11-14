@@ -7,9 +7,11 @@ export async function setAvatarById(
   avatarId: string,
   content: Buffer,
 ) {
+  const avatarFile = avatarId.replaceAll("-", "").trim() + ".webp";
+
   await s3.send(new PutObjectCommand({
     Bucket: BUCKET_NAME,
-    Key: `${avatarId}.webp`,
+    Key: avatarFile,
     ACL: "public-read",
     ContentType: "image/webp",
     Body: content
@@ -20,10 +22,12 @@ export async function getAvatarById(
   s3: S3Client,
   avatarId: string,
 ): Promise<Uint8Array|null> {
+  const avatarFile = avatarId.replaceAll("-", "").trim() + ".webp";
+
   try {
     const object = await s3.send(new GetObjectCommand({
       Bucket: BUCKET_NAME,
-      Key: `${avatarId}.webp`,
+      Key: avatarFile,
       ResponseContentEncoding: "gzip",
     }));
 
@@ -41,8 +45,10 @@ export async function removeAvatarById(
   s3: S3Client,
   avatarId: string,
 ) {
+  const avatarFile = avatarId.replaceAll("-", "").trim() + ".webp";
+
   await s3.send(new DeleteObjectCommand({
     Bucket: BUCKET_NAME,
-    Key: `${avatarId}.webp`,
+    Key: avatarFile,
   }));
 }

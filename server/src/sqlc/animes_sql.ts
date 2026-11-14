@@ -11,7 +11,7 @@ INSERT INTO public.animes (
     title_en,
     title_original,
     anime_description,
-    cover_url,
+    cover_id,
     production_studio,
     mal_id,
     anilist_id,
@@ -30,7 +30,7 @@ INSERT INTO public.animes (
     $3::text,
     $4::text,
     $5::text,
-    $6::text,
+    $6::uuid,
     $7::text,
     $8::bigint,
     $9::bigint,
@@ -52,7 +52,7 @@ export interface CreateAnimeArgs {
     titleEn: string;
     titleOriginal: string;
     animeDescription: string;
-    coverUrl: string;
+    coverId: string | null;
     productionStudio: string;
     malId: string | null;
     anilistId: string | null;
@@ -74,7 +74,7 @@ export interface CreateAnimeRow {
 export async function createAnime(client: Client, args: CreateAnimeArgs): Promise<CreateAnimeRow | null> {
     const result = await client.query({
         text: createAnimeQuery,
-        values: [args.slug, args.titleUa, args.titleEn, args.titleOriginal, args.animeDescription, args.coverUrl, args.productionStudio, args.malId, args.anilistId, args.hikkaId, args.imdbId, args.yearReleased, args.avgEpisodeDuration, args.episodesCount, args.ageRestriction, args.animeStatus, args.animeFormat, args.available],
+        values: [args.slug, args.titleUa, args.titleEn, args.titleOriginal, args.animeDescription, args.coverId, args.productionStudio, args.malId, args.anilistId, args.hikkaId, args.imdbId, args.yearReleased, args.avgEpisodeDuration, args.episodesCount, args.ageRestriction, args.animeStatus, args.animeFormat, args.available],
         rowMode: "array"
     });
     if (result.rows.length !== 1) {
@@ -114,7 +114,7 @@ SELECT
     a.title_en,
     a.title_original,
     a.anime_description,
-    a.cover_url,
+    a.cover_id,
     a.production_studio,
     a.mal_id,
     a.anilist_id,
@@ -135,31 +135,25 @@ SELECT
     )::text[] AS genres
 FROM public.animes a
 WHERE
-    ($1::text IS NULL OR
-        a.slug ILIKE '%' || $1::text || '%' OR
-        a.title_ua ILIKE '%' || $1::text || '%' OR
-        a.title_en ILIKE '%' || $1::text || '%' OR
-        a.title_original ILIKE '%' || $1::text || '%')
-    AND ($2::genre_type_enum IS NULL OR EXISTS (
+    ($1::genre_type_enum IS NULL OR EXISTS (
         SELECT 1
         FROM public.genres fg
         WHERE fg.anime_id = a.anime_id
-          AND fg.genre_type = $2::genre_type_enum
+          AND fg.genre_type = $1::genre_type_enum
     ))
-    AND ($3::anime_status_enum IS NULL OR a.anime_status = $3::anime_status_enum)
-    AND ($4::anime_format_enum IS NULL OR a.anime_format = $4::anime_format_enum)
-    AND ($5::smallint IS NULL OR a.year_released = $5::smallint)
-    AND ($6::boolean IS NULL OR a.available = $6::boolean)
+    AND ($2::anime_status_enum IS NULL OR a.anime_status = $2::anime_status_enum)
+    AND ($3::anime_format_enum IS NULL OR a.anime_format = $3::anime_format_enum)
+    AND ($4::smallint IS NULL OR a.year_released = $4::smallint)
+    AND ($5::boolean IS NULL OR a.available = $5::boolean)
 ORDER BY
-    CASE WHEN $7::text = 'oldest' THEN a.anime_id END ASC,
-    CASE WHEN $7::text = 'title' THEN lower(a.title_ua) END ASC,
-    CASE WHEN $7::text = 'year_desc' THEN a.year_released END DESC NULLS LAST,
-    CASE WHEN $7::text = 'year_asc' THEN a.year_released END ASC NULLS LAST,
+    CASE WHEN $6::text = 'oldest' THEN a.anime_id END ASC,
+    CASE WHEN $6::text = 'title' THEN lower(a.title_ua) END ASC,
+    CASE WHEN $6::text = 'year_desc' THEN a.year_released END DESC NULLS LAST,
+    CASE WHEN $6::text = 'year_asc' THEN a.year_released END ASC NULLS LAST,
     a.anime_id DESC
-LIMIT $9::int OFFSET $8::int`;
+LIMIT $8::int OFFSET $7::int`;
 
 export interface ListAnimesArgs {
-    search: string | null;
     genre: string | null;
     status: string | null;
     format: string | null;
@@ -177,7 +171,7 @@ export interface ListAnimesRow {
     titleEn: string;
     titleOriginal: string;
     animeDescription: string;
-    coverUrl: string;
+    coverId: string | null;
     productionStudio: string;
     malId: string | null;
     anilistId: string | null;
@@ -196,7 +190,7 @@ export interface ListAnimesRow {
 export async function listAnimes(client: Client, args: ListAnimesArgs): Promise<ListAnimesRow[]> {
     const result = await client.query({
         text: listAnimesQuery,
-        values: [args.search, args.genre, args.status, args.format, args.year, args.available, args.sort, args.offset, args.limit],
+        values: [args.genre, args.status, args.format, args.year, args.available, args.sort, args.offset, args.limit],
         rowMode: "array"
     });
     return result.rows.map(row => {
@@ -207,7 +201,7 @@ export async function listAnimes(client: Client, args: ListAnimesArgs): Promise<
             titleEn: row[3],
             titleOriginal: row[4],
             animeDescription: row[5],
-            coverUrl: row[6],
+            coverId: row[6],
             productionStudio: row[7],
             malId: row[8],
             anilistId: row[9],
@@ -229,24 +223,18 @@ export const countAnimesQuery = `-- name: CountAnimes :one
 SELECT COUNT(*)::int AS total
 FROM public.animes a
 WHERE
-    ($1::text IS NULL OR
-        a.slug ILIKE '%' || $1::text || '%' OR
-        a.title_ua ILIKE '%' || $1::text || '%' OR
-        a.title_en ILIKE '%' || $1::text || '%' OR
-        a.title_original ILIKE '%' || $1::text || '%')
-    AND ($2::genre_type_enum IS NULL OR EXISTS (
+    ($1::genre_type_enum IS NULL OR EXISTS (
         SELECT 1
         FROM public.genres fg
         WHERE fg.anime_id = a.anime_id
-          AND fg.genre_type = $2::genre_type_enum
+          AND fg.genre_type = $1::genre_type_enum
     ))
-    AND ($3::anime_status_enum IS NULL OR a.anime_status = $3::anime_status_enum)
-    AND ($4::anime_format_enum IS NULL OR a.anime_format = $4::anime_format_enum)
-    AND ($5::smallint IS NULL OR a.year_released = $5::smallint)
-    AND ($6::boolean IS NULL OR a.available = $6::boolean)`;
+    AND ($2::anime_status_enum IS NULL OR a.anime_status = $2::anime_status_enum)
+    AND ($3::anime_format_enum IS NULL OR a.anime_format = $3::anime_format_enum)
+    AND ($4::smallint IS NULL OR a.year_released = $4::smallint)
+    AND ($5::boolean IS NULL OR a.available = $5::boolean)`;
 
 export interface CountAnimesArgs {
-    search: string | null;
     genre: string | null;
     status: string | null;
     format: string | null;
@@ -261,7 +249,7 @@ export interface CountAnimesRow {
 export async function countAnimes(client: Client, args: CountAnimesArgs): Promise<CountAnimesRow | null> {
     const result = await client.query({
         text: countAnimesQuery,
-        values: [args.search, args.genre, args.status, args.format, args.year, args.available],
+        values: [args.genre, args.status, args.format, args.year, args.available],
         rowMode: "array"
     });
     if (result.rows.length !== 1) {
@@ -281,7 +269,7 @@ SELECT
     a.title_en,
     a.title_original,
     a.anime_description,
-    a.cover_url,
+    a.cover_id,
     a.production_studio,
     a.mal_id,
     a.anilist_id,
@@ -314,7 +302,7 @@ export interface GetAnimeByIdRow {
     titleEn: string;
     titleOriginal: string;
     animeDescription: string;
-    coverUrl: string;
+    coverId: string | null;
     productionStudio: string;
     malId: string | null;
     anilistId: string | null;
@@ -347,7 +335,7 @@ export async function getAnimeById(client: Client, args: GetAnimeByIdArgs): Prom
         titleEn: row[3],
         titleOriginal: row[4],
         animeDescription: row[5],
-        coverUrl: row[6],
+        coverId: row[6],
         productionStudio: row[7],
         malId: row[8],
         anilistId: row[9],
@@ -372,7 +360,7 @@ SELECT
     a.title_en,
     a.title_original,
     a.anime_description,
-    a.cover_url,
+    a.cover_id,
     a.production_studio,
     a.mal_id,
     a.anilist_id,
@@ -405,7 +393,7 @@ export interface GetAnimeBySlugRow {
     titleEn: string;
     titleOriginal: string;
     animeDescription: string;
-    coverUrl: string;
+    coverId: string | null;
     productionStudio: string;
     malId: string | null;
     anilistId: string | null;
@@ -438,7 +426,7 @@ export async function getAnimeBySlug(client: Client, args: GetAnimeBySlugArgs): 
         titleEn: row[3],
         titleOriginal: row[4],
         animeDescription: row[5],
-        coverUrl: row[6],
+        coverId: row[6],
         productionStudio: row[7],
         malId: row[8],
         anilistId: row[9],
@@ -629,7 +617,7 @@ SELECT
     "slug",
     "title_ua",
     "year_released",
-    "cover_url",
+    "cover_id",
     "episodes_count"
 FROM public.animes
 WHERE
@@ -642,7 +630,7 @@ export interface GetAvailableAnimesByCurrentYearRow {
     slug: string;
     titleUa: string;
     yearReleased: number | null;
-    coverUrl: string;
+    coverId: string | null;
     episodesCount: number;
 }
 
@@ -658,7 +646,7 @@ export async function getAvailableAnimesByCurrentYear(client: Client): Promise<G
             slug: row[1],
             titleUa: row[2],
             yearReleased: row[3],
-            coverUrl: row[4],
+            coverId: row[4],
             episodesCount: row[5]
         };
     });
@@ -672,7 +660,8 @@ SET
     "title_en"             = COALESCE($3::text, title_en),
     "title_original"       = COALESCE($4::text, title_original),
     "anime_description"    = COALESCE($5::text, anime_description),
-    "cover_url"            = COALESCE($6::text, cover_url),
+    -- TODO: provide the way to reset cover_id
+    "cover_id"             = COALESCE($6::uuid, cover_id),
     "production_studio"    = COALESCE($7::text, production_studio),
     "mal_id"               = $8::bigint,
     "anilist_id"           = $9::bigint,
@@ -694,7 +683,7 @@ RETURNING
     "title_en",
     "title_original",
     "anime_description",
-    "cover_url",
+    "cover_id",
     "production_studio",
     "mal_id",
     "anilist_id",
@@ -714,7 +703,7 @@ export interface UpdateAnimeByIdArgs {
     titleEn: string | null;
     titleOriginal: string | null;
     animeDescription: string | null;
-    coverUrl: string | null;
+    coverId: string | null;
     productionStudio: string | null;
     malId: string | null;
     anilistId: string | null;
@@ -737,7 +726,7 @@ export interface UpdateAnimeByIdRow {
     titleEn: string;
     titleOriginal: string;
     animeDescription: string;
-    coverUrl: string;
+    coverId: string | null;
     productionStudio: string;
     malId: string | null;
     anilistId: string | null;
@@ -755,7 +744,7 @@ export interface UpdateAnimeByIdRow {
 export async function updateAnimeById(client: Client, args: UpdateAnimeByIdArgs): Promise<UpdateAnimeByIdRow | null> {
     const result = await client.query({
         text: updateAnimeByIdQuery,
-        values: [args.slug, args.titleUa, args.titleEn, args.titleOriginal, args.animeDescription, args.coverUrl, args.productionStudio, args.malId, args.anilistId, args.hikkaId, args.imdbId, args.yearReleased, args.avgEpisodeDuration, args.episodesCount, args.ageRestriction, args.animeStatus, args.animeFormat, args.available, args.animeId],
+        values: [args.slug, args.titleUa, args.titleEn, args.titleOriginal, args.animeDescription, args.coverId, args.productionStudio, args.malId, args.anilistId, args.hikkaId, args.imdbId, args.yearReleased, args.avgEpisodeDuration, args.episodesCount, args.ageRestriction, args.animeStatus, args.animeFormat, args.available, args.animeId],
         rowMode: "array"
     });
     if (result.rows.length !== 1) {
@@ -769,7 +758,7 @@ export async function updateAnimeById(client: Client, args: UpdateAnimeByIdArgs)
         titleEn: row[3],
         titleOriginal: row[4],
         animeDescription: row[5],
-        coverUrl: row[6],
+        coverId: row[6],
         productionStudio: row[7],
         malId: row[8],
         anilistId: row[9],

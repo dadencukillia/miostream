@@ -1,4 +1,7 @@
-import Type, { type TSchema, type TSchemaOptions } from "typebox";
+import Type from "typebox";
+import { ErrorResponse } from "@utils/errorsCollection";
+import { AnimeId } from "./anime.shared";
+import { Nullable, StringEnum } from "@utils/types";
 
 export const ANIME_FORMATS = [
 	"tv",
@@ -114,20 +117,6 @@ export const ANIME_SORTS = [
 	"year_asc",
 ] as const;
 
-// Builds a JSON Schema enum that also infers as a union of string literals.
-const StringEnum = <T extends readonly string[]>(
-	values: T,
-	options: TSchemaOptions = {},
-) =>
-	Type.Unsafe<T[number]>({
-		type: "string",
-		enum: [...values],
-		...options,
-	});
-
-const Nullable = <T extends TSchema>(schema: T) =>
-	Type.Union([schema, Type.Null()]);
-
 const slugSchema = Type.String({
 	minLength: 1,
 	maxLength: 200,
@@ -140,31 +129,6 @@ const genresSchema = Type.Array(StringEnum(GENRES), {
 	maxItems: 60,
 	description: "Anime genres (in the `genres` table)",
 });
-
-export const AnimeIdRequestParams = Type.Object(
-	{
-		id: Type.String({ format: "uuid", description: "Anime UUID" }),
-	},
-	{
-		additionalProperties: false,
-		examples: [{ id: "018f23ab-1234-7123-8123-123456789abc" }],
-	},
-);
-
-export const AnimeSlugRequestParams = Type.Object(
-	{
-		slug: Type.String({
-			minLength: 1,
-			maxLength: 200,
-			pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$",
-			description: "URL-friendly anime slug",
-		}),
-	},
-	{
-		additionalProperties: false,
-		examples: [{ slug: "sample-anime" }],
-	},
-);
 
 export const AnimeResponse = Type.Object(
 	{
@@ -218,6 +182,17 @@ export const AnimeResponse = Type.Object(
 		],
 	},
 );
+
+export const AnimeIdOrSlugRequestParams = Type.Object({
+  identifier: Type.Union([
+    AnimeId,
+    Type.String({ description: "URL-friendly anime slug", minLength: 1, maxLength: 200, examples: [ "jujutsu-kaisen-season-1-24242" ] })
+  ]),
+});
+
+export const AnimeIdRequestParams = Type.Object({
+  id: AnimeId,
+});
 
 export const CreateAnimeRequestPayload = Type.Object(
 	{
@@ -274,13 +249,6 @@ export const ListAnimesRequestQueries = Type.Object(
 		limit: Type.Optional(
 			Type.Integer({ minimum: 1, maximum: 100, default: 20, description: "Number of items per page" }),
 		),
-		search: Type.Optional(
-			Type.String({
-				minLength: 1,
-				maxLength: 200,
-				description: "Case-insensitive search by slug or any title",
-			}),
-		),
 		genre: Type.Optional(StringEnum(GENRES, { description: "Filter by genre" })),
 		status: Type.Optional(StringEnum(ANIME_STATUSES, { description: "Filter by anime status" })),
 		format: Type.Optional(StringEnum(ANIME_FORMATS, { description: "Filter by anime format" })),
@@ -296,7 +264,7 @@ export const ListAnimesRequestQueries = Type.Object(
 	{
 		additionalProperties: false,
 		description: "Query parameters for listing animes",
-		examples: [{ page: 1, limit: 20, search: "frieren", sort: "newest" }],
+		examples: [{ page: 1, limit: 20, sort: "newest" }],
 	},
 );
 
@@ -331,24 +299,12 @@ export const AnimeListResponse = Type.Object(
 	},
 );
 
-export const ErrorResponse = Type.Object(
-	{
-		ok: Type.Literal(false, { description: "Indicates an unsuccessful operation" }),
-		message: Type.String({ description: "Human-readable error details" }),
-	},
-	{
-		additionalProperties: false,
-		description: "Standard error response payload",
-		examples: [{ ok: false, message: "Anime not found" }],
-	},
-);
-
 // Route schemas passed directly to Fastify.
 
 export const ListAnimesSchema = {
-	tags: ["anime"],
+	tags: ["Anime"],
 	summary: "List animes",
-	description: "Returns a paginated list of animes with optional filtering, search and sorting.",
+	description: "Returns a paginated list of animes with optional filtering and sorting.",
 	querystring: ListAnimesRequestQueries,
 	response: {
 		200: AnimeListResponse,
@@ -357,24 +313,14 @@ export const ListAnimesSchema = {
 	},
 } as const;
 
-export const GetAnimeSchema = {
-	tags: ["anime"],
-	summary: "Get anime by id",
-	description: "Fetches a single anime by its UUID.",
-	params: AnimeIdRequestParams,
-	response: {
-		200: AnimeResponse,
-		400: ErrorResponse,
-		404: ErrorResponse,
-		500: ErrorResponse,
-	},
-} as const;
-
-export const GetAnimeBySlugSchema = {
-	tags: ["anime"],
-	summary: "Get anime by slug",
-	description: "Fetches a single anime by its URL-friendly slug.",
-	params: AnimeSlugRequestParams,
+export const GetAnimeRouteSchema = {
+	tags: ["Anime"],
+	summary: "Get anime by id or slug",
+	description: "Fetches a single anime by its UUID or slug.",
+	params: Type.Union([
+    AnimeIdOrSlugRequestParams,
+    Type.String({ description: "Anime slug", examples: [ "jujutsu-kaisen-season-1-24242" ] })
+  ]),
 	response: {
 		200: AnimeResponse,
 		400: ErrorResponse,
@@ -384,7 +330,7 @@ export const GetAnimeBySlugSchema = {
 } as const;
 
 export const CreateAnimeSchema = {
-	tags: ["anime"],
+	tags: ["Anime"],
 	summary: "Create anime",
 	description: "Creates a new anime entry with the provided data.",
 	body: CreateAnimeRequestPayload,
@@ -397,7 +343,7 @@ export const CreateAnimeSchema = {
 } as const;
 
 export const UpdateAnimeSchema = {
-	tags: ["anime"],
+	tags: ["Anime"],
 	summary: "Update anime",
 	description: "Updates an existing anime by its UUID.",
 	params: AnimeIdRequestParams,
@@ -412,7 +358,7 @@ export const UpdateAnimeSchema = {
 } as const;
 
 export const DeleteAnimeSchema = {
-	tags: ["anime"],
+	tags: ["Anime"],
 	summary: "Delete anime",
 	description: "Permanently removes an anime by its UUID.",
 	params: AnimeIdRequestParams,

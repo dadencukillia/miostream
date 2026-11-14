@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@scalar/fastify-api-reference": "^1.78.1"
+  }
+}

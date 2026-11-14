@@ -5,7 +5,7 @@ INSERT INTO public.animes (
     title_en,
     title_original,
     anime_description,
-    cover_url,
+    cover_id,
     production_studio,
     mal_id,
     anilist_id,
@@ -24,7 +24,7 @@ INSERT INTO public.animes (
     @title_en::text,
     @title_original::text,
     @anime_description::text,
-    @cover_url::text,
+    sqlc.narg('cover_id')::uuid,
     @production_studio::text,
     sqlc.narg('mal_id')::bigint,
     sqlc.narg('anilist_id')::bigint,
@@ -54,7 +54,7 @@ SELECT
     a.title_en,
     a.title_original,
     a.anime_description,
-    a.cover_url,
+    a.cover_id,
     a.production_studio,
     a.mal_id,
     a.anilist_id,
@@ -75,12 +75,7 @@ SELECT
     )::text[] AS genres
 FROM public.animes a
 WHERE
-    (sqlc.narg('search')::text IS NULL OR
-        a.slug ILIKE '%' || sqlc.narg('search')::text || '%' OR
-        a.title_ua ILIKE '%' || sqlc.narg('search')::text || '%' OR
-        a.title_en ILIKE '%' || sqlc.narg('search')::text || '%' OR
-        a.title_original ILIKE '%' || sqlc.narg('search')::text || '%')
-    AND (sqlc.narg('genre')::genre_type_enum IS NULL OR EXISTS (
+    (sqlc.narg('genre')::genre_type_enum IS NULL OR EXISTS (
         SELECT 1
         FROM public.genres fg
         WHERE fg.anime_id = a.anime_id
@@ -102,12 +97,7 @@ LIMIT sqlc.arg('limit')::int OFFSET sqlc.arg('offset')::int;
 SELECT COUNT(*)::int AS total
 FROM public.animes a
 WHERE
-    (sqlc.narg('search')::text IS NULL OR
-        a.slug ILIKE '%' || sqlc.narg('search')::text || '%' OR
-        a.title_ua ILIKE '%' || sqlc.narg('search')::text || '%' OR
-        a.title_en ILIKE '%' || sqlc.narg('search')::text || '%' OR
-        a.title_original ILIKE '%' || sqlc.narg('search')::text || '%')
-    AND (sqlc.narg('genre')::genre_type_enum IS NULL OR EXISTS (
+    (sqlc.narg('genre')::genre_type_enum IS NULL OR EXISTS (
         SELECT 1
         FROM public.genres fg
         WHERE fg.anime_id = a.anime_id
@@ -126,7 +116,7 @@ SELECT
     a.title_en,
     a.title_original,
     a.anime_description,
-    a.cover_url,
+    a.cover_id,
     a.production_studio,
     a.mal_id,
     a.anilist_id,
@@ -156,7 +146,7 @@ SELECT
     a.title_en,
     a.title_original,
     a.anime_description,
-    a.cover_url,
+    a.cover_id,
     a.production_studio,
     a.mal_id,
     a.anilist_id,
@@ -241,7 +231,7 @@ SELECT
     "slug",
     "title_ua",
     "year_released",
-    "cover_url",
+    "cover_id",
     "episodes_count"
 FROM public.animes
 WHERE
@@ -257,7 +247,8 @@ SET
     "title_en"             = COALESCE(sqlc.narg('title_en')::text, title_en),
     "title_original"       = COALESCE(sqlc.narg('title_original')::text, title_original),
     "anime_description"    = COALESCE(sqlc.narg('anime_description')::text, anime_description),
-    "cover_url"            = COALESCE(sqlc.narg('cover_url')::text, cover_url),
+    -- TODO: provide the way to reset cover_id
+    "cover_id"             = COALESCE(sqlc.narg('cover_id')::uuid, cover_id),
     "production_studio"    = COALESCE(sqlc.narg('production_studio')::text, production_studio),
     "mal_id"               = sqlc.narg('mal_id')::bigint,
     "anilist_id"           = sqlc.narg('anilist_id')::bigint,
@@ -279,7 +270,7 @@ RETURNING
     "title_en",
     "title_original",
     "anime_description",
-    "cover_url",
+    "cover_id",
     "production_studio",
     "mal_id",
     "anilist_id",

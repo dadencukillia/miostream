@@ -60,7 +60,8 @@ export const toAnime = (row: AnimeRecord): AnimeResponseType => ({
 	titleEn: row.titleEn,
 	titleOriginal: row.titleOriginal,
 	animeDescription: row.animeDescription,
-	coverUrl: row.coverUrl,
+  // TODO: receive coverUrl from coverId
+	coverUrl: "",
 	productionStudio: row.productionStudio,
 	malId: row.malId === null ? null : Number(row.malId),
 	anilistId: row.anilistId === null ? null : Number(row.anilistId),
@@ -172,10 +173,7 @@ export async function listAnimes(
 ): Promise<AnimeListResponseType> {
 	const page = query.page ?? 1;
 	const limit = query.limit ?? 20;
-	const search = query.search?.trim() || null;
-
 	const filter: AnimeListFilterType = {
-		search,
 		genre: query.genre ?? null,
 		status: query.status ?? null,
 		format: query.format ?? null,
@@ -226,26 +224,27 @@ export async function createAnime(
 	assertHasTitle([data.titleUa, data.titleEn, data.titleOriginal]);
 
 	const anime = await repoCreateAnime(db, {
-			slug: data.slug,
-			titleUa: data.titleUa ?? "",
-			titleEn: data.titleEn ?? "",
-			titleOriginal: data.titleOriginal ?? "",
-			animeDescription: data.animeDescription ?? "",
-			coverUrl: data.coverUrl ?? "",
-			productionStudio: data.productionStudio ?? "",
-			malId: data.malId ?? null,
-			anilistId: data.anilistId ?? null,
-			hikkaId: data.hikkaId ?? null,
-			imdbId: data.imdbId ?? null,
-			yearReleased: data.yearReleased ?? null,
-			avgEpisodeDuration: data.avgEpisodeDuration ?? 0,
-			episodesCount: data.episodesCount ?? 0,
-			ageRestriction: data.ageRestriction ?? null,
-			animeStatus: data.animeStatus ?? null,
-			animeFormat: data.animeFormat ?? "tv",
-			available: data.available ?? true,
-			genres: uniqueGenres(data.genres),
-		})
+		slug: data.slug,
+		titleUa: data.titleUa ?? "",
+		titleEn: data.titleEn ?? "",
+		titleOriginal: data.titleOriginal ?? "",
+		animeDescription: data.animeDescription ?? "",
+    // TODO: download cover, store it in the CDN and receive coverId
+		coverId: null,
+		productionStudio: data.productionStudio ?? "",
+		malId: data.malId ?? null,
+		anilistId: data.anilistId ?? null,
+		hikkaId: data.hikkaId ?? null,
+		imdbId: data.imdbId ?? null,
+		yearReleased: data.yearReleased ?? null,
+		avgEpisodeDuration: data.avgEpisodeDuration ?? 0,
+		episodesCount: data.episodesCount ?? 0,
+		ageRestriction: data.ageRestriction ?? null,
+		animeStatus: data.animeStatus ?? null,
+		animeFormat: data.animeFormat ?? "tv",
+		available: data.available ?? true,
+		genres: uniqueGenres(data.genres),
+	})
 		.catch(handleDbError);
 
 	if (!anime) throw AnimeErrors.error("anime-not-created");
@@ -286,7 +285,9 @@ export async function updateAnime(
 	if (data.animeDescription !== undefined) {
 		patch.animeDescription = data.animeDescription;
 	}
-	if (data.coverUrl !== undefined) patch.coverUrl = data.coverUrl;
+
+  // TODO: download cover, store it in the CDN and receive coverId
+	if (data.coverUrl !== undefined) patch.coverId = undefined;
 	if (data.productionStudio !== undefined) {
 		patch.productionStudio = data.productionStudio;
 	}
@@ -360,7 +361,7 @@ export interface CreateAnimeRecord {
 	titleEn: string;
 	titleOriginal: string;
 	animeDescription: string;
-	coverUrl: string;
+	coverId: string | null;
 	productionStudio: string;
 	malId: number | null;
 	anilistId: number | null;
@@ -400,7 +401,6 @@ async function withTransaction<T>(
 
 async function repoListAnimes(db: Pool, filter: AnimeListFilterType) {
 	const filters = {
-		search: filter.search,
 		genre: filter.genre,
 		status: filter.status,
 		format: filter.format,
@@ -447,7 +447,7 @@ async function repoCreateAnime(
 			titleEn: input.titleEn,
 			titleOriginal: input.titleOriginal,
 			animeDescription: input.animeDescription,
-			coverUrl: input.coverUrl,
+			coverId: input.coverId,
 			productionStudio: input.productionStudio,
 			malId: input.malId === null ? null : String(input.malId),
 			anilistId: input.anilistId === null ? null : String(input.anilistId),
@@ -486,7 +486,7 @@ async function repoUpdateAnime(
 			titleEn: "title_en",
 			titleOriginal: "title_original",
 			animeDescription: "anime_description",
-			coverUrl: "cover_url",
+			coverId: "cover_id",
 			productionStudio: "production_studio",
 			malId: "mal_id",
 			anilistId: "anilist_id",
@@ -511,7 +511,7 @@ async function repoUpdateAnime(
 			titleEn: merged.titleEn ?? existing.titleEn,
 			titleOriginal: merged.titleOriginal ?? existing.titleOriginal,
 			animeDescription: merged.animeDescription ?? existing.animeDescription,
-			coverUrl: merged.coverUrl ?? existing.coverUrl,
+			coverId: merged.coverId ?? existing.coverId,
 			productionStudio: merged.productionStudio ?? existing.productionStudio,
 			malId: merged.malId === undefined ? existing.malId : (merged.malId === null ? null : String(merged.malId)),
 			anilistId: merged.anilistId === undefined ? existing.anilistId : (merged.anilistId === null ? null : String(merged.anilistId)),
