@@ -1,5 +1,7 @@
 import type { Static } from "typebox";
 import * as userSchema from "./user.schema";
+import type { TransformedType } from "@utils/modelTransformer";
+import { toPublicUserModel } from "./user.model";
 
 // Enums
 export type UserRoleType = (typeof userSchema.USER_ROLE)[number];
@@ -8,7 +10,7 @@ export type UserStatusType = (typeof userSchema.USER_STATUS)[number];
 // Responses
 export type ErrorResponseType = Static<typeof userSchema.ErrorResponse>;
 export type UserResponseType = Static<typeof userSchema.UserResponse>;
-export type PublicUserResponseType = Static<typeof userSchema.PublicUserResponse>;
+export type PublicUserResponseType = TransformedType<UserResponseType, typeof toPublicUserModel>;
 export type UserLinkResponseType = Static<typeof userSchema.UserLinkResponse>;
 export type UserLinkListResponseType = UserLinkResponseType[];
 
@@ -31,7 +33,6 @@ export type UpdateUserLinkRequestPayloadType = Static<typeof userSchema.UpdateUs
 // Controller Return Types
 export type CreateUserReturnType = UserResponseType | ErrorResponseType;
 export type GetUserReturnType = PublicUserResponseType | ErrorResponseType;
-export type GetUserByIdReturnType = PublicUserResponseType | ErrorResponseType;
 export type UpdateUserProfileReturnType = UserResponseType | ErrorResponseType;
 export type UpdateUserAvatarReturnType = UserResponseType | ErrorResponseType;
 export type DeleteUserAvatarReturnType = null | ErrorResponseType;

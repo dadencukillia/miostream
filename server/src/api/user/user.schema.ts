@@ -67,12 +67,15 @@ export const UserResponse = Type.Object({
         description: "Longest watch streak achieved (in days)",
         examples: [12]
     }),
+    streak: Type.Integer({
+        minimum: 0,
+        description: "Current active watch streak (in days)",
+        examples: [5]
+    }),
     timezone: Type.String({
         description: "User IANA timezone identifier",
         examples: ["Europe/Kyiv"]
     }),
-    streakStartDate: NullableDateType,
-    lastWatchDate: NullableDateType,
     profileFrameUrl: Nullable(Type.String({
         format: "uri",
         description: "Custom profile frame decorative asset URL (null if not set)",
@@ -328,19 +331,6 @@ export const GetUserSchema = {
     summary: "Get user by ID or nickname",
     description: "Retrieves public profile details by user UUID (canonical or compact) or unique nickname.",
     params: UserIdentifierRequestParams,
-    response: {
-        200: PublicUserResponse,
-        400: ErrorResponse,
-        404: ErrorResponse,
-        500: ErrorResponse,
-    },
-} as const;
-
-export const GetUserByIdSchema = {
-    tags: [TAG_USER],
-    summary: "Get user by ID",
-    description: "Retrieves public profile details for the specified user UUID.",
-    params: UserIdRequestParams,
     response: {
         200: PublicUserResponse,
         400: ErrorResponse,
