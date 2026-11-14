@@ -4,9 +4,10 @@ export const isUuid = (value: string): boolean => {
 	return UUID_REGEX.test(value);
 };
 
-//  Normalizes a UUID string to its canonical hyphenated, lowercase form.
-//  Returns null if the input is not a valid UUID.
-
+/**
+ * Normalizes a UUID string to its canonical hyphenated, lowercase form.
+ * Returns null if the input is not a valid UUID.
+ */
 export const normalizeUuid = (value: string): string | null => {
 	if (!isUuid(value)) return null;
 	const hex = value.replace(/-/g, "").toLowerCase();

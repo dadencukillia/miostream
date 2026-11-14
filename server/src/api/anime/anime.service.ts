@@ -4,12 +4,12 @@ import type {
 	AnimeResponseType,
 	AnimeFormatType,
 	AnimeListFilterType,
-	AnimeListQueryType,
+	ListAnimesRequestQueriesType,
 	AnimeListResponseType,
 	AnimeStatusType,
-	CreateAnimeBodyType,
+	CreateAnimeRequestPayloadType,
 	GenreType,
-	UpdateAnimeBodyType,
+	UpdateAnimeRequestPayloadType,
 } from "./anime.dto";
 import { AnimeErrors } from "./anime.errors";
 import {
@@ -60,7 +60,9 @@ export const toAnime = (row: AnimeRecord): AnimeResponseType => ({
 	titleEn: row.titleEn,
 	titleOriginal: row.titleOriginal,
 	animeDescription: row.animeDescription,
+	// Preserve the stored reference until cover URL resolution is available.
 	coverId: row.coverId,
+	coverUrl: "",
 	productionStudio: row.productionStudio,
 	malId: row.malId === null ? null : Number(row.malId),
 	anilistId: row.anilistId === null ? null : Number(row.anilistId),
@@ -168,7 +170,7 @@ const uniqueGenres = (genres: GenreType[] | undefined): GenreType[] => [
 
 export async function listAnimes(
 	db: Pool,
-	query: AnimeListQueryType,
+	query: ListAnimesRequestQueriesType,
 ): Promise<AnimeListResponseType> {
 	const page = query.page ?? 1;
 	const limit = query.limit ?? 20;
@@ -217,7 +219,7 @@ export async function getAnimeBySlug(db: Pool, slug: string): Promise<AnimeRespo
 
 export async function createAnime(
 	db: Pool,
-	data: CreateAnimeBodyType,
+	data: CreateAnimeRequestPayloadType,
 ): Promise<AnimeResponseType> {
 	assertValidSlug(data.slug);
 	assertHasTitle([data.titleUa, data.titleEn, data.titleOriginal]);
@@ -254,7 +256,7 @@ export async function createAnime(
 export async function updateAnime(
 	db: Pool,
 	animeId: string,
-	data: UpdateAnimeBodyType,
+	data: UpdateAnimeRequestPayloadType,
 ): Promise<AnimeResponseType> {
 	assertValidId(animeId);
 

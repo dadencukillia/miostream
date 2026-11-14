@@ -3,26 +3,26 @@ import type {
 	ANIME_FORMATS,
 	ANIME_SORTS,
 	ANIME_STATUSES,
-	AnimeIdParamsSchema,
-	AnimeListResponseSchema,
-	AnimeResponseSchema,
-	AnimeSlugParamsSchema,
-	CreateAnimeBodySchema,
+	AnimeIdRequestParams,
+	AnimeIdOrSlugRequestParams,
+	AnimeListResponse,
+	AnimeResponse,
+	CreateAnimeRequestPayload,
 	GENRES,
-	ListAnimesQuerySchema,
+	ListAnimesRequestQueries,
 	MPAA_RATINGS,
-	PaginationSchema,
-	UpdateAnimeBodySchema,
+	PaginationResponse,
+	UpdateAnimeRequestPayload,
 } from "./anime.schema";
 
-export type AnimeResponseType = Type.Static<typeof AnimeResponseSchema>;
-export type CreateAnimeBodyType = Type.Static<typeof CreateAnimeBodySchema>;
-export type UpdateAnimeBodyType = Type.Static<typeof UpdateAnimeBodySchema>;
-export type AnimeListQueryType = Type.Static<typeof ListAnimesQuerySchema>;
-export type AnimeListResponseType = Type.Static<typeof AnimeListResponseSchema>;
-export type PaginationType = Type.Static<typeof PaginationSchema>;
-export type AnimeIdParamsType = Type.Static<typeof AnimeIdParamsSchema>;
-export type AnimeSlugParamsType = Type.Static<typeof AnimeSlugParamsSchema>;
+export type AnimeResponseType = Type.Static<typeof AnimeResponse>;
+export type CreateAnimeRequestPayloadType = Type.Static<typeof CreateAnimeRequestPayload>;
+export type UpdateAnimeRequestPayloadType = Type.Static<typeof UpdateAnimeRequestPayload>;
+export type ListAnimesRequestQueriesType = Type.Static<typeof ListAnimesRequestQueries>;
+export type AnimeListResponseType = Type.Static<typeof AnimeListResponse>;
+export type PaginationResponseType = Type.Static<typeof PaginationResponse>;
+export type AnimeIdRequestParamsType = Type.Static<typeof AnimeIdRequestParams>;
+export type AnimeIdOrSlugRequestParamsType = Type.Static<typeof AnimeIdOrSlugRequestParams>;
 
 export type AnimeFormatType = (typeof ANIME_FORMATS)[number];
 export type AnimeStatusType = (typeof ANIME_STATUSES)[number];

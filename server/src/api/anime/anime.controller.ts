@@ -1,16 +1,16 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import type {
-	AnimeIdParamsType,
-	AnimeListQueryType,
-	AnimeSlugParamsType,
-	CreateAnimeBodyType,
-	UpdateAnimeBodyType,
+	AnimeIdRequestParamsType,
+	ListAnimesRequestQueriesType,
+	AnimeIdOrSlugRequestParamsType,
+	CreateAnimeRequestPayloadType,
+	UpdateAnimeRequestPayloadType,
 } from "./anime.dto";
 import * as animeService from "./anime.service";
-import { isUuid, normalizeUuid } from "@utils/uuid";
+import { normalizeUuid } from "@utils/uuid";
 
 export const listAnimes = async (
-	request: FastifyRequest<{ Querystring: AnimeListQueryType }>,
+	request: FastifyRequest<{ Querystring: ListAnimesRequestQueriesType }>,
 	reply: FastifyReply,
 ) => {
 	const result = await animeService.listAnimes(
@@ -21,20 +21,20 @@ export const listAnimes = async (
 };
 
 export const getAnime = async (
-	request: FastifyRequest<{ Params: { idOrSlug: string } }>,
+	request: FastifyRequest<{ Params: AnimeIdOrSlugRequestParamsType }>,
 	reply: FastifyReply,
 ) => {
-	const { idOrSlug } = request.params;
-	const normalizedId = normalizeUuid(idOrSlug);
+	const { identifier } = request.params;
+	const normalizedId = normalizeUuid(identifier);
 	const anime = normalizedId
 		? await animeService.getAnime(request.server.pg, normalizedId)
-		: await animeService.getAnimeBySlug(request.server.pg, idOrSlug);
+		: await animeService.getAnimeBySlug(request.server.pg, identifier);
 	return reply.status(200).send(anime);
 };
 
 export const createAnime = async (
-	request: FastifyRequest<{ Body: CreateAnimeBodyType }>,
-	reply: FastifyReply,
+	request: FastifyRequest<{ Body: CreateAnimeRequestPayloadType }>,
+	reply: FastifyReply<{ Body: CreateAnimeRequestPayloadType }>,
 ) => {
 	const anime = await animeService.createAnime(request.server.pg, request.body);
 	return reply.status(201).send(anime);
@@ -42,8 +42,8 @@ export const createAnime = async (
 
 export const updateAnime = async (
 	request: FastifyRequest<{
-		Params: AnimeIdParamsType;
-		Body: UpdateAnimeBodyType;
+		Params: AnimeIdRequestParamsType;
+		Body: UpdateAnimeRequestPayloadType;
 	}>,
 	reply: FastifyReply,
 ) => {
@@ -56,7 +56,7 @@ export const updateAnime = async (
 };
 
 export const deleteAnime = async (
-	request: FastifyRequest<{ Params: AnimeIdParamsType }>,
+	request: FastifyRequest<{ Params: AnimeIdRequestParamsType }>,
 	reply: FastifyReply,
 ) => {
 	await animeService.deleteAnime(request.server.pg, request.params.id);
