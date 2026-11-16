@@ -1,4 +1,4 @@
-import { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 const plugin: FastifyPluginAsync = async (fastify, _opts) => {
   fastify.get('/', async (_request: FastifyRequest, reply: FastifyReply) => {

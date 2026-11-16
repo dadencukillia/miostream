@@ -1,4 +1,4 @@
-import type { FastifyPluginAsync, FastifyInstance, FastifyPluginOptions, FastifyRequest, FastifyReply } from "fastify";
+import type { FastifyPluginAsync, FastifyInstance, FastifyPluginOptions } from "fastify";
 import * as schemas from "./comment.schema";
 import * as controllers from "./comment.controller";
 import { CommentErrors } from "./comment.errors";

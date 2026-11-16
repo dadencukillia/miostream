@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyPluginAsync, FastifyPluginOptions, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyInstance, FastifyPluginAsync, FastifyPluginOptions } from "fastify";
 import { ListErrors } from "./list.errors";
 import * as schemas from "./list.schema";
 import * as controllers from "./list.controller";

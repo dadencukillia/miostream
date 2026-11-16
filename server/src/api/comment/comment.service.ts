@@ -1,7 +1,7 @@
 import type { Pool } from "pg";
 import * as commentsSqlc from "@sqlc/comments_sql";
 import { CommentErrors } from "./comment.errors";
-import * as dto from "./comment.dto";
+import type * as dto from "./comment.dto";
 
 export const getComments = async (
     client: Pool,

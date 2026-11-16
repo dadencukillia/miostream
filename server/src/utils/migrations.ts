@@ -45,11 +45,7 @@ async function pgWrapTransaction(client: Client, callback: (client: Client) => P
   }
 }
 
-class MigrationError extends Error {
-  constructor(message: string) {
-    super(message);
-  }
-}
+class MigrationError extends Error {}
 
 /**
  * Represents a single migration file, handling its path validation, timestamp extraction,
@@ -262,7 +258,7 @@ export class Migrator {
   public async down() {
     await pgWrapClient(this.db, async client => {
       await pgWrapLock(client, async client => {
-        let currentMigrationState = (await Migrator.getMigration(client, this.schema))?.state ?? null;
+        const currentMigrationState = (await Migrator.getMigration(client, this.schema))?.state ?? null;
         console.log("[Migrations] current state:", currentMigrationState);
 
         if (currentMigrationState === null) {
@@ -335,10 +331,10 @@ export class Migrator {
       return migration;
     }
 
-    const id = Number(migrationEntry["operation_id"]);
-    const executedAt = new Date(migrationEntry["executed_at"]);
-    const fromMigration: number|null = processDBMigrationState(migrationEntry["from_migration"]);
-    const toMigration: number|null = processDBMigrationState(migrationEntry["to_migration"]);
+    const id = Number(migrationEntry.operation_id);
+    const executedAt = new Date(migrationEntry.executed_at);
+    const fromMigration: number|null = processDBMigrationState(migrationEntry.from_migration);
+    const toMigration: number|null = processDBMigrationState(migrationEntry.to_migration);
 
     const type: "up"|"down" = (toMigration ?? 0) > (fromMigration ?? 0) ? "up" : "down";
 

@@ -1,5 +1,5 @@
 import fastifySwagger from "@fastify/swagger";
-import Fastify, { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import Fastify, { type FastifyPluginAsync, type FastifyReply, type FastifyRequest } from "fastify";
 import api from "./api/api.plugin";
 import cdn from "./cdn/cdn.plugin";
 import scalarPlugin from '@scalar/fastify-api-reference';

@@ -1,6 +1,6 @@
 import type { FastifyRequest, FastifyReply } from "fastify";
 import { CommentErrors } from "./comment.errors";
-import * as dto from "./comment.dto";
+import type * as dto from "./comment.dto";
 import * as services from "./comment.service";
 
 export const getComments = async (

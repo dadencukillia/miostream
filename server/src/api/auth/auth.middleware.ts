@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyPluginOptions, FastifyReply, FastifyRequest, preHandlerAsyncHookHandler, preHandlerHookHandler, RawReplyDefaultExpression, RawRequestDefaultExpression, RawServerDefault, RouteHandlerMethod } from "fastify";
+import type { FastifyInstance, FastifyPluginOptions, FastifyReply, FastifyRequest, preHandlerAsyncHookHandler, RawReplyDefaultExpression, RawRequestDefaultExpression, RawServerDefault } from "fastify";
 import "@context";
 import fp from "fastify-plugin";
 
@@ -62,7 +62,7 @@ export class AuthContext {
    * @param req - The Fastify request object.
    * @param resp - The Fastify reply object.
    */
-  public logout(request: FastifyRequest, reply: FastifyReply) {
+  public logout(_request: FastifyRequest, _reply: FastifyReply) {
     // TODO: real session deletion, cookies cleaning
   }
 }

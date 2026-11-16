@@ -1,5 +1,5 @@
 import type { Static } from "typebox";
-import * as commentSchema from "./comment.schema";
+import type * as commentSchema from "./comment.schema";
 
 // Responses
 export type ErrorResponseType = Static<typeof commentSchema.ErrorResponse>;
