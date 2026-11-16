@@ -7,8 +7,9 @@ import {
     removeAvatarById,
     setAvatarById
 } from "@/cdn/avatar/avatar.shared";
-import type {
-    UpdateUserAvatarReturningOldRow
+import {
+    updateUserAvatarReturningOld,
+    type UpdateUserAvatarReturningOldRow
 } from "@sqlc/users_sql";
 import type * as dto from "../user.dto";
 import { toUserModel, toUserWithoutOldAvatarModel } from "../user.model";

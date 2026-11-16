@@ -153,6 +153,7 @@ class CustomError extends Error {
       type: "CustomError",
       message: this.message,
       statusCode: this._statusCode,
+      slug: this._slug,
       collection: this._collection.name,
       details: this._details.map(serializeDetail),
       stack: this.stack ?? "",
@@ -167,6 +168,7 @@ class CustomError extends Error {
       name: this.name,
       message: this.message,
       statusCode: this._statusCode,
+      slug: this._slug,
       collection: this._collection.name,
       details: this._details,
       stack: this.stack
@@ -304,7 +306,8 @@ export class ErrorsCollection {
         ) {
           return reply.status(frameworkError.statusCode!).send({
             ok: false,
-            message: frameworkError.message
+            message: frameworkError.message,
+            error: "fastify"
           } as ErrorResponseReturnType);
         }
       }
@@ -313,7 +316,8 @@ export class ErrorsCollection {
         .status(500)
         .send({
           ok: false,
-          message: "unknown error"
+          message: "something went wrong",
+          error: "unexpected-error"
         } as ErrorResponseReturnType);
     });
   }

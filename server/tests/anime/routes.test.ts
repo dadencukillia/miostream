@@ -98,11 +98,11 @@ describe("anime API", () => {
       databaseError = { code: "23505", constraint: "animes_slug_key" };
       const conflict = await app.inject({ method: "GET", url: `/api/anime/${id}` });
       expect(conflict.statusCode).toBe(409);
-      expect(conflict.json()).toEqual({ ok: false, message: "Anime with this slug already exists" });
+      expect(conflict.json()).toEqual({ ok: false, message: "Anime with this slug already exists", error: "anime-already-exists" });
       databaseError = new Error("sensitive database details");
       const error = await app.inject({ method: "GET", url: `/api/anime/${id}` });
       expect(error.statusCode).toBe(500);
-      expect(error.json()).toEqual({ ok: false, message: "unknown error" });
+      expect(error.json()).toEqual({ ok: false, message: "something went wrong", error: "unexpected-error" });
     } finally {
       databaseError = undefined;
     }
