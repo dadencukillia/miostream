@@ -6,7 +6,7 @@ import {
 import { ErrorResponse } from "@utils/errorsCollection";
 
 // Tags
-export const TAG_COMMENT = "comment";
+export const TAG_COMMENT = "Comment";
 
 // Responses
 export const CommentAuthorResponse = Type.Object({
@@ -18,7 +18,7 @@ export const CommentAuthorResponse = Type.Object({
     description: "Author information"
 });
 
-export const CommentResponse = Type.Object({
+export const CommentItem = Type.Object({
     commentId: Type.String({ description: "Unique comment ID (bigint string)" }),
     content: Type.String({ description: "Comment body text" }),
     createdAt: DateTimeType,
@@ -29,8 +29,21 @@ export const CommentResponse = Type.Object({
     description: "Single comment record"
 });
 
+export const CommentResponse = Type.Object({
+    ok: Type.Literal(true, { description: "Indicates a successful operation" }),
+    commentId: Type.String({ description: "Unique comment ID (bigint string)" }),
+    content: Type.String({ description: "Comment body text" }),
+    createdAt: DateTimeType,
+    isEdited: Type.Boolean({ description: "Indicates if the comment was edited" }),
+    author: CommentAuthorResponse,
+}, {
+    additionalProperties: false,
+    description: "Single comment response payload"
+});
+
 export const CommentsResponse = Type.Object({
-    comments: Type.Array(CommentResponse, { description: "List of comments" }),
+    ok: Type.Literal(true, { description: "Indicates a successful operation" }),
+    comments: Type.Array(CommentItem, { description: "List of comments" }),
     nextCursor: Nullable(Type.String({ description: "Cursor for the next page, or null if end of list" })),
 }, {
     additionalProperties: false,

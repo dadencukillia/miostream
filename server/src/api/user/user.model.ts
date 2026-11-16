@@ -1,42 +1,6 @@
+import { getTodayUtcMsInTimezone } from "@utils/timezones";
 import { generateTransformer } from "@utils/modelTransformer";
-
-const MS_PER_DAY = 86_400_000;
-
-function parseCalendarDateToUtcMs(value: string | Date): number | null {
-    if (value instanceof Date) {
-        if (Number.isNaN(value.getTime())) return null;
-        return Date.UTC(value.getFullYear(), value.getMonth(), value.getDate());
-    }
-
-    const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value.trim());
-    if (!match) return null;
-
-    const year = Number(match[1]);
-    const month = Number(match[2]);
-    const day = Number(match[3]);
-    return Date.UTC(year, month - 1, day);
-}
-
-function getTodayUtcMsInTimezone(timezone: string): number {
-    let formatted: string;
-    try {
-        formatted = new Intl.DateTimeFormat("en-CA", {
-            timeZone: timezone,
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-        }).format(new Date());
-    } catch {
-        formatted = new Intl.DateTimeFormat("en-CA", {
-            timeZone: "UTC",
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-        }).format(new Date());
-    }
-
-    return parseCalendarDateToUtcMs(formatted)!;
-}
+import { MS_PER_DAY, parseCalendarDateToUtcMs } from "@utils/time";
 
 export function calculateUserStreak(
     streakStartDate: string | Date | null,
@@ -69,6 +33,7 @@ export const toUserModel = generateTransformer({
         lastWatchDate: string | Date | null;
         timezone: string;
     }) => ({
+        ok: true as const,
         streak: calculateUserStreak(user.streakStartDate, user.lastWatchDate, user.timezone),
     }),
 });
@@ -81,4 +46,11 @@ export const toPublicUserModel = generateTransformer({
 export const toUserWithoutOldAvatarModel = generateTransformer({
     delete: ["oldAvatarId"],
     map: (_row: { oldAvatarId: string | null }) => ({}),
+});
+
+export const toUserLinkModel = generateTransformer({
+    delete: [],
+    map: (_link: { userLinkId: string | number; userId: string; userLinkUrl: string }) => ({
+        ok: true as const,
+    }),
 });

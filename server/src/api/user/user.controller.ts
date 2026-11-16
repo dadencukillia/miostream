@@ -7,7 +7,7 @@ import { isSafeHttpUrl } from "@utils/urls";
 import { isValidTimezone } from "@utils/timezones";
 import { isUuid, normalizeUuid } from "@utils/uuid";
 import { isReservedNickname } from "@utils/nickname";
-import { toPublicUserModel, toUserModel } from "./user.model";
+import { toPublicUserModel, toUserLinkModel, toUserModel } from "./user.model";
 
 export const createUser = async (
     request: FastifyRequest<{ Body: dto.CreateUserRequestPayloadType }>,
@@ -168,7 +168,7 @@ export const createUserLink = async (
         request.auth!.userId,
         userLinkUrl
     );
-    return reply.status(201).send(link);
+    return reply.status(201).send(toUserLinkModel(link));
 };
 
 export const listUserLinks = async (
@@ -176,7 +176,7 @@ export const listUserLinks = async (
     reply: FastifyReply<{ Reply: dto.ListUserLinksReturnType }>
 ) => {
     const links = await services.listUserLinksByUserId(request.server.pg, request.auth!.userId);
-    return reply.status(200).send(links);
+    return reply.status(200).send({ ok: true, links });
 };
 
 export const listUserLinksByUserId = async (
@@ -184,7 +184,7 @@ export const listUserLinksByUserId = async (
     reply: FastifyReply<{ Params: dto.UserIdRequestParamsType; Reply: dto.ListUserLinksReturnType }>
 ) => {
     const links = await services.listUserLinksByUserId(request.server.pg, request.params.userId);
-    return reply.status(200).send(links);
+    return reply.status(200).send({ ok: true, links });
 };
 
 export const updateUserLink = async (
@@ -201,7 +201,7 @@ export const updateUserLink = async (
         request.params.userLinkId,
         userLinkUrl
     );
-    return reply.status(200).send(link);
+    return reply.status(200).send(toUserLinkModel(link));
 };
 
 export const deleteUserLink = async (

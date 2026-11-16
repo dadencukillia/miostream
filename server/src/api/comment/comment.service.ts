@@ -26,7 +26,7 @@ export const getComments = async (
         throw CommentErrors.error("comment-db-error").withDetails(e);
     }
 
-    const comments: dto.CommentResponseType[] = commentsRaw.map((cr) => ({
+    const comments: dto.CommentItemType[] = commentsRaw.map((cr) => ({
         commentId: String(cr.commentId),
         content: cr.content,
         createdAt: cr.createdAt,
@@ -42,6 +42,7 @@ export const getComments = async (
     const nextCursor = lastComment ? String(lastComment.commentId) : null;
 
     return {
+        ok: true,
         comments,
         nextCursor,
     };
@@ -76,6 +77,7 @@ export const postComment = async (
     }
 
     return {
+        ok: true,
         commentId: String(created.commentId),
         content: created.content,
         createdAt: created.createdAt,
@@ -116,6 +118,7 @@ export const updateComment = async (
     }
 
     return {
+        ok: true,
         commentId: String(updated.commentId),
         content: updated.content,
         createdAt: updated.createdAt,

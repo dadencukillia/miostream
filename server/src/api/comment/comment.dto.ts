@@ -5,6 +5,7 @@ import { ErrorResponse } from "@utils/errorsCollection";
 // Responses
 export type ErrorResponseType = Static<typeof ErrorResponse>;
 export type CommentAuthorResponseType = Static<typeof commentSchema.CommentAuthorResponse>;
+export type CommentItemType = Static<typeof commentSchema.CommentItem>;
 export type CommentResponseType = Static<typeof commentSchema.CommentResponse>;
 export type CommentsResponseType = Static<typeof commentSchema.CommentsResponse>;
 
