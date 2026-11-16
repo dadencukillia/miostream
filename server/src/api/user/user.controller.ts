@@ -59,9 +59,11 @@ export const updateUserProfile = async (
 ) => {
     const { timezone, nickname, fullName } = request.body;
 
-    if (!isValidTimezone(timezone)) throw UserErrors.error("user-invalid");
-    if (nickname.trim().length === 0 || fullName.trim().length === 0) throw UserErrors.error("user-invalid");
-    if (isUuid(nickname) || isReservedNickname(nickname)) throw UserErrors.error("user-invalid");
+    if (timezone !== undefined && !isValidTimezone(timezone)) throw UserErrors.error("user-invalid");
+    if (nickname !== undefined && (nickname.trim().length === 0 || isUuid(nickname) || isReservedNickname(nickname))) {
+        throw UserErrors.error("user-invalid");
+    }
+    if (fullName !== undefined && fullName.trim().length === 0) throw UserErrors.error("user-invalid");
 
     const user = await services.updateUserProfile(
         request.server.pg,

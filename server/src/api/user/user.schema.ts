@@ -206,7 +206,7 @@ export const CreateUserRequestPayload = Type.Object({
     description: "Payload for user registration. At least one of password or googleId must be supplied"
 });
 
-export const UpdateUserProfileRequestPayload = Type.Object({
+export const UpdateUserProfileRequestPayload = Type.Partial(Type.Object({
     nickname: Type.String({
         minLength: 3,
         maxLength: 30,
@@ -232,9 +232,9 @@ export const UpdateUserProfileRequestPayload = Type.Object({
         description: "Valid IANA timezone identifier",
         examples: ["UTC"]
     }),
-}, {
+}), {
     additionalProperties: false,
-    description: "Payload for replacing user profile fields. All fields are required"
+    description: "Payload for partially updating user profile fields. Omitted fields remain unchanged"
 });
 
 export const UpdateUserCustomizationRequestPayload = Type.Object({

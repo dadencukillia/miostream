@@ -125,14 +125,18 @@ export const updateUserProfile = async (
     userId: string,
     data: dto.UpdateUserProfileRequestPayloadType
 ): Promise<dto.UserType> => {
+    if (!data || Object.keys(data).length === 0) {
+        throw UserErrors.error("user-invalid").withMessage("Update payload cannot be empty");
+    }
+
     let user;
     try {
         user = await usersSqlc.updateUserProfile(client, {
             userId: userId,
-            nickname: data.nickname,
-            fullName: data.fullName,
-            bio: data.bio,
-            timezone: data.timezone
+            nickname: data.nickname ?? null,
+            fullName: data.fullName ?? null,
+            bio: data.bio ?? null,
+            timezone: data.timezone ?? null
         });
     } catch (e: any) {
         if (e?.code === "23505") {
@@ -157,13 +161,16 @@ export const updateUserCustomization = async (
     userId: string,
     data: dto.UpdateUserCustomizationRequestPayloadType
 ): Promise<dto.UserType> => {
+    const nullFields: string[] = [];
+    if (data.profileFrameUrl === null) nullFields.push("profile_frame_url");
+    if (data.profileBackgroundUrl === null) nullFields.push("profile_background_url");
+
     let user;
     try {
         user = await usersSqlc.updateUserCustomization(client, {
             userId,
-            setFrame: data.profileFrameUrl !== undefined,
+            nullFields,
             profileFrameUrl: data.profileFrameUrl ?? null,
-            setBackground: data.profileBackgroundUrl !== undefined,
             profileBackgroundUrl: data.profileBackgroundUrl ?? null
         });
     } catch (e: any) {
