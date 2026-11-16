@@ -332,8 +332,8 @@ export class ErrorsCollection {
  * throw UserErrors.error("user_not_found"); 
  * ```
  */
-export class ErrorsSet<T extends {[Key: string]: [number, string]}> extends ErrorsCollection {
-  private _errors: Map<keyof T, CustomError> = new Map();
+export class ErrorsSet<T extends { [K in keyof T]-?: [number, string] }> extends ErrorsCollection {
+  private _errors: T;
 
   /**
    * Creates an instance of ErrorsSet.
@@ -344,11 +344,7 @@ export class ErrorsSet<T extends {[Key: string]: [number, string]}> extends Erro
   public constructor(name: string, errors: T) {
     super(name);
 
-    for (const msg in errors) {
-      const slug = msg;
-      const [ statusCode, message ] = errors[slug]!;
-      this._errors.set(slug, super.createError(slug, statusCode, message));
-    }
+    this._errors = errors;
   }
 
   /**
@@ -356,10 +352,10 @@ export class ErrorsSet<T extends {[Key: string]: [number, string]}> extends Erro
    * 
    * @param slug - Key of the error definition.
    */
-  public error(slug: keyof T): CustomError {
-    const error = this._errors.get(slug)!;
+  public error<S extends keyof T & string>(slug: S): CustomError {
+    const error = this._errors[slug];
 
-    return super.createError(error.slug, error.statusCode, error.message);
+    return super.createError(slug, error[0], error[1]);
   }
 }
 
