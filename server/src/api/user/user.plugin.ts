@@ -1,13 +1,11 @@
-import type { FastifyPluginAsync, FastifyInstance, FastifyPluginOptions, FastifyRequest, FastifyReply } from "fastify";
+import type { FastifyPluginAsync, FastifyInstance, FastifyPluginOptions } from "fastify";
 import * as schemas from "./user.schema";
 import * as controllers from "./user.controller";
 import { UserErrors, AvatarErrors } from "./user.errors";
 import { grantAuthMiddleware } from "@/api/auth/auth.middleware";
 
-type AuthHook = (req: FastifyRequest<any>, reply: FastifyReply<any>) => Promise<void | unknown>;
-
-const requireAdmin = grantAuthMiddleware({ userHasRole: ["admin"] }) as AuthHook;
-const requireAuth = grantAuthMiddleware() as AuthHook;
+const requireAdmin = grantAuthMiddleware({ userHasRole: ["admin"] });
+const requireAuth = grantAuthMiddleware();
 
 const modulePlugin: FastifyPluginAsync = async (fastify: FastifyInstance, _opts: FastifyPluginOptions) => {
     UserErrors.setupErrorHandler(fastify, [UserErrors, AvatarErrors], true, true);

@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyPluginOptions, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyInstance, FastifyPluginOptions, FastifyReply, FastifyRequest, preHandlerAsyncHookHandler, preHandlerHookHandler, RawReplyDefaultExpression, RawRequestDefaultExpression, RawServerDefault, RouteHandlerMethod } from "fastify";
 import "@context";
 import fp from "fastify-plugin";
 
@@ -67,6 +67,13 @@ export class AuthContext {
   }
 }
 
+type AnyRoutePreHandler = preHandlerAsyncHookHandler<
+  RawServerDefault,
+  RawRequestDefaultExpression<RawServerDefault>,
+  RawReplyDefaultExpression<RawServerDefault>,
+  any
+>;
+
 /**
  * Fastify preHandler middleware that populates `req.auth` with a `AuthContext`.
  * 
@@ -82,7 +89,7 @@ export class AuthContext {
  * });
  * ```
  */
-export async function authMiddleware(request: FastifyRequest, _reply: FastifyReply) {
+export const authMiddleware: AnyRoutePreHandler = async (request: FastifyRequest, _reply: FastifyReply) => {
   // TODO: replace onto the real auth operations
 
   const authHeader = request.headers.authorization?.trim();
@@ -148,7 +155,7 @@ const grantAuthDefaultFilters: Required<GrantAuthFilters> = {
  *   return { message: `Welcome ${req.auth!.fullName}` };
  * });
  */
-export const grantAuthMiddleware = (opts: GrantAuthFilters = grantAuthDefaultFilters) => async (request: FastifyRequest, reply: FastifyReply) => {
+export const grantAuthMiddleware = (opts: GrantAuthFilters = grantAuthDefaultFilters): AnyRoutePreHandler => async function (this: FastifyInstance, request: FastifyRequest, reply: FastifyReply) {
   const {
     receiveAuthData, unsignedOnly, userHasRole, userHasStatus, fallback
   } = {
@@ -169,21 +176,26 @@ export const grantAuthMiddleware = (opts: GrantAuthFilters = grantAuthDefaultFil
     }
   };
 
-  if (receiveAuthData) await authMiddleware(request, reply);
+  if (receiveAuthData) await authMiddleware.call(this, request, reply);
 
   if (unsignedOnly) {
-    if (request.auth != null) return await handleFallback();
+    if (request.auth != null) await handleFallback();
     return;
   }
 
-  if (!request.auth) return await handleFallback();
+  if (!request.auth) {
+    await handleFallback();
+    return;
+  }
 
   if (userHasRole.length > 0 && !userHasRole.includes(request.auth.role)) {
-    return await handleFallback();
+    await handleFallback();
+    return;
   }
 
   if (userHasStatus.length > 0 && !userHasStatus.includes(request.auth.status)) {
-    return await handleFallback();
+    await handleFallback();
+    return;
   }
 };
 
