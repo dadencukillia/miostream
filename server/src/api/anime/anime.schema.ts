@@ -184,6 +184,57 @@ export const AnimeResponse = Type.Object(
 	},
 );
 
+export const OkResponse = Type.Object({
+	ok: Type.Literal(true),
+});
+
+export const AnimeResponseWithOk = Type.Object({
+	ok: Type.Literal(true),
+	...AnimeResponse.properties,
+}, { additionalProperties: false });
+
+export const StatusStatResponse = Type.Array(Type.Object({
+	animeStatus: Nullable(StringEnum(ANIME_STATUSES)),
+	total: Type.Integer({ minimum: 0 }),
+}, { additionalProperties: false }));
+
+export const StudioStatResponse = Type.Array(Type.Object({
+	studio: Type.String(),
+	titlesCount: Type.Integer({ minimum: 0 }),
+	totalEpisodes: Type.Integer({ minimum: 0 }),
+	avgEpisodeDuration: Type.Number(),
+}, { additionalProperties: false }));
+
+export const FormatStatResponse = Type.Array(Type.Object({
+	animeFormat: StringEnum(ANIME_FORMATS),
+	titlesCount: Type.Integer({ minimum: 0 }),
+	avgEpisodes: Type.Number(),
+	maxEpisodes: Type.Integer({ minimum: 0 }),
+	minEpisodes: Type.Integer({ minimum: 0 }),
+}, { additionalProperties: false }));
+
+export const StudiosAboveAverageResponse = Type.Array(Type.Object({
+	studio: Type.String(),
+	avgEpisodes: Type.Number(),
+}, { additionalProperties: false }));
+
+export const OngoingAnimesResponse = Type.Array(Type.Object({
+	animeId: Type.String({ format: "uuid" }),
+	slug: Type.String(),
+	titleUa: Type.String(),
+	titleEn: Type.String(),
+	episodesCount: Type.Integer({ minimum: 0 }),
+}, { additionalProperties: false }));
+
+export const AvailableAnimesResponse = Type.Array(Type.Object({
+	animeId: Type.String({ format: "uuid" }),
+	slug: Type.String(),
+	titleUa: Type.String(),
+	yearReleased: Nullable(Type.Integer()),
+	coverId: Nullable(Type.String()),
+	episodesCount: Type.Integer({ minimum: 0 }),
+}, { additionalProperties: false }));
+
 export const AnimeIdOrSlugRequestParams = Type.Object({
   identifier: Type.Union([
     AnimeId,
@@ -236,10 +287,6 @@ export const CreateAnimeRequestPayload = Type.Object(
 	},
 );
 
-/**
- * PATCH uses the same fields as POST, but every field becomes optional.
- * Service additionally rejects an empty patch object.
- */
 export const UpdateAnimeRequestPayload = Type.Partial(CreateAnimeRequestPayload, {
 	additionalProperties: false,
 });
@@ -300,6 +347,12 @@ export const AnimeListResponse = Type.Object(
 	},
 );
 
+export const AnimeListResponseWithOk = Type.Object({
+	ok: Type.Literal(true),
+	...AnimeListResponse.properties,
+}, { additionalProperties: false });
+
+
 // Route schemas passed directly to Fastify.
 
 export const ListAnimesSchema = {
@@ -308,7 +361,7 @@ export const ListAnimesSchema = {
 	description: "Returns a paginated list of animes with optional filtering and sorting.",
 	querystring: ListAnimesRequestQueries,
 	response: {
-		200: AnimeListResponse,
+		200: AnimeListResponseWithOk,
 		400: ErrorResponse,
 		500: ErrorResponse,
 	},
@@ -323,7 +376,7 @@ export const GetAnimeRouteSchema = {
     Type.String({ description: "Anime slug", examples: [ "jujutsu-kaisen-season-1-24242" ] })
   ]),
 	response: {
-		200: AnimeResponse,
+		200: AnimeResponseWithOk,
 		400: ErrorResponse,
 		404: ErrorResponse,
 		500: ErrorResponse,
@@ -336,7 +389,7 @@ export const CreateAnimeSchema = {
 	description: "Creates a new anime entry with the provided data.",
 	body: CreateAnimeRequestPayload,
 	response: {
-		201: AnimeResponse,
+		201: AnimeResponseWithOk,
 		400: ErrorResponse,
 		409: ErrorResponse,
 		500: ErrorResponse,
@@ -350,7 +403,7 @@ export const UpdateAnimeSchema = {
 	params: AnimeIdRequestParams,
 	body: UpdateAnimeRequestPayload,
 	response: {
-		200: AnimeResponse,
+		200: AnimeResponseWithOk,
 		400: ErrorResponse,
 		404: ErrorResponse,
 		409: ErrorResponse,
@@ -361,12 +414,72 @@ export const UpdateAnimeSchema = {
 export const DeleteAnimeSchema = {
 	tags: ["Anime"],
 	summary: "Delete anime",
-	description: "Permanently removes an anime by its UUID.",
+	description: "Marks an anime as unavailable (soft delete) by its UUID.",
 	params: AnimeIdRequestParams,
 	response: {
-		204: Type.Null(),
+		200: OkResponse,
 		400: ErrorResponse,
 		404: ErrorResponse,
+		500: ErrorResponse,
+	},
+} as const;
+
+export const CountByStatusSchema = {
+	tags: ["Anime"],
+	summary: "Anime counts by status",
+	description: "Returns the number of available animes grouped by status.",
+	response: {
+		200: StatusStatResponse,
+		500: ErrorResponse,
+	},
+} as const;
+
+export const StudioStatsSchema = {
+	tags: ["Anime"],
+	summary: "Anime stats by studio",
+	description: "Returns aggregate statistics grouped by production studio.",
+	response: {
+		200: StudioStatResponse,
+		500: ErrorResponse,
+	},
+} as const;
+
+export const FormatStatsSchema = {
+	tags: ["Anime"],
+	summary: "Anime stats by format",
+	description: "Returns aggregate statistics grouped by anime format.",
+	response: {
+		200: FormatStatResponse,
+		500: ErrorResponse,
+	},
+} as const;
+
+export const StudiosAboveAverageSchema = {
+	tags: ["Anime"],
+	summary: "Studios above average episodes",
+	description: "Returns studios whose average episode count is above the global average.",
+	response: {
+		200: StudiosAboveAverageResponse,
+		500: ErrorResponse,
+	},
+} as const;
+
+export const AboveAverageEpisodesSchema = {
+	tags: ["Anime"],
+	summary: "Ongoing animes",
+	description: "Returns ongoing animes ordered by episode count.",
+	response: {
+		200: OngoingAnimesResponse,
+		500: ErrorResponse,
+	},
+} as const;
+
+export const MaxEpisodesSchema = {
+	tags: ["Anime"],
+	summary: "Available animes of the current year",
+	description: "Returns available animes released in the current year.",
+	response: {
+		200: AvailableAnimesResponse,
 		500: ErrorResponse,
 	},
 } as const;
