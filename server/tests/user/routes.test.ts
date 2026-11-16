@@ -186,7 +186,7 @@ describe("user routes", () => {
         });
 
         expect(response.statusCode).toBe(200);
-        expect(response.json()).toEqual([]);
+        expect(response.json()).toEqual({ ok: true, links: [] });
     });
 
     test("delete user (admin only)", async () => {

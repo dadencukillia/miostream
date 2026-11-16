@@ -139,7 +139,7 @@ describe("comment service", () => {
 
         // Empty list for anime without comments
         const empty = await service.getComments(fastify.pg, otherAnimeId, {});
-        expect(empty).toEqual({ comments: [], nextCursor: null });
+        expect(empty).toEqual({ ok: true, comments: [], nextCursor: null });
 
         expect(
             service.getComments(fastify.pg, "invalid-uuid", {})
