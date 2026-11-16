@@ -1,4 +1,5 @@
 import Type from "typebox";
+import { ErrorResponse } from "@utils/errorsCollection";
 
 export const TAG_LIST = "list";
 
@@ -28,14 +29,6 @@ export const ListUnitResponse = Type.Object(
 		startedWatching: Type.String({ format: "date" }),
 		listUnitStatus: StringEnum(LIST_UNIT_STATUSES),
 		grade: Type.Union([Type.Integer({ minimum: -5, maximum: 5 }), Type.Null()]),
-	},
-	{ additionalProperties: false },
-);
-
-export const ErrorResponse = Type.Object(
-	{
-		ok: Type.Literal(false),
-		message: Type.String(),
 	},
 	{ additionalProperties: false },
 );
