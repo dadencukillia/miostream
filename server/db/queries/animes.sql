@@ -38,7 +38,7 @@ INSERT INTO public.animes (
     @anime_format::anime_format_enum,
     @available::boolean
 )
-RETURNING anime_id; --or 1
+RETURNING *; --or 1
 
 -- name: CreateAnimeGenres :exec
 INSERT INTO public.genres (anime_id, genre_type)
@@ -263,26 +263,7 @@ SET
     "available"            = COALESCE(@available::boolean, available),
     "updated_at"           = NOW()
 WHERE "anime_id" = @anime_id::uuid
-RETURNING
-    "anime_id",
-    "slug",
-    "title_ua",
-    "title_en",
-    "title_original",
-    "anime_description",
-    "cover_id",
-    "production_studio",
-    "mal_id",
-    "anilist_id",
-    "hikka_id",
-    "imdb_id",
-    "year_released",
-    "avg_episode_duration",
-    "episodes_count",
-    "age_restriction",
-    "anime_status",
-    "anime_format",
-    "available";
+RETURNING *;
 
 -- name: UpdateAnimeStatusById :one
 UPDATE public.animes
@@ -290,8 +271,7 @@ SET
     "anime_status" = @anime_status::anime_status_enum,
     "updated_at"   = NOW()
 WHERE "anime_id" = @anime_id::uuid
-RETURNING "anime_id",
-          "anime_status";
+RETURNING *;
 
 -- name: UpdateAnimeAvailableById :one
 UPDATE public.animes
@@ -299,8 +279,7 @@ SET
     "available"  = @available::boolean,
     "updated_at" = NOW()
 WHERE "anime_id" = @anime_id::uuid
-RETURNING "anime_id",
-          "available";
+RETURNING *;
 
 -- name: IncrementAnimeEpisodesById :one
 UPDATE public.animes
@@ -308,5 +287,8 @@ SET
     "episodes_count" = GREATEST(episodes_count, @episodes_count::smallint),
     "updated_at"     = NOW()
 WHERE "anime_id" = @anime_id::uuid
-RETURNING "anime_id",
-          "episodes_count";
+RETURNING *;
+
+-- name: DeleteAnimeGenres :exec
+DELETE FROM public.genres
+WHERE anime_id = @anime_id::uuid;

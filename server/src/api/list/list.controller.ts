@@ -9,7 +9,7 @@ export const createListUnit = async (
 	}>,
 	reply: FastifyReply<{
 		Body: dto.CreateListUnitRequestPayloadType;
-		Reply: dto.ListUnitResponseType;
+		Reply: dto.ListUnitResponseType & { ok: true };
 	}>
 ) => {
 	const userId = request.auth!.userId;
@@ -30,7 +30,7 @@ export const updateListUnit = async (
 	reply: FastifyReply<{
 		Params: { animeId: string };
 		Body: dto.UpdateListUnitRequestPayloadType;
-		Reply: dto.ListUnitResponseType;
+		Reply: dto.ListUnitResponseType & { ok: true };
 	}>
 ) => {
 	const userId = request.auth!.userId;
@@ -84,7 +84,7 @@ export const getListUnits = async (
 	reply: FastifyReply<{
 		Params: { userId: string };
 		Querystring: dto.GetListUnitsRequestQueriesType;
-		Reply: dto.ListUnitsPageResponseType;
+		Reply: dto.ListUnitsPageResponseType & { ok: true };
 	}>
 ) => {
 	const sort = request.query.sort;

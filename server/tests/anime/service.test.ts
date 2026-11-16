@@ -32,6 +32,7 @@ function fakeDb(options: { missing?: boolean; failAt?: string; error?: unknown; 
       genres = [...new Set([...genres, ...(input.values[1] as string[])])];
     }
     if (name === "UpdateAnimeById") return { rows: [row.slice(0, 19)] };
+    if (name === "UpdateAnimeAvailableById") return { rows: exists ? [row.slice(0, 19)] : [] };
     return { rows: [], rowCount: 1 };
   };
   const client = { query, release: () => { released = true; } };
@@ -155,10 +156,11 @@ describe("anime service", () => {
     expect(result.genres).toEqual(["comedy"]);
   });
 
-  test("deletes an existing anime", async () => {
+  test("soft deletes an existing anime by marking it unavailable", async () => {
     const fake = fakeDb();
     await expect(service.deleteAnime(fake.db, id)).resolves.toBeUndefined();
-    await expect(service.getAnime(fake.db, id)).rejects.toMatchObject({ collection: AnimeErrors, statusCode: 404 });
-    await expect(service.deleteAnime(fake.db, id)).rejects.toMatchObject({ collection: AnimeErrors, statusCode: 404 });
+    expect(byName(fake.calls, "UpdateAnimeAvailableById")?.values).toEqual(expect.arrayContaining([false, id]));
+    expect(byName(fake.calls, "DeleteAnime")).toBeUndefined();
+    await expect(service.deleteAnime(fakeDb({ missing: true }).db, id)).rejects.toMatchObject({ collection: AnimeErrors, statusCode: 404 });
   });
 });

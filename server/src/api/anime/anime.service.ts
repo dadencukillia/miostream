@@ -18,6 +18,8 @@ import {
 	createAnimeGenres,
 	listAnimes as listAnimeRows,
 	updateAnimeById,
+	updateAnimeAvailableById,
+	deleteAnimeGenres,
 	getAnimeById,
 	getAnimeBySlug as getAnimeBySlugQuery,
 	countAnimesByStatus as countAnimesByStatusQuery,
@@ -271,8 +273,9 @@ export async function updateAnime(
 }
 
 export async function deleteAnime(db: Pool, animeId: string): Promise<void> {
-	const deleted = await repoDeleteAnime(db, animeId).catch(handleDbError);
-	if (!deleted) throw AnimeErrors.error("anime-not-found");
+	const updated = await updateAnimeAvailableById(db, { animeId, available: false })
+		.catch(handleDbError);
+	if (!updated) throw AnimeErrors.error("anime-not-found");
 }
 
 export async function getAnimesCountByStatus(db: Pool) {
@@ -477,16 +480,11 @@ async function repoUpdateAnime(
 		});
 		if (!updated) return null;
 		if (genres !== undefined) {
-			await client.query("DELETE FROM genres WHERE anime_id = $1", [animeId]);
+			await deleteAnimeGenres(client, { animeId });
 			if (genres.length > 0) {
 				await createAnimeGenres(client, { animeId, genres });
 			}
 		}
 		return getAnimeById(client, { animeId });
 	});
-}
-
-async function repoDeleteAnime(db: Pool, animeId: string): Promise<boolean> {
-	const result = await db.query("DELETE FROM animes WHERE anime_id = $1 RETURNING anime_id", [animeId]);
-	return (result.rowCount ?? 0) > 0;
 }

@@ -1,5 +1,14 @@
 import type { Pool } from "pg";
-import { createListUnit as createListUnitQuery } from "@/sqlc/list_units_sql";
+import {
+  countListUnits,
+  createListUnit as createListUnitQuery,
+  deleteListUnit as deleteListUnitQuery,
+  getListUnit,
+  listListUnits,
+  updateListUnit as updateListUnitQuery,
+  type CreateListUnitRow,
+  type UpdateListUnitRow,
+} from "@/sqlc/anime_list_units_sql";
 import { ListErrors } from "./list.errors";
 import type {
   CreateListUnitRequestPayloadType,
@@ -8,6 +17,44 @@ import type {
   ListUnitsPageResponseType,
   UpdateListUnitRequestPayloadType
 } from "./list.dto";
+
+type ListUnitStatus = "finished" | "watching" | "delayed" | "dropped";
+
+function toLocalDate(value: string): Date {
+	const [year, month, day] = value.split("-").map(Number);
+	return new Date(year!, month! - 1, day!);
+}
+
+function toDateString(value: Date): string {
+	const month = String(value.getMonth() + 1).padStart(2, "0");
+	const day = String(value.getDate()).padStart(2, "0");
+	return `${value.getFullYear()}-${month}-${day}`;
+}
+
+function toListUnit(row: CreateListUnitRow | UpdateListUnitRow): ListUnitResponseType {
+	return {
+		userId: row.userId,
+		animeId: row.animeId,
+		watchedEpisodes: row.watchedEpisodes,
+		repeatTimes: row.repeatTimes,
+		startedWatching: toDateString(row.startedWatching),
+		listUnitStatus: row.listUnitStatus as ListUnitStatus,
+		grade: row.grade,
+	};
+}
+
+function mapDbError(error: any): never {
+	if (error?.code === "23505") {
+		throw ListErrors.error("list-already-exists");
+	}
+	if (error?.code === "23503") {
+		throw ListErrors.error("list-not-found").withMessage("anime not found");
+	}
+	if (["22P02", "23502", "23514"].includes(error?.code)) {
+		throw ListErrors.error("list-invalid");
+	}
+	throw error;
+}
 
 export async function createListUnit(
 	db: Pool,
@@ -20,103 +67,50 @@ export async function createListUnit(
 	const listUnitStatus = input.listUnitStatus ?? "watching";
 	const grade = input.grade ?? null;
 
-	try {
-		const row = await createListUnitQuery(db as any, {
-			userId,
-			animeId: input.animeId,
-			watchedEpisodes,
-			repeatTimes,
-			startedWatching,
-			listUnitStatus: listUnitStatus as "finished" | "watching" | "delayed" | "dropped",
-			grade,
-		});
-		return {
-			userId: row.userId,
-			animeId: row.animeId,
-			watchedEpisodes: row.watchedEpisodes,
-			repeatTimes: row.repeatTimes,
-			startedWatching: row.startedWatching,
-			listUnitStatus: row.listUnitStatus as "finished" | "watching" | "delayed" | "dropped",
-			grade: row.grade,
-		};
-	} catch (error: any) {
-		if (error?.code === "23505") {
-			throw ListErrors.error("list-already-exists");
-		}
-		if (error?.code === "23503") {
-			throw ListErrors.error("list-not-found").withMessage("anime not found");
-		}
-		if (["22P02", "23502", "23514"].includes(error?.code)) {
-			throw ListErrors.error("list-invalid");
-		}
-		throw error;
+	const row = await createListUnitQuery(db, {
+		userId,
+		animeId: input.animeId,
+		watchedEpisodes,
+		repeatTimes,
+		startedWatching: toLocalDate(startedWatching),
+		listUnitStatus,
+		grade,
+	}).catch(mapDbError);
+	if (!row) {
+		throw ListErrors.error("list-not-found");
 	}
+	return toListUnit(row);
 }
+
 export async function updateListUnit(
 	db: Pool,
 	userId: string,
 	animeId: string,
 	input: UpdateListUnitRequestPayloadType,
 ): Promise<ListUnitResponseType> {
-	const fields: string[] = [];
-	const values: any[] = [];
-	let idx = 3; // $1 = userId, $2 = animeId
-
-	if (input.watchedEpisodes !== undefined) {
-		fields.push(`watched_episodes = $${idx++}::int`);
-		values.push(input.watchedEpisodes);
-	}
-	if (input.repeatTimes !== undefined) {
-		fields.push(`repeat_times = $${idx++}::int`);
-		values.push(input.repeatTimes);
-	}
-	if (input.startedWatching !== undefined) {
-		fields.push(`started_watching = $${idx++}::date`);
-		values.push(input.startedWatching);
-	}
-	if (input.listUnitStatus !== undefined) {
-		fields.push(`list_unit_status = $${idx++}::anime_list_unit_status_enum`);
-		values.push(input.listUnitStatus);
-	}
-	if (input.grade !== undefined) {
-		fields.push(`grade = $${idx++}::smallint`);
-		values.push(input.grade);
+	const existing = await getListUnit(db, { userId, animeId });
+	if (!existing) {
+		throw ListErrors.error("list-not-found");
 	}
 
-	const sql = `UPDATE public.anime_list_units SET ${fields.join(", ")} WHERE user_id = $1::uuid AND anime_id = $2::uuid RETURNING user_id, anime_id, watched_episodes, repeat_times, started_watching, list_unit_status, grade`;
-	let result;
-	try {
-		result = await db.query({ text: sql, values: [userId, animeId, ...values], rowMode: "array" });
-	} catch (error: any) {
-		if (error?.code === "23505") {
-			throw ListErrors.error("list-already-exists");
-		}
-		if (error?.code === "23503") {
-			throw ListErrors.error("list-not-found").withMessage("anime not found");
-		}
-		if (["22P02", "23502", "23514"].includes(error?.code)) {
-			throw ListErrors.error("list-invalid");
-		}
-		throw error;
-	}
-	const row = (result as any).rows[0] as any;
+	const row = await updateListUnitQuery(db, {
+		userId,
+		animeId,
+		watchedEpisodes: input.watchedEpisodes ?? existing.watchedEpisodes,
+		repeatTimes: input.repeatTimes ?? existing.repeatTimes,
+		startedWatching: input.startedWatching !== undefined ? toLocalDate(input.startedWatching) : existing.startedWatching,
+		listUnitStatus: input.listUnitStatus ?? existing.listUnitStatus,
+		grade: input.grade !== undefined ? input.grade : existing.grade,
+	}).catch(mapDbError);
 	if (!row) {
 		throw ListErrors.error("list-not-found");
 	}
-	return {
-		userId: row[0],
-		animeId: row[1],
-		watchedEpisodes: row[2],
-		repeatTimes: row[3],
-		startedWatching: row[4],
-		listUnitStatus: row[5] as "finished" | "watching" | "delayed" | "dropped",
-		grade: row[6],
-	};
+	return toListUnit(row);
 }
 
 export async function deleteListUnit(db: Pool, userId: string, animeId: string): Promise<void> {
-	const result = await db.query({ text: `DELETE FROM public.anime_list_units WHERE user_id = $1::uuid AND anime_id = $2::uuid`, values: [userId, animeId], rowMode: "array" });
-	if ((result as any).rowCount === 0) {
+	const row = await deleteListUnitQuery(db, { userId, animeId });
+	if (!row) {
 		throw ListErrors.error("list-not-found");
 	}
 }
@@ -130,44 +124,26 @@ export async function getListUnits(
 	const limit = query.limit ?? 20;
 	const offset = (page - 1) * limit;
 	const status = query.status ?? null;
-
-	const orderBy = {
-		startedWatching: "lu.started_watching DESC, a.title_ua ASC",
-		grade: "lu.grade DESC NULLS LAST, a.title_ua ASC",
-		title: "a.title_ua ASC",
-	};
 	const sort = query.sort ?? "startedWatching";
 
-	const countResult = await db.query({
-		text: `SELECT COUNT(*)::int AS total FROM public.anime_list_units WHERE user_id = $1::uuid AND ($2::anime_list_unit_status_enum IS NULL OR list_unit_status = $2::anime_list_unit_status_enum)`,
-		values: [userId, status],
-		rowMode: "array",
-	});
-	const total = countResult.rows[0]?.[0] ?? 0;
+	const [counted, rows] = await Promise.all([
+		countListUnits(db, { userId, status }),
+		listListUnits(db, { userId, status, sort, limit, offset }),
+	]);
+	const total = counted?.total ?? 0;
 
-	const itemsResult = await db.query({
-		text: `SELECT lu.anime_id, a.slug, a.title_ua, a.title_en, a.cover_id, lu.watched_episodes, lu.repeat_times, lu.started_watching, lu.list_unit_status, lu.grade
-		 FROM public.anime_list_units lu
-		 JOIN public.animes a ON a.anime_id = lu.anime_id
-		 WHERE lu.user_id = $1::uuid
-		   AND ($2::anime_list_unit_status_enum IS NULL OR lu.list_unit_status = $2::anime_list_unit_status_enum)
-		 ORDER BY ${orderBy[sort as keyof typeof orderBy]}
-		 LIMIT $3::int OFFSET $4::int`,
-		values: [userId, status, limit, offset],
-		rowMode: "array",
-	});
-
-	const items = (itemsResult.rows as any[]).map((row) => ({
-		animeId: row[0],
-		slug: row[1],
-		titleUa: row[2],
-		titleEn: row[3],
+	const items = rows.map((row) => ({
+		animeId: row.animeId,
+		slug: row.slug,
+		titleUa: row.titleUa,
+		titleEn: row.titleEn,
+		// Cover URL resolution is not available yet.
 		coverUrl: "",
-		watchedEpisodes: row[5],
-		repeatTimes: row[6],
-		startedWatching: row[7],
-		listUnitStatus: row[8] as "finished" | "watching" | "delayed" | "dropped",
-		grade: row[9],
+		watchedEpisodes: row.watchedEpisodes,
+		repeatTimes: row.repeatTimes,
+		startedWatching: toDateString(row.startedWatching),
+		listUnitStatus: row.listUnitStatus as ListUnitStatus,
+		grade: row.grade,
 	}));
 
 	return {
