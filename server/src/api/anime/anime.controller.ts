@@ -15,21 +15,21 @@ const UUID_RE =
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 function assertValidId(id: string) {
-	if (!id?.trim()) throw AnimeErrors.error("anime-invalid").withMessage("Anime ID is required");
-	if (!UUID_RE.test(id)) throw AnimeErrors.error("anime-invalid").withMessage("Anime ID must be a valid UUID");
+	if (!id?.trim()) throw AnimeErrors.error("anime-invalid").withMessage("anime ID is required");
+	if (!UUID_RE.test(id)) throw AnimeErrors.error("anime-invalid").withMessage("anime ID must be a valid UUID");
 }
 
 function assertValidSlug(slug: string) {
-	if (!slug?.trim()) throw AnimeErrors.error("anime-invalid").withMessage("Slug is required");
-	if (slug.length > 200) throw AnimeErrors.error("anime-invalid").withMessage("Slug must not exceed 200 characters");
+	if (!slug?.trim()) throw AnimeErrors.error("anime-invalid").withMessage("slug is required");
+	if (slug.length > 200) throw AnimeErrors.error("anime-invalid").withMessage("slug must not exceed 200 characters");
 	if (!SLUG_RE.test(slug)) {
-		throw AnimeErrors.error("anime-invalid").withMessage("Slug must contain only lowercase latin letters, digits and single hyphens");
+		throw AnimeErrors.error("anime-invalid").withMessage("slug must contain only lowercase latin letters, digits and single hyphens");
 	}
 }
 
 function assertHasTitle(titles: Array<string | null | undefined>) {
 	if (!titles.some((title) => (title ?? "").trim().length > 0)) {
-		throw AnimeErrors.error("anime-invalid").withMessage("At least one title (title_ua, title_en or title_original) is required");
+		throw AnimeErrors.error("anime-invalid").withMessage("at least one title (title_ua, title_en or title_original) is required");
 	}
 }
 
@@ -78,7 +78,7 @@ export const updateAnime = async (
 ) => {
 	assertValidId(request.params.id);
 	if (!request.body || Object.keys(request.body).length === 0) {
-		throw AnimeErrors.error("anime-invalid").withMessage("Update payload cannot be empty");
+		throw AnimeErrors.error("anime-invalid").withMessage("update payload cannot be empty");
 	}
 	if (request.body.slug !== undefined) assertValidSlug(request.body.slug);
 	const existing = await animeService.getAnime(request.server.pg, request.params.id);

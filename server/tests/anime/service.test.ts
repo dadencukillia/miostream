@@ -100,24 +100,24 @@ describe("anime service", () => {
 
   test("rolls back and releases the client when inserting genres fails", async () => {
     const fake = fakeDb({ failAt: "CreateAnimeGenres", error: { code: "23503" } });
-    await expect(service.createAnime(fake.db, { slug: "valid", titleEn: "Title", genres: ["action"] })).rejects.toThrow("Related record does not exist");
+    await expect(service.createAnime(fake.db, { slug: "valid", titleEn: "Title", genres: ["action"] })).rejects.toThrow("related record does not exist");
     expect(fake.calls.map((call) => call.name)).toEqual(["BEGIN", "CreateAnime", "CreateAnimeGenres", "ROLLBACK"]);
     expect(fake.released).toBe(true);
   });
 
   test("translates database errors and preserves unexpected errors", async () => {
     for (const [code, detail, message] of [
-      ["23505", "slug", "Anime with this slug already exists"],
-      ["23505", "mal_id", "Anime with this MAL ID already exists"],
-      ["23505", "anilist_id", "Anime with this AniList ID already exists"],
-      ["23505", "hikka_id", "Anime with this Hikka ID already exists"],
-      ["23505", "imdb_id", "Anime with this IMDb ID already exists"],
-      ["23505", "other", "Anime with the same unique fields already exists"],
-      ["22P02", "", "Invalid data format or enum value"],
-      ["22001", "", "Field value exceeds maximum allowed length"],
-      ["23514", "", "Value violates a database constraint"],
-      ["23503", "", "Related record does not exist"],
-      ["23502", "", "Required field is missing"],
+      ["23505", "slug", "anime with this slug already exists"],
+      ["23505", "mal_id", "anime with this MAL ID already exists"],
+      ["23505", "anilist_id", "anime with this AniList ID already exists"],
+      ["23505", "hikka_id", "anime with this Hikka ID already exists"],
+      ["23505", "imdb_id", "anime with this IMDb ID already exists"],
+      ["23505", "other", "anime with the same unique fields already exists"],
+      ["22P02", "", "invalid data format or enum value"],
+      ["22001", "", "field value exceeds maximum allowed length"],
+      ["23514", "", "value violates a database constraint"],
+      ["23503", "", "related record does not exist"],
+      ["23502", "", "required field is missing"],
     ]) {
       const fake = fakeDb({ failAt: "GetAnimeById", error: { code, detail } });
       await expect(service.getAnime(fake.db, id)).rejects.toThrow(message);

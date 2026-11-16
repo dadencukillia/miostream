@@ -52,7 +52,6 @@ const toAnimeFormat = (value: string): AnimeFormatType =>
 const toGenres = (values: string[] | null): GenreType[] =>
 	(values ?? []).filter((value): value is GenreType => includes(GENRES, value));
 
-/** Maps a SQL row (camelCase) to the public API shape (camelCase). */
 export const toAnime = (row: AnimeRecord): AnimeResponseType => ({
 	animeId: row.animeId,
 	slug: row.slug,
@@ -60,7 +59,7 @@ export const toAnime = (row: AnimeRecord): AnimeResponseType => ({
 	titleEn: row.titleEn,
 	titleOriginal: row.titleOriginal,
 	animeDescription: row.animeDescription,
-	// Preserve the stored reference until cover URL resolution is available.
+
 	coverId: row.coverId,
 	coverUrl: "",
 	productionStudio: row.productionStudio,
@@ -90,48 +89,48 @@ function handleDbError(error: unknown): never {
 		const detail = `${dbError.detail ?? ""} ${dbError.constraint ?? ""}`;
 
 		if (detail.includes("slug")) {
-			throw AnimeErrors.error("anime-already-exists").withMessage("Anime with this slug already exists");
+			throw AnimeErrors.error("anime-already-exists").withMessage("anime with this slug already exists");
 		}
 		if (detail.includes("mal_id")) {
 			throw AnimeErrors.error("anime-already-exists").withMessage(
-				"Anime with this MAL ID already exists",
+				"anime with this MAL ID already exists",
 			);
 		}
 		if (detail.includes("anilist_id")) {
 			throw AnimeErrors.error("anime-already-exists").withMessage(
-				"Anime with this AniList ID already exists",
+				"anime with this AniList ID already exists",
 			);
 		}
 		if (detail.includes("hikka_id")) {
 			throw AnimeErrors.error("anime-already-exists").withMessage(
-				"Anime with this Hikka ID already exists",
+				"anime with this Hikka ID already exists",
 			);
 		}
 		if (detail.includes("imdb_id")) {
 			throw AnimeErrors.error("anime-already-exists").withMessage(
-				"Anime with this IMDb ID already exists",
+				"anime with this IMDb ID already exists",
 			);
 		}
 
 		throw AnimeErrors.error("anime-already-exists").withMessage(
-			"Anime with the same unique fields already exists",
+			"anime with the same unique fields already exists",
 		);
 	}
 
 	if (dbError.code === "22P02") {
-		throw AnimeErrors.error("anime-invalid").withMessage("Invalid data format or enum value");
+		throw AnimeErrors.error("anime-invalid").withMessage("invalid data format or enum value");
 	}
 	if (dbError.code === "22001") {
-		throw AnimeErrors.error("anime-invalid").withMessage("Field value exceeds maximum allowed length");
+		throw AnimeErrors.error("anime-invalid").withMessage("field value exceeds maximum allowed length");
 	}
 	if (dbError.code === "23514") {
-		throw AnimeErrors.error("anime-invalid").withMessage("Value violates a database constraint");
+		throw AnimeErrors.error("anime-invalid").withMessage("value violates a database constraint");
 	}
 	if (dbError.code === "23503") {
-		throw AnimeErrors.error("anime-invalid").withMessage("Related record does not exist");
+		throw AnimeErrors.error("anime-invalid").withMessage("related record does not exist");
 	}
 	if (dbError.code === "23502") {
-		throw AnimeErrors.error("anime-invalid").withMessage("Required field is missing");
+		throw AnimeErrors.error("anime-invalid").withMessage("required field is missing");
 	}
 
 	throw error;
@@ -196,7 +195,6 @@ export async function createAnime(
 		titleEn: data.titleEn ?? "",
 		titleOriginal: data.titleOriginal ?? "",
 		animeDescription: data.animeDescription ?? "",
-    // TODO: download cover, store it in the CDN and receive coverId
 		coverId: null,
 		productionStudio: data.productionStudio ?? "",
 		malId: data.malId ?? null,
@@ -240,7 +238,6 @@ export async function updateAnime(
 		patch.animeDescription = data.animeDescription;
 	}
 
-  // TODO: download cover, store it in the CDN and receive coverId
 	if (data.coverUrl !== undefined) patch.coverId = undefined;
 	if (data.productionStudio !== undefined) {
 		patch.productionStudio = data.productionStudio;
@@ -455,7 +452,7 @@ async function repoUpdateAnime(
 		for (const [key, value] of Object.entries(patchData)) {
 			snakePatchData[camelToSnake[key] ?? key] = value;
 		}
-		// updateAnimeById requires full row; merge with existing
+
 		const merged = { ...existing, ...patch };
 		const updated = await updateAnimeById(client, {
 			slug: merged.slug ?? existing.slug,
