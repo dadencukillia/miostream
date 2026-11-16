@@ -1,6 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import * as dto from "./list.dto";
 import * as listService from "./list.service";
+import { ListErrors } from "./list.errors";
 
 export const createListUnit = async (
 	request: FastifyRequest<{
@@ -33,6 +34,18 @@ export const updateListUnit = async (
 	}>
 ) => {
 	const userId = request.auth!.userId;
+	const body = request.body ?? {};
+	const hasUpdatableField = [
+		"watchedEpisodes",
+		"repeatTimes",
+		"startedWatching",
+		"listUnitStatus",
+		"grade",
+	].some((key) => body[key as keyof typeof body] !== undefined);
+	if (!hasUpdatableField) {
+		throw ListErrors.error("list-invalid");
+	}
+
 	const result = await listService.updateListUnit(
 		request.server.pg,
 		userId,
@@ -74,6 +87,11 @@ export const getListUnits = async (
 		Reply: dto.ListUnitsPageResponseType;
 	}>
 ) => {
+	const sort = request.query.sort;
+	if (sort !== undefined && !["startedWatching", "grade", "title"].includes(sort)) {
+		throw ListErrors.error("list-invalid");
+	}
+
 	const result = await listService.getListUnits(
 		request.server.pg,
 		request.params.userId,

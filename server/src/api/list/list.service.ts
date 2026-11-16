@@ -84,10 +84,6 @@ export async function updateListUnit(
 		values.push(input.grade);
 	}
 
-	if (fields.length === 0) {
-		throw ListErrors.error("list-invalid");
-	}
-
 	const sql = `UPDATE public.anime_list_units SET ${fields.join(", ")} WHERE user_id = $1::uuid AND anime_id = $2::uuid RETURNING user_id, anime_id, watched_episodes, repeat_times, started_watching, list_unit_status, grade`;
 	const result = await db.query({ text: sql, values: [userId, animeId, ...values], rowMode: "array" });
 	const row = result.rows[0] as any;
@@ -128,9 +124,6 @@ export async function getListUnits(
 		title: "a.title_ua ASC",
 	};
 	const sort = query.sort ?? "startedWatching";
-	if (!Object.hasOwn(orderBy, sort)) {
-		throw ListErrors.error("list-invalid");
-	}
 
 	const countResult = await db.query({
 		text: `SELECT COUNT(*)::int AS total FROM public.anime_list_units WHERE user_id = $1::uuid AND ($2::anime_list_unit_status_enum IS NULL OR list_unit_status = $2::anime_list_unit_status_enum)`,

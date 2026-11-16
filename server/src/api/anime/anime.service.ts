@@ -137,33 +137,6 @@ function handleDbError(error: unknown): never {
 	throw error;
 }
 
-function assertValidId(id: string) {
-	if (!id?.trim()) throw AnimeErrors.error("anime-invalid").withMessage("Anime ID is required");
-	if (!UUID_RE.test(id)) {
-		throw AnimeErrors.error("anime-invalid").withMessage("Anime ID must be a valid UUID");
-	}
-}
-
-function assertValidSlug(slug: string) {
-	if (!slug?.trim()) throw AnimeErrors.error("anime-invalid").withMessage("Slug is required");
-	if (slug.length > 200) {
-		throw AnimeErrors.error("anime-invalid").withMessage("Slug must not exceed 200 characters");
-	}
-	if (!SLUG_RE.test(slug)) {
-		throw AnimeErrors.error("anime-invalid").withMessage(
-			"Slug must contain only lowercase latin letters, digits and single hyphens",
-		);
-	}
-}
-
-function assertHasTitle(titles: Array<string | null | undefined>) {
-	if (!titles.some((title) => (title ?? "").trim().length > 0)) {
-		throw AnimeErrors.error("anime-invalid").withMessage(
-			"At least one title (title_ua, title_en or title_original) is required",
-		);
-	}
-}
-
 const uniqueGenres = (genres: GenreType[] | undefined): GenreType[] => [
 	...new Set(genres ?? []),
 ];
@@ -200,8 +173,6 @@ export async function listAnimes(
 }
 
 export async function getAnime(db: Pool, animeId: string): Promise<AnimeResponseType> {
-	assertValidId(animeId);
-
 	const anime = await repoGetAnimeById(db, animeId).catch(handleDbError);
 	if (!anime) throw AnimeErrors.error("anime-not-found");
 
@@ -209,8 +180,6 @@ export async function getAnime(db: Pool, animeId: string): Promise<AnimeResponse
 }
 
 export async function getAnimeBySlug(db: Pool, slug: string): Promise<AnimeResponseType> {
-	assertValidSlug(slug);
-
 	const anime = await repoGetAnimeBySlug(db, slug).catch(handleDbError);
 	if (!anime) throw AnimeErrors.error("anime-not-found");
 
@@ -221,9 +190,6 @@ export async function createAnime(
 	db: Pool,
 	data: CreateAnimeRequestPayloadType,
 ): Promise<AnimeResponseType> {
-	assertValidSlug(data.slug);
-	assertHasTitle([data.titleUa, data.titleEn, data.titleOriginal]);
-
 	const anime = await repoCreateAnime(db, {
 		slug: data.slug,
 		titleUa: data.titleUa ?? "",
@@ -258,22 +224,9 @@ export async function updateAnime(
 	animeId: string,
 	data: UpdateAnimeRequestPayloadType,
 ): Promise<AnimeResponseType> {
-	assertValidId(animeId);
-
-	if (!data || Object.keys(data).length === 0) {
-		throw AnimeErrors.error("anime-invalid").withMessage("Update payload cannot be empty");
-	}
-	if (data.slug !== undefined) assertValidSlug(data.slug);
-
 	const existing = await repoGetAnimeById(db, animeId)
 		.catch(handleDbError);
 	if (!existing) throw AnimeErrors.error("anime-not-found");
-
-	assertHasTitle([
-		data.titleUa ?? existing.titleUa,
-		data.titleEn ?? existing.titleEn,
-		data.titleOriginal ?? existing.titleOriginal,
-	]);
 
 	const patch: UpdateAnimeRecord = {};
 
@@ -321,8 +274,6 @@ export async function updateAnime(
 }
 
 export async function deleteAnime(db: Pool, animeId: string): Promise<void> {
-	assertValidId(animeId);
-
 	const deleted = await repoDeleteAnime(db, animeId).catch(handleDbError);
 	if (!deleted) throw AnimeErrors.error("anime-not-found");
 }
