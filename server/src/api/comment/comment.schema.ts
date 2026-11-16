@@ -18,7 +18,7 @@ export const CommentAuthorResponse = Type.Object({
     description: "Author information"
 });
 
-export const CommentItem = Type.Object({
+export const Comment = Type.Object({
     commentId: Type.String({ description: "Unique comment ID (bigint string)" }),
     content: Type.String({ description: "Comment body text" }),
     createdAt: DateTimeType,
@@ -43,7 +43,7 @@ export const CommentResponse = Type.Object({
 
 export const CommentsResponse = Type.Object({
     ok: Type.Literal(true, { description: "Indicates a successful operation" }),
-    comments: Type.Array(CommentItem, { description: "List of comments" }),
+    comments: Type.Array(Comment, { description: "List of comments" }),
     nextCursor: Nullable(Type.String({ description: "Cursor for the next page, or null if end of list" })),
 }, {
     additionalProperties: false,

@@ -4,8 +4,9 @@ import * as userLinksSqlc from "@sqlc/user_links_sql";
 import { UserErrors } from "../user.errors";
 import type * as dto from "../user.dto";
 import { hashPassword, verifyPassword } from "@utils/password";
+import { userTransformPublic, userTransformStreak } from "../user.model";
 
-export const createUser = async (client: Pool, data: dto.CreateUserRequestPayloadType) => {
+export const createUser = async (client: Pool, data: dto.CreateUserRequestPayloadType): Promise<dto.UserType> => {
     const passwordHash = data.password ? await hashPassword(data.password) : null;
 
     let user;
@@ -40,10 +41,10 @@ export const createUser = async (client: Pool, data: dto.CreateUserRequestPayloa
 
     if (!user) throw UserErrors.error("user-db-error");
 
-    return user;
+    return userTransformStreak(user);
 };
 
-export const getUserById = async (client: Pool, userId: string) => {
+export const getUserById = async (client: Pool, userId: string): Promise<dto.UserType> => {
     let user;
     try {
         user = await usersSqlc.getUserById(client, { userId });
@@ -55,10 +56,10 @@ export const getUserById = async (client: Pool, userId: string) => {
     }
 
     if (!user) throw UserErrors.error("user-not-found");
-    return user;
+    return userTransformStreak(user);
 };
 
-export const getUserByNickname = async (client: Pool, nickname: string) => {
+export const getUserByNickname = async (client: Pool, nickname: string): Promise<dto.UserType> => {
     let user;
     try {
         user = await usersSqlc.getUserByNickname(client, { nickname });
@@ -67,7 +68,17 @@ export const getUserByNickname = async (client: Pool, nickname: string) => {
     }
 
     if (!user) throw UserErrors.error("user-not-found");
-    return user;
+    return userTransformStreak(user);
+};
+
+export const getPublicUserById = async (client: Pool, userId: string): Promise<dto.PublicUserType> => {
+    const user = await getUserById(client, userId);
+    return userTransformPublic(user);
+};
+
+export const getPublicUserByNickname = async (client: Pool, nickname: string): Promise<dto.PublicUserType> => {
+    const user = await getUserByNickname(client, nickname);
+    return userTransformPublic(user);
 };
 
 // TODO(auth): move getUserByEmail/getUserByGoogleId to an auth module; keep email/googleId out of client-facing errors.
@@ -109,7 +120,11 @@ export const deleteUserById = async (client: Pool, userId: string) => {
     if (!deleted) throw UserErrors.error("user-not-found");
 };
 
-export const updateUserProfile = async (client: Pool, userId: string, data: dto.UpdateUserProfileRequestPayloadType) => {
+export const updateUserProfile = async (
+    client: Pool,
+    userId: string,
+    data: dto.UpdateUserProfileRequestPayloadType
+): Promise<dto.UserType> => {
     let user;
     try {
         user = await usersSqlc.updateUserProfile(client, {
@@ -134,10 +149,14 @@ export const updateUserProfile = async (client: Pool, userId: string, data: dto.
     }
 
     if (!user) throw UserErrors.error("user-not-found");
-    return user;
+    return userTransformStreak(user);
 };
 
-export const updateUserCustomization = async (client: Pool, userId: string, data: dto.UpdateUserCustomizationRequestPayloadType) => {
+export const updateUserCustomization = async (
+    client: Pool,
+    userId: string,
+    data: dto.UpdateUserCustomizationRequestPayloadType
+): Promise<dto.UserType> => {
     let user;
     try {
         user = await usersSqlc.updateUserCustomization(client, {
@@ -155,7 +174,7 @@ export const updateUserCustomization = async (client: Pool, userId: string, data
     }
 
     if (!user) throw UserErrors.error("user-not-found");
-    return user;
+    return userTransformStreak(user);
 };
 
 export const updateUserPassword = async (client: Pool, userId: string, data: dto.UpdateUserPasswordRequestPayloadType) => {
@@ -193,7 +212,11 @@ export const updateUserPassword = async (client: Pool, userId: string, data: dto
     if (!updated) throw UserErrors.error("user-not-found");
 };
 
-export const updateUserStatus = async (client: Pool, userId: string, status: dto.UserStatusType) => {
+export const updateUserStatus = async (
+    client: Pool,
+    userId: string,
+    status: dto.UserStatusType
+): Promise<dto.UserType> => {
     let user;
     try {
         user = await usersSqlc.updateUserStatus(client, {
@@ -208,11 +231,15 @@ export const updateUserStatus = async (client: Pool, userId: string, status: dto
     }
 
     if (!user) throw UserErrors.error("user-not-found");
-    return user;
+    return userTransformStreak(user);
 };
 
 // TODO(admin): add check of last-admin rule.
-export const updateUserRole = async (client: Pool, userId: string, role: dto.UserRoleType) => {
+export const updateUserRole = async (
+    client: Pool,
+    userId: string,
+    role: dto.UserRoleType
+): Promise<dto.UserType> => {
     let user;
     try {
         user = await usersSqlc.updateUserRole(client, {
@@ -227,7 +254,7 @@ export const updateUserRole = async (client: Pool, userId: string, role: dto.Use
     }
 
     if (!user) throw UserErrors.error("user-not-found");
-    return user;
+    return userTransformStreak(user);
 };
 
 export const createUserLink = async (client: Pool, userId: string, url: string) => {

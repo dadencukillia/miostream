@@ -5,9 +5,10 @@ import { ErrorResponse } from "@utils/errorsCollection";
 // Responses
 export type ErrorResponseType = Static<typeof ErrorResponse>;
 export type CommentAuthorResponseType = Static<typeof commentSchema.CommentAuthorResponse>;
-export type CommentItemType = Static<typeof commentSchema.CommentItem>;
+export type CommentType = Static<typeof commentSchema.Comment>;
 export type CommentResponseType = Static<typeof commentSchema.CommentResponse>;
 export type CommentsResponseType = Static<typeof commentSchema.CommentsResponse>;
+export type CommentsType = Omit<CommentsResponseType, "ok">;
 
 // Request Params
 export type AnimeIdCommentRequestParamsType = Static<typeof commentSchema.AnimeIdCommentRequestParams>;

@@ -1,6 +1,7 @@
 import { getTodayUtcMsInTimezone } from "@utils/timezones";
 import { generateTransformer } from "@utils/modelTransformer";
 import { MS_PER_DAY, parseCalendarDateToUtcMs } from "@utils/time";
+import { Plain } from "@utils/types";
 
 export function calculateUserStreak(
     streakStartDate: string | Date | null,
@@ -26,31 +27,47 @@ export function calculateUserStreak(
     return Math.round((lastUtcMs - startUtcMs) / MS_PER_DAY) + 1;
 }
 
-export const toUserModel = generateTransformer({
+// Streak Transformation
+
+export interface UserTransformStreakInput {
+    streakStartDate: string | Date | null;
+    lastWatchDate: string | Date | null;
+    timezone: string;
+}
+
+export interface UserTransformStreakOutput {
+    streak: number;
+}
+
+export const userTransformStreak = generateTransformer({
     delete: ["streakStartDate", "lastWatchDate"],
-    map: (user: {
-        streakStartDate: string | Date | null;
-        lastWatchDate: string | Date | null;
-        timezone: string;
-    }) => ({
-        ok: true as const,
+    map: (user: Plain<UserTransformStreakInput>): Plain<UserTransformStreakOutput> => ({
         streak: calculateUserStreak(user.streakStartDate, user.lastWatchDate, user.timezone),
     }),
 });
 
-export const toPublicUserModel = generateTransformer({
+// Public User Transformation
+
+export interface UserTransformPublicInput {
+    email: string;
+}
+
+export interface UserTransformPublicOutput { }
+
+export const userTransformPublic = generateTransformer({
     delete: ["email"],
-    map: (_user: { email: string }) => ({}),
+    map: (_user: Plain<UserTransformPublicInput>): Plain<UserTransformPublicOutput> => ({}),
 });
 
-export const toUserWithoutOldAvatarModel = generateTransformer({
+// Old Avatar Cleanup Transformation
+
+export interface UserTransformOldAvatarInput {
+    oldAvatarId: string | null;
+}
+
+export interface UserTransformOldAvatarOutput { }
+
+export const userTransformOldAvatar = generateTransformer({
     delete: ["oldAvatarId"],
-    map: (_row: { oldAvatarId: string | null }) => ({}),
-});
-
-export const toUserLinkModel = generateTransformer({
-    delete: [],
-    map: (_link: { userLinkId: string | number; userId: string; userLinkUrl: string }) => ({
-        ok: true as const,
-    }),
+    map: (_row: Plain<UserTransformOldAvatarInput>): Plain<UserTransformOldAvatarOutput> => ({}),
 });

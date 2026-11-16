@@ -1,7 +1,7 @@
 import type { Static } from "typebox";
 import type * as userSchema from "./user.schema";
 import type { TransformedType } from "@utils/modelTransformer";
-import type { toPublicUserModel } from "./user.model";
+import type { userTransformPublic } from "./user.model";
 import { ErrorResponse } from "@utils/errorsCollection";
 
 // Enums
@@ -11,7 +11,9 @@ export type UserStatusType = (typeof userSchema.USER_STATUS)[number];
 // Responses
 export type ErrorResponseType = Static<typeof ErrorResponse>;
 export type UserResponseType = Static<typeof userSchema.UserResponse>;
-export type PublicUserResponseType = TransformedType<UserResponseType, typeof toPublicUserModel>;
+export type UserType = Omit<UserResponseType, "ok">;
+export type PublicUserResponseType = TransformedType<UserResponseType, typeof userTransformPublic>;
+export type PublicUserType = TransformedType<UserType, typeof userTransformPublic>;
 export type UserLinkItemType = Static<typeof userSchema.UserLinkItem>;
 export type UserLinkResponseType = Static<typeof userSchema.UserLinkResponse>;
 export type UserLinkListResponseType = Static<typeof userSchema.UserLinkListResponse>;
