@@ -7,6 +7,7 @@ import {
     DateTimeType,
     BigIntIdResponseType
 } from "@utils/types";
+import { ErrorResponse } from "@utils/errorsCollection";
 
 // Tags
 export const TAG_USER = "User";
@@ -17,23 +18,6 @@ export const USER_ROLE = ["user", "admin"] as const;
 export const USER_STATUS = ["active", "banned", "deactivated"] as const;
 
 // Responses
-export const ErrorResponse = Type.Object({
-    ok: Type.Literal(false, { description: "Indicates an unsuccessful operation" }),
-    message: Type.String({
-        description: "Human-readable error details",
-        examples: ["referenced user does not exist"]
-    }),
-}, {
-    additionalProperties: false,
-    description: "Standard error response payload",
-    examples: [
-        {
-            ok: false,
-            message: "referenced user does not exist"
-        }
-    ]
-});
-
 export const UserResponse = Type.Object({
     userId: Type.String({
         format: "uuid",

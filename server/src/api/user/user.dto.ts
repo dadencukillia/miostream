@@ -2,13 +2,14 @@ import type { Static } from "typebox";
 import type * as userSchema from "./user.schema";
 import type { TransformedType } from "@utils/modelTransformer";
 import type { toPublicUserModel } from "./user.model";
+import { ErrorResponse } from "@utils/errorsCollection";
 
 // Enums
 export type UserRoleType = (typeof userSchema.USER_ROLE)[number];
 export type UserStatusType = (typeof userSchema.USER_STATUS)[number];
 
 // Responses
-export type ErrorResponseType = Static<typeof userSchema.ErrorResponse>;
+export type ErrorResponseType = Static<typeof ErrorResponse>;
 export type UserResponseType = Static<typeof userSchema.UserResponse>;
 export type PublicUserResponseType = TransformedType<UserResponseType, typeof toPublicUserModel>;
 export type UserLinkResponseType = Static<typeof userSchema.UserLinkResponse>;

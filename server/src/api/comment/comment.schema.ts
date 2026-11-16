@@ -3,28 +3,12 @@ import {
     Nullable,
     DateTimeType
 } from "@utils/types";
+import { ErrorResponse } from "@utils/errorsCollection";
 
 // Tags
 export const TAG_COMMENT = "comment";
 
 // Responses
-export const ErrorResponse = Type.Object({
-    ok: Type.Literal(false, { description: "Indicates an unsuccessful operation" }),
-    message: Type.String({
-        description: "Human-readable error details",
-        examples: ["database read error"]
-    }),
-}, {
-    additionalProperties: false,
-    description: "Standard error response payload",
-    examples: [
-        {
-            ok: false,
-            message: "database read error"
-        }
-    ]
-});
-
 export const CommentAuthorResponse = Type.Object({
     userId: Type.String({ format: "uuid", description: "Author user UUID" }),
     nickname: Type.String({ description: "Author nickname" }),
@@ -155,6 +139,7 @@ export const PostCommentSchema = {
     response: {
         201: CommentResponse,
         400: ErrorResponse,
+        403: ErrorResponse,
         404: ErrorResponse,
         500: ErrorResponse,
     },
@@ -169,6 +154,7 @@ export const UpdateCommentSchema = {
     response: {
         200: CommentResponse,
         400: ErrorResponse,
+        403: ErrorResponse,
         404: ErrorResponse,
         500: ErrorResponse,
     },
