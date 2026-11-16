@@ -19,7 +19,7 @@ export const createListUnit = async (
 		request.body
 	);
 
-	return reply.status(201).send(result);
+	return reply.status(201).send({ ok: true, ...result });
 };
 
 export const updateListUnit = async (
@@ -53,7 +53,7 @@ export const updateListUnit = async (
 		request.body
 	);
 
-	return reply.status(200).send(result);
+	return reply.status(200).send({ ok: true, ...result });
 };
 
 export const deleteListUnit = async (
@@ -73,7 +73,7 @@ export const deleteListUnit = async (
 		request.params.animeId
 	);
 
-	return reply.status(204).send(null);
+	return reply.status(200).send({ ok: true });
 };
 
 export const getListUnits = async (
@@ -98,5 +98,5 @@ export const getListUnits = async (
 		request.query
 	);
 
-	return reply.status(200).send(result);
+	return reply.status(200).send({ ok: true, ...result });
 };

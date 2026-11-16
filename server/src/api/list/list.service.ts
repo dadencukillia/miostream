@@ -46,8 +46,7 @@ export async function createListUnit(
 		if (error?.code === "23503") {
 			throw ListErrors.error("list-not-found").withMessage("anime not found");
 		}
-		const clientDataErrors = new Set(["22P02", "23502", "23514"]);
-		if (clientDataErrors.has(error?.code)) {
+		if (["22P02", "23502", "23514"].includes(error?.code)) {
 			throw ListErrors.error("list-invalid");
 		}
 		throw error;
@@ -85,8 +84,22 @@ export async function updateListUnit(
 	}
 
 	const sql = `UPDATE public.anime_list_units SET ${fields.join(", ")} WHERE user_id = $1::uuid AND anime_id = $2::uuid RETURNING user_id, anime_id, watched_episodes, repeat_times, started_watching, list_unit_status, grade`;
-	const result = await db.query({ text: sql, values: [userId, animeId, ...values], rowMode: "array" });
-	const row = result.rows[0] as any;
+	let result;
+	try {
+		result = await db.query({ text: sql, values: [userId, animeId, ...values], rowMode: "array" });
+	} catch (error: any) {
+		if (error?.code === "23505") {
+			throw ListErrors.error("list-already-exists");
+		}
+		if (error?.code === "23503") {
+			throw ListErrors.error("list-not-found").withMessage("anime not found");
+		}
+		if (["22P02", "23502", "23514"].includes(error?.code)) {
+			throw ListErrors.error("list-invalid");
+		}
+		throw error;
+	}
+	const row = (result as any).rows[0] as any;
 	if (!row) {
 		throw ListErrors.error("list-not-found");
 	}
@@ -149,7 +162,6 @@ export async function getListUnits(
 		slug: row[1],
 		titleUa: row[2],
 		titleEn: row[3],
-		// Cover URL resolution is not available yet.
 		coverUrl: "",
 		watchedEpisodes: row[5],
 		repeatTimes: row[6],

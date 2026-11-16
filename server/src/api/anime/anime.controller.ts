@@ -41,7 +41,7 @@ export const listAnimes = async (
 		request.server.pg,
 		request.query,
 	);
-	return reply.status(200).send(result);
+	return reply.status(200).send({ ok: true, ...result });
 };
 
 export const getAnime = async (
@@ -52,11 +52,11 @@ export const getAnime = async (
 	const normalizedId = normalizeUuid(identifier);
 	if (normalizedId) {
 		const anime = await animeService.getAnime(request.server.pg, normalizedId);
-		return reply.status(200).send(anime);
+		return reply.status(200).send({ ok: true, ...anime });
 	}
 	assertValidSlug(identifier);
 	const anime = await animeService.getAnimeBySlug(request.server.pg, identifier);
-	return reply.status(200).send(anime);
+	return reply.status(200).send({ ok: true, ...anime });
 };
 
 export const createAnime = async (
@@ -66,7 +66,7 @@ export const createAnime = async (
 	assertValidSlug(request.body.slug);
 	assertHasTitle([request.body.titleUa, request.body.titleEn, request.body.titleOriginal]);
 	const anime = await animeService.createAnime(request.server.pg, request.body);
-	return reply.status(201).send(anime);
+	return reply.status(201).send({ ok: true, ...anime });
 };
 
 export const updateAnime = async (
@@ -92,7 +92,7 @@ export const updateAnime = async (
 		request.params.id,
 		request.body,
 	);
-	return reply.status(200).send(anime);
+	return reply.status(200).send({ ok: true, ...anime });
 };
 
 export const deleteAnime = async (
@@ -101,7 +101,7 @@ export const deleteAnime = async (
 ) => {
 	assertValidId(request.params.id);
 	await animeService.deleteAnime(request.server.pg, request.params.id);
-	return reply.status(204).send();
+	return reply.status(200).send({ ok: true });
 };
 
 export const countByStatus = async (
@@ -109,7 +109,7 @@ export const countByStatus = async (
 	reply: FastifyReply,
 ) => {
 	const result = await animeService.getAnimesCountByStatus(request.server.pg);
-	return reply.status(200).send(result);
+	return reply.status(200).send({ ok: true, ...result });
 };
 
 export const studioStats = async (
@@ -117,7 +117,7 @@ export const studioStats = async (
 	reply: FastifyReply,
 ) => {
 	const result = await animeService.getStudioStats(request.server.pg);
-	return reply.status(200).send(result);
+	return reply.status(200).send({ ok: true, ...result });
 };
 
 export const formatStats = async (
@@ -125,7 +125,7 @@ export const formatStats = async (
 	reply: FastifyReply,
 ) => {
 	const result = await animeService.getFormatStats(request.server.pg);
-	return reply.status(200).send(result);
+	return reply.status(200).send({ ok: true, ...result });
 };
 
 export const studiosAboveAverage = async (
@@ -133,7 +133,7 @@ export const studiosAboveAverage = async (
 	reply: FastifyReply,
 ) => {
 	const result = await animeService.getStudiosAboveAverage(request.server.pg);
-	return reply.status(200).send(result);
+	return reply.status(200).send({ ok: true, ...result });
 };
 
 export const aboveAverageEpisodes = async (
@@ -143,7 +143,7 @@ export const aboveAverageEpisodes = async (
 	const result = await animeService.getAnimesAboveAverageEpisodes(
 		request.server.pg,
 	);
-	return reply.status(200).send(result);
+	return reply.status(200).send({ ok: true, ...result });
 };
 
 export const maxEpisodes = async (
@@ -151,5 +151,5 @@ export const maxEpisodes = async (
 	reply: FastifyReply,
 ) => {
 	const result = await animeService.getAnimesWithMaxEpisodes(request.server.pg);
-	return reply.status(200).send(result);
+	return reply.status(200).send({ ok: true, ...result });
 };
