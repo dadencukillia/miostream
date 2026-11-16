@@ -4,6 +4,9 @@ import { CommentErrors } from "./comment.errors";
 import type * as dto from "./comment.dto";
 import { commentTransformAuthor } from "./comment.model";
 
+const DB_INVALID_ID_CODES: readonly string[] = ["22P02", "22003"];
+const DB_INVALID_INPUT_CODES: readonly string[] = ["23514", "22P02", "22003", "22001"];
+
 export const getComments = async (
     client: Pool,
     animeId: string,
@@ -21,7 +24,7 @@ export const getComments = async (
             maxCount,
         });
     } catch (e: any) {
-        if (e?.code === "22P02" || e?.code === "22003") {
+        if (DB_INVALID_ID_CODES.includes(e?.code)) {
             throw CommentErrors.error("comment-db-invalid-error").withDetails(e);
         }
         throw CommentErrors.error("comment-db-error").withDetails(e);
@@ -56,7 +59,7 @@ export const postComment = async (
         if (e?.code === "23503") {
             throw CommentErrors.error("comment-db-data-not-found").withDetails(e);
         }
-        if (e?.code === "23514" || e?.code === "22P02" || e?.code === "22003" || e?.code === "22001") {
+        if (DB_INVALID_INPUT_CODES.includes(e?.code)) {
             throw CommentErrors.error("comment-db-invalid-error").withDetails(e);
         }
         throw CommentErrors.error("comment-db-error").withDetails(e);
@@ -86,7 +89,7 @@ export const updateComment = async (
             content: data.content.trim(),
         });
     } catch (e: any) {
-        if (e?.code === "23514" || e?.code === "22P02" || e?.code === "22003" || e?.code === "22001") {
+        if (DB_INVALID_INPUT_CODES.includes(e?.code)) {
             throw CommentErrors.error("comment-db-invalid-error").withDetails(e);
         }
         throw CommentErrors.error("comment-db-error").withDetails(e);
@@ -116,7 +119,7 @@ export const deleteComment = async (
             isPrivileged,
         });
     } catch (e: any) {
-        if (e?.code === "22P02" || e?.code === "22003") {
+        if (DB_INVALID_ID_CODES.includes(e?.code)) {
             throw CommentErrors.error("comment-db-invalid-error").withDetails(e);
         }
         throw CommentErrors.error("comment-db-error").withDetails(e);

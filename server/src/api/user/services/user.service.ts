@@ -6,6 +6,9 @@ import type * as dto from "../user.dto";
 import { hashPassword, verifyPassword } from "@utils/password";
 import { userTransformPublic, userTransformStreak } from "../user.model";
 
+const DB_INVALID_INPUT_CODES: readonly string[] = ["23514", "22P02", "22003", "22001"];
+const DB_INVALID_ENUM_CODES: readonly string[] = ["23514", "22P02"];
+
 export const createUser = async (client: Pool, data: dto.CreateUserRequestPayloadType): Promise<dto.UserType> => {
     const passwordHash = data.password ? await hashPassword(data.password) : null;
 
@@ -33,7 +36,7 @@ export const createUser = async (client: Pool, data: dto.CreateUserRequestPayloa
             }
             throw UserErrors.error("user-already-exists").withDetails(e);
         }
-        if (e?.code === "23514" || e?.code === "22P02" || e?.code === "22003" || e?.code === "22001") {
+        if (DB_INVALID_INPUT_CODES.includes(e?.code)) {
             throw UserErrors.error("user-db-invalid-error").withDetails(e);
         }
         throw UserErrors.error("user-db-error").withDetails(e);
@@ -146,7 +149,7 @@ export const updateUserProfile = async (
             }
             throw UserErrors.error("user-already-exists").withDetails(e);
         }
-        if (e?.code === "23514" || e?.code === "22P02" || e?.code === "22003" || e?.code === "22001") {
+        if (DB_INVALID_INPUT_CODES.includes(e?.code)) {
             throw UserErrors.error("user-db-invalid-error").withDetails(e);
         }
         throw UserErrors.error("user-db-error").withDetails(e);
@@ -174,7 +177,7 @@ export const updateUserCustomization = async (
             profileBackgroundUrl: data.profileBackgroundUrl ?? null
         });
     } catch (e: any) {
-        if (e?.code === "23514" || e?.code === "22P02" || e?.code === "22003" || e?.code === "22001") {
+        if (DB_INVALID_INPUT_CODES.includes(e?.code)) {
             throw UserErrors.error("user-db-invalid-error").withDetails(e);
         }
         throw UserErrors.error("user-db-error").withDetails(e);
@@ -231,7 +234,7 @@ export const updateUserStatus = async (
             userStatus: status
         });
     } catch (e: any) {
-        if (e?.code === "23514" || e?.code === "22P02") {
+        if (DB_INVALID_ENUM_CODES.includes(e?.code)) {
             throw UserErrors.error("user-db-invalid-error").withDetails(e);
         }
         throw UserErrors.error("user-db-error").withDetails(e);
@@ -254,7 +257,7 @@ export const updateUserRole = async (
             userRole: role
         });
     } catch (e: any) {
-        if (e?.code === "23514" || e?.code === "22P02") {
+        if (DB_INVALID_ENUM_CODES.includes(e?.code)) {
             throw UserErrors.error("user-db-invalid-error").withDetails(e);
         }
         throw UserErrors.error("user-db-error").withDetails(e);
@@ -282,7 +285,7 @@ export const createUserLink = async (client: Pool, userId: string, url: string) 
             }
             throw UserErrors.error("user-db-data-not-found").withDetails(e);
         }
-        if (e?.code === "23514" || e?.code === "22P02" || e?.code === "22003" || e?.code === "22001") {
+        if (DB_INVALID_INPUT_CODES.includes(e?.code)) {
             throw UserErrors.error("user-db-invalid-error").withDetails(e);
         }
         throw UserErrors.error("user-db-error").withDetails(e);
@@ -320,7 +323,7 @@ export const updateUserLink = async (
         if (e?.code === "23505") {
             throw UserErrors.error("user-link-already-exists").withDetails(e);
         }
-        if (e?.code === "23514" || e?.code === "22P02" || e?.code === "22003" || e?.code === "22001") {
+        if (DB_INVALID_INPUT_CODES.includes(e?.code)) {
             throw UserErrors.error("user-db-invalid-error").withDetails(e);
         }
         throw UserErrors.error("user-db-error").withDetails(e);
