@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { Pool } from "pg";
 import * as service from "@/api/anime/anime.service";
+import { toAnimeModel } from "@/api/anime/anime.model";
 import { AnimeErrors } from "@/api/anime/anime.errors";
 
 const id = "018f23ab-1234-7123-8123-123456789abc";
@@ -47,7 +48,7 @@ const byName = (calls: Call[], name: string) => calls.find((call) => call.name =
 
 describe("anime service", () => {
   test("maps database rows, including numeric IDs and unknown enum values", () => {
-    const anime = service.toAnime({
+    const anime = toAnimeModel({
       animeId: id, slug: "sample-anime", titleUa: "Назва", titleEn: "Title", titleOriginal: "Original",
       animeDescription: "Description", coverId: "4f2f627b-cec4-48ca-ae1e-1c59b1fccd7c", productionStudio: "Studio", malId: "123", anilistId: null,
       hikkaId: null, imdbId: null, yearReleased: null, avgEpisodeDuration: 0, episodesCount: 0,

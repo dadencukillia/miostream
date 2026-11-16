@@ -1,17 +1,15 @@
 import type { Pool, PoolClient } from "pg";
 import type {
-	AgeRestrictionType,
 	AnimeResponseType,
-	AnimeFormatType,
 	AnimeListFilterType,
 	ListAnimesRequestQueriesType,
 	AnimeListResponseType,
-	AnimeStatusType,
 	CreateAnimeRequestPayloadType,
 	GenreType,
 	UpdateAnimeRequestPayloadType,
 } from "./anime.dto";
 import { AnimeErrors } from "./anime.errors";
+import { toAnimeModel } from "./anime.model";
 import {
 	countAnimes,
 	createAnime as createAnimeQuery,
@@ -29,56 +27,6 @@ import {
 	getOngoingAnimes,
 	getAvailableAnimesByCurrentYear,
 } from "@sqlc/animes_sql";
-import { ANIME_FORMATS, ANIME_STATUSES, GENRES, MPAA_RATINGS } from "./anime.schema";
-
-const UUID_RE =
-	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-
-const includes = (values: readonly string[], value: string) =>
-	values.includes(value);
-
-const toAgeRestriction = (value: string | null): AgeRestrictionType | null =>
-	value !== null && includes(MPAA_RATINGS, value)
-		? (value as AgeRestrictionType)
-		: null;
-
-const toAnimeStatus = (value: string | null): AnimeStatusType | null =>
-	value !== null && includes(ANIME_STATUSES, value)
-		? (value as AnimeStatusType)
-		: null;
-
-const toAnimeFormat = (value: string): AnimeFormatType =>
-	includes(ANIME_FORMATS, value) ? (value as AnimeFormatType) : "other";
-
-const toGenres = (values: string[] | null): GenreType[] =>
-	(values ?? []).filter((value): value is GenreType => includes(GENRES, value));
-
-export const toAnime = (row: AnimeRecord): AnimeResponseType => ({
-	animeId: row.animeId,
-	slug: row.slug,
-	titleUa: row.titleUa,
-	titleEn: row.titleEn,
-	titleOriginal: row.titleOriginal,
-	animeDescription: row.animeDescription,
-
-	coverId: row.coverId,
-	coverUrl: "",
-	productionStudio: row.productionStudio,
-	malId: row.malId === null ? null : Number(row.malId),
-	anilistId: row.anilistId === null ? null : Number(row.anilistId),
-	hikkaId: row.hikkaId,
-	imdbId: row.imdbId,
-	yearReleased: row.yearReleased,
-	avgEpisodeDuration: row.avgEpisodeDuration,
-	episodesCount: row.episodesCount,
-	ageRestriction: toAgeRestriction(row.ageRestriction),
-	animeStatus: toAnimeStatus(row.animeStatus),
-	animeFormat: toAnimeFormat(row.animeFormat),
-	available: row.available,
-	genres: toGenres(row.genres),
-});
-
 function handleDbError(error: unknown): never {
 	const dbError = error as {
 		code?: string;
@@ -163,7 +111,7 @@ export async function listAnimes(
 		.catch(handleDbError);
 
 	return {
-		items: items.map(toAnime),
+		items: items.map((item) => toAnimeModel(item)),
 		pagination: {
 			page,
 			limit,
@@ -177,14 +125,14 @@ export async function getAnime(db: Pool, animeId: string): Promise<AnimeResponse
 	const anime = await repoGetAnimeById(db, animeId).catch(handleDbError);
 	if (!anime) throw AnimeErrors.error("anime-not-found");
 
-	return toAnime(anime);
+	return toAnimeModel(anime);
 }
 
 export async function getAnimeBySlug(db: Pool, slug: string): Promise<AnimeResponseType> {
 	const anime = await repoGetAnimeBySlug(db, slug).catch(handleDbError);
 	if (!anime) throw AnimeErrors.error("anime-not-found");
 
-	return toAnime(anime);
+	return toAnimeModel(anime);
 }
 
 export async function createAnime(
@@ -216,7 +164,7 @@ export async function createAnime(
 
 	if (!anime) throw AnimeErrors.error("anime-not-created");
 
-	return toAnime(anime);
+	return toAnimeModel(anime);
 }
 
 export async function updateAnime(
@@ -269,7 +217,7 @@ export async function updateAnime(
 		.catch(handleDbError);
 	if (!anime) throw AnimeErrors.error("anime-not-found");
 
-	return toAnime(anime);
+	return toAnimeModel(anime);
 }
 
 export async function deleteAnime(db: Pool, animeId: string): Promise<void> {

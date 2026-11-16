@@ -6,10 +6,13 @@ import {
   getListUnit,
   listListUnits,
   updateListUnit as updateListUnitQuery,
-  type CreateListUnitRow,
-  type UpdateListUnitRow,
 } from "@/sqlc/anime_list_units_sql";
 import { ListErrors } from "./list.errors";
+import {
+  parseListUnitDate,
+  toListUnitModel,
+  toListUnitWithAnimeModel,
+} from "./list.model";
 import type {
   CreateListUnitRequestPayloadType,
   GetListUnitsRequestQueriesType,
@@ -17,31 +20,6 @@ import type {
   ListUnitsPageResponseType,
   UpdateListUnitRequestPayloadType
 } from "./list.dto";
-
-type ListUnitStatus = "finished" | "watching" | "delayed" | "dropped";
-
-function toLocalDate(value: string): Date {
-	const [year, month, day] = value.split("-").map(Number);
-	return new Date(year!, month! - 1, day!);
-}
-
-function toDateString(value: Date): string {
-	const month = String(value.getMonth() + 1).padStart(2, "0");
-	const day = String(value.getDate()).padStart(2, "0");
-	return `${value.getFullYear()}-${month}-${day}`;
-}
-
-function toListUnit(row: CreateListUnitRow | UpdateListUnitRow): ListUnitResponseType {
-	return {
-		userId: row.userId,
-		animeId: row.animeId,
-		watchedEpisodes: row.watchedEpisodes,
-		repeatTimes: row.repeatTimes,
-		startedWatching: toDateString(row.startedWatching),
-		listUnitStatus: row.listUnitStatus as ListUnitStatus,
-		grade: row.grade,
-	};
-}
 
 function mapDbError(error: any): never {
 	if (error?.code === "23505") {
@@ -72,14 +50,14 @@ export async function createListUnit(
 		animeId: input.animeId,
 		watchedEpisodes,
 		repeatTimes,
-		startedWatching: toLocalDate(startedWatching),
+		startedWatching: parseListUnitDate(startedWatching),
 		listUnitStatus,
 		grade,
 	}).catch(mapDbError);
 	if (!row) {
 		throw ListErrors.error("list-not-found");
 	}
-	return toListUnit(row);
+	return toListUnitModel(row);
 }
 
 export async function updateListUnit(
@@ -98,14 +76,14 @@ export async function updateListUnit(
 		animeId,
 		watchedEpisodes: input.watchedEpisodes ?? existing.watchedEpisodes,
 		repeatTimes: input.repeatTimes ?? existing.repeatTimes,
-		startedWatching: input.startedWatching !== undefined ? toLocalDate(input.startedWatching) : existing.startedWatching,
+		startedWatching: input.startedWatching !== undefined ? parseListUnitDate(input.startedWatching) : existing.startedWatching,
 		listUnitStatus: input.listUnitStatus ?? existing.listUnitStatus,
 		grade: input.grade !== undefined ? input.grade : existing.grade,
 	}).catch(mapDbError);
 	if (!row) {
 		throw ListErrors.error("list-not-found");
 	}
-	return toListUnit(row);
+	return toListUnitModel(row);
 }
 
 export async function deleteListUnit(db: Pool, userId: string, animeId: string): Promise<void> {
@@ -132,19 +110,7 @@ export async function getListUnits(
 	]);
 	const total = counted?.total ?? 0;
 
-	const items = rows.map((row) => ({
-		animeId: row.animeId,
-		slug: row.slug,
-		titleUa: row.titleUa,
-		titleEn: row.titleEn,
-		// Cover URL resolution is not available yet.
-		coverUrl: "",
-		watchedEpisodes: row.watchedEpisodes,
-		repeatTimes: row.repeatTimes,
-		startedWatching: toDateString(row.startedWatching),
-		listUnitStatus: row.listUnitStatus as ListUnitStatus,
-		grade: row.grade,
-	}));
+	const items = rows.map((row) => toListUnitWithAnimeModel(row));
 
 	return {
 		items,
