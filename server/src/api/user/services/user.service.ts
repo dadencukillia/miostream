@@ -2,7 +2,7 @@ import type { Pool } from "pg";
 import * as usersSqlc from "@sqlc/users_sql";
 import * as userLinksSqlc from "@sqlc/user_links_sql";
 import { UserErrors } from "../user.errors";
-import * as dto from "../user.dto";
+import type * as dto from "../user.dto";
 import { hashPassword, verifyPassword } from "@utils/password";
 
 export const createUser = async (client: Pool, data: dto.CreateUserRequestPayloadType) => {

@@ -1,7 +1,7 @@
 import type { Static } from "typebox";
-import * as userSchema from "./user.schema";
+import type * as userSchema from "./user.schema";
 import type { TransformedType } from "@utils/modelTransformer";
-import { toPublicUserModel } from "./user.model";
+import type { toPublicUserModel } from "./user.model";
 
 // Enums
 export type UserRoleType = (typeof userSchema.USER_ROLE)[number];

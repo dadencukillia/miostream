@@ -8,6 +8,7 @@ import {
   ErrorsSet,
   fastifyErrSerializer,
 } from "@utils/errorsCollection";
+import { error } from "node:console";
 
 describe("ErrorsCollection", () => {
   test("identifies collections by instance even when their names match", () => {
@@ -16,9 +17,10 @@ describe("ErrorsCollection", () => {
     expect(first.name).toBe("users");
     expect(Number.isInteger(first.id)).toBe(true);
     expect(second.id).not.toBe(first.id);
-    const error = first.createError(404, "User not found");
+    const error = first.createError("not-found", 404, "User not found");
     expect(error).toBeInstanceOf(Error);
     expect(error.collection).toBe(first);
+    expect(error.slug).toBe("not-found");
     expect(error.statusCode).toBe(404);
     expect(error.message).toBe("User not found");
     expect(error.details).toEqual([]);
@@ -26,7 +28,7 @@ describe("ErrorsCollection", () => {
 
   test("copies errors without changing the original or losing context and stack", () => {
     const collection = new ErrorsCollection("users");
-    const original = collection.createError(404, "User not found");
+    const original = collection.createError("not-found", 404, "User not found");
     const context = { userId: "missing" };
     const detailed = original.withDetails(context);
     const changedStatus = detailed.withStatusCode(410);
@@ -34,13 +36,16 @@ describe("ErrorsCollection", () => {
     const appended = detailed.withDetails("lookup failed", null);
 
     expect(original.details).toEqual([]);
+    expect(original.slug).toBe("not-found");
     expect(detailed.details).toEqual([context]);
     expect(detailed.statusCode).toBe(404);
     expect(detailed.message).toBe("User not found");
+    expect(detailed.slug).toBe("not-found");
     expect(changedStatus.statusCode).toBe(410);
     expect(changedStatus.message).toBe("User not found");
     expect(changedMessage.message).toBe("User removed");
     expect(changedMessage.statusCode).toBe(404);
+    expect(changedMessage.slug).toBe("not-found");
     expect(appended.details).toEqual([context, "lookup failed", null]);
     for (const copy of [detailed, changedStatus, changedMessage, appended]) {
       expect(copy).not.toBe(original);
@@ -55,8 +60,9 @@ describe("ErrorsCollection", () => {
   });
 
   test("supports chained overrides, empty details, and an empty message", () => {
-    const error = new ErrorsCollection("users").createError(400, "Invalid")
-      .withDetails().withStatusCode(422).withMessage("").withDetails(0, false, undefined);
+    const error = new ErrorsCollection("users").createError("validation", 400, "Invalid")
+      .withDetails().withStatusCode(422).withMessage("").withDetails(0, false, undefined).withSlug("hello");
+    expect(error.slug).toBe("hello");
     expect(error.statusCode).toBe(422);
     expect(error.message).toBe("");
     expect(error.details).toEqual([0, false, undefined]);
@@ -69,11 +75,11 @@ describe("error serialization", () => {
     const cause = new TypeError("invalid input", { cause: { field: "email" } });
     const detail = new Error("lookup failed", { cause });
     const metadata = { userId: "missing" };
-    const error = new ErrorsCollection("users").createError(404, "User not found")
+    const error = new ErrorsCollection("users").createError("not-found", 404, "User not found")
       .withDetails(detail, metadata, null, false, 0, "context");
     expect(error.toLog()).toEqual({
       type: "CustomError", message: "User not found", statusCode: 404,
-      collection: "users", stack: error.stack,
+      slug: "not-found", collection: "users", stack: error.stack,
       details: [{
         type: "Error", message: "lookup failed", stack: detail.stack,
         cause: {
@@ -90,7 +96,7 @@ describe("error serialization", () => {
   test("uses empty stack strings when errors have no stack", () => {
     const detail = new Error("detail");
     delete detail.stack;
-    const error = new ErrorsCollection("users").createError(500, "failed").withDetails(detail);
+    const error = new ErrorsCollection("users").createError("db", 500, "failed").withDetails(detail);
     delete error.stack;
     expect(error.toLog().stack).toBe("");
     expect(error.toLog().details).toEqual([{ type: "Error", message: "detail", stack: "" }]);
@@ -104,11 +110,11 @@ describe("error serialization", () => {
   });
 
   test("exposes structured context to the custom Node inspector", () => {
-    const error = new ErrorsCollection("users").createError(409, "Conflict").withDetails({ id: 1 });
+    const error = new ErrorsCollection("users").createError("db", 409, "Conflict").withDetails({ id: 1 });
     const inspect = (error as unknown as Record<symbol, () => unknown>)[Symbol.for("nodejs.util.inspect.custom")]!;
     expect(inspect.call(error)).toEqual({
       name: error.name, message: "Conflict", statusCode: 409,
-      collection: "users", details: [{ id: 1 }], stack: error.stack,
+      slug: "db", collection: "users", details: [{ id: 1 }], stack: error.stack,
     });
   });
 });
@@ -135,9 +141,9 @@ describe("ErrorsSet", () => {
 
 describe("ErrorResponse schema", () => {
   test.each([
-    [{ ok: false, message: "unknown error" }, true],
-    [{ ok: false, message: "" }, true],
-    [{ ok: true, message: "error" }, false],
+    [{ ok: false, message: "something went wrong", error: "unexpected-error" }, true],
+    [{ ok: false, message: "", error: "empty-error" }, true],
+    [{ ok: true, message: "error", error: "maybe-error" }, false],
     [{ ok: false }, false],
     [{ message: "error" }, false],
     [{ ok: false, message: 500 }, false],
@@ -157,13 +163,13 @@ describe("Fastify error handler", () => {
     const app = Fastify({ loggerInstance: logger });
     collection.setupErrorHandler(app);
     const error = custom
-      ? collection.createError(503, "Service unavailable").withDetails("private context")
+      ? collection.createError("out-of-service", 503, "Service unavailable").withDetails("private context")
       : new Error("private context");
     app.get("/", () => { throw error; });
     try {
       const response = await app.inject("/");
       expect(response.statusCode).toBe(custom ? 503 : 500);
-      expect(response.json()).toEqual({ ok: false, message: custom ? "Service unavailable" : "unknown error" });
+      expect(response.json()).toEqual({ ok: false, message: custom ? "Service unavailable" : "something went wrong", error: custom ? "out-of-service" : "unexpected-error" });
       expect(entries).toHaveLength(1);
       if (custom) {
         expect(entries[0]).toMatchObject({
@@ -186,12 +192,12 @@ describe("Fastify error handler", () => {
       if (mode === "default" || mode === "same name") owner.setupErrorHandler(app, [owner], true, true);
       else owner.setupErrorHandler(app, mode === "multiple" ? [owner, other] : mode === "empty" ? [] : [other], true, true);
       const source = mode === "same name" || mode === "multiple" ? other : owner;
-      app.get("/", () => { throw source.createError(409, "Conflict").withDetails("private detail"); });
+      app.get("/", () => { throw source.createError("db", 409, "Conflict").withDetails("private detail"); });
       try {
         const response = await app.inject("/");
         const allowed = mode === "default" || mode === "multiple";
         expect(response.statusCode).toBe(allowed ? 409 : 500);
-        expect(response.json()).toEqual({ ok: false, message: allowed ? "Conflict" : "unknown error" });
+        expect(response.json()).toEqual({ ok: false, message: allowed ? "Conflict" : "something went wrong", error: allowed ? "db" : "unexpected-error" });
       } finally {
         await app.close();
       }
@@ -211,7 +217,8 @@ describe("Fastify error handler", () => {
       expect(response.statusCode).toBe(passValidationErrors ? 400 : 500);
       expect(response.json()).toEqual({
         ok: false,
-        message: passValidationErrors ? "body must have required property 'email'" : "unknown error",
+        message: passValidationErrors ? "body must have required property 'email'" : "something went wrong",
+        error: passValidationErrors ? "validation" : "unexpected-error"
       });
     } finally {
       await app.close();
@@ -225,7 +232,7 @@ describe("Fastify error handler", () => {
     try {
       const response = await app.inject("/");
       expect(response.statusCode).toBe(500);
-      expect(response.json()).toEqual({ ok: false, message: "unknown error" });
+      expect(response.json()).toEqual({ ok: false, message: "something went wrong", error: "unexpected-error" });
     } finally {
       await app.close();
     }
@@ -238,7 +245,7 @@ describe("Fastify error handler", () => {
     try {
       const response = await app.inject("/");
       expect(response.statusCode).toBe(400);
-      expect(response.json()).toEqual({ ok: false, message: "Invalid input" });
+      expect(response.json()).toEqual({ ok: false, message: "Invalid input", error: "validation" });
     } finally {
       await app.close();
     }

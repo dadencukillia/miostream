@@ -1,6 +1,6 @@
 import type { FastifyRequest, FastifyReply } from "fastify";
 import { UserErrors } from "./user.errors";
-import * as dto from "./user.dto";
+import type * as dto from "./user.dto";
 import * as services from "./services/user.service";
 import * as avatarServices from "./services/avatar.service";
 import { isSafeHttpUrl } from "@utils/urls";

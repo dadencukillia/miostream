@@ -1,5 +1,5 @@
-import Type from "typebox";
-import {
+import type Type from "typebox";
+import type {
 	CreateListUnitRequestPayload,
 	GetListUnitsRequestQueries,
 	ListUnitResponse,

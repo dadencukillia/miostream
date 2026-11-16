@@ -8,9 +8,10 @@ import {
     setAvatarById
 } from "@/cdn/avatar/avatar.shared";
 import {
-    updateUserAvatarReturningOld
+    updateUserAvatarReturningOld,
+    type UpdateUserAvatarReturningOldRow
 } from "@sqlc/users_sql";
-import * as dto from "../user.dto";
+import type * as dto from "../user.dto";
 import { toUserModel, toUserWithoutOldAvatarModel } from "../user.model";
 
 const AVATAR_WIDTH = 256;
@@ -51,23 +52,22 @@ export async function updateUserAvatarImage(
 
     // Update avatar in the database
 
-    let dbResponse;
-    {
-        try {
-            dbResponse = await updateUserAvatarReturningOld(db, {
-                userId: userId,
-                newAvatarId: newAvatarId
-            });
-        } catch (e) {
-            logger.error(e);
-            await removeAvatarById(s3, newAvatarId);
-            throw AvatarErrors.error("update-avatar-db").withDetails(e);
-        }
+    let dbResponse: UpdateUserAvatarReturningOldRow | null;
 
-        if (dbResponse == null) {
-            await removeAvatarById(s3, newAvatarId);
-            throw UserErrors.error("user-not-found");
-        }
+    try {
+        dbResponse = await updateUserAvatarReturningOld(db, {
+            userId: userId,
+            newAvatarId: newAvatarId
+        });
+    } catch (e) {
+        logger.error(e);
+        await removeAvatarById(s3, newAvatarId);
+        throw AvatarErrors.error("update-avatar-db").withDetails(e);
+    }
+
+    if (dbResponse == null) {
+        await removeAvatarById(s3, newAvatarId);
+        throw UserErrors.error("user-not-found");
     }
 
     // Remove old avatar file
@@ -92,7 +92,7 @@ export async function resetUserAvatar(
 ): Promise<dto.UserResponseType> {
     // Update avatar id in database, return old
 
-    let dbResponse;
+    let dbResponse: UpdateUserAvatarReturningOldRow | null;
 
     try {
         dbResponse = await updateUserAvatarReturningOld(db, {
