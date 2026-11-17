@@ -5,8 +5,6 @@ import * as controllers from "./list.controller";
 
 type AuthHook = (req: FastifyRequest<any>, reply: FastifyReply<any>) => Promise<void | unknown>;
 
-// The shared middleware currently supplies a dummy identity for arbitrary tokens.
-// Keep mutations unavailable until a verified authentication provider is wired in.
 const requireAuth: AuthHook = async (_request, reply) => {
 	return reply.status(503).send({ ok: false, message: "Verified authentication is unavailable" });
 };

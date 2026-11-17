@@ -57,3 +57,23 @@ for (const sort of [undefined, "startedWatching", "title", "grade"] as const) {
 		expect(list?.values).toEqual(expect.arrayContaining([userId, "watching", sort ?? "startedWatching", 10, 10]));
 	});
 }
+
+test("grade null is sent through null_fields to reset a nullable list unit field", async () => {
+	const { db, calls } = fakeDb();
+	await updateListUnit(db, userId, animeId, { grade: null });
+
+	const update = calls.find((call) => call.text.includes("-- name: UpdateListUnit"))!;
+	expect(update.values[4]).toEqual(["grade"]);
+	expect(update.values[5]).toBeNull();
+	expect(update.values.slice(0, 4)).toEqual([3, 1, expect.any(Date), "watching"]);
+});
+
+test("omitted grade keeps null_fields empty and sends null to preserve the value", async () => {
+	const { db, calls } = fakeDb();
+	await updateListUnit(db, userId, animeId, { watchedEpisodes: 7 });
+
+	const update = calls.find((call) => call.text.includes("-- name: UpdateListUnit"))!;
+	expect(update.values[4]).toEqual([]);
+	expect(update.values[5]).toBeNull();
+	expect(update.values[0]).toBe(7);
+});

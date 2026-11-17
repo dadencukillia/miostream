@@ -134,7 +134,11 @@ describe("anime service", () => {
   test("validates updates and merges unchanged fields", async () => {
     const fake = fakeDb();
     await service.updateAnime(fake.db, id, { titleEn: "New title", available: false, malId: null });
-    expect(byName(fake.calls, "UpdateAnimeById")?.values).toEqual(["sample-anime", "Назва", "New title", "Original", "Description", "cover", "Studio", null, "456", "hikka", "tt123", 2020, 24, 12, "pg13", "ongoing", "tv", false, id]);
+    expect(byName(fake.calls, "UpdateAnimeById")?.values).toEqual([
+      "sample-anime", "Назва", "New title", "Original", "Description",
+      ["mal_id"], null, "Studio", null, null, null, null, null,
+      24, 12, null, null, "tv", false, id,
+    ]);
     expect(fake.released).toBe(true);
     await expect(service.updateAnime(fakeDb({ missing: true }).db, id, { titleEn: "New" })).rejects.toMatchObject({ collection: AnimeErrors, statusCode: 404 });
   });
@@ -163,5 +167,38 @@ describe("anime service", () => {
     expect(byName(fake.calls, "UpdateAnimeAvailableById")?.values).toEqual(expect.arrayContaining([false, id]));
     expect(byName(fake.calls, "DeleteAnime")).toBeUndefined();
     await expect(service.deleteAnime(fakeDb({ missing: true }).db, id)).rejects.toMatchObject({ collection: AnimeErrors, statusCode: 404 });
+  });
+
+  test("sends null_fields for every explicitly cleared nullable anime field", async () => {
+    const fake = fakeDb();
+    await service.updateAnime(fake.db, id, {
+      malId: null,
+      anilistId: null,
+      hikkaId: null,
+      imdbId: null,
+      yearReleased: null,
+      ageRestriction: null,
+      animeStatus: null,
+    });
+
+    const values = byName(fake.calls, "UpdateAnimeById")!.values;
+    expect(values[5]).toEqual([
+      "mal_id", "anilist_id", "hikka_id", "imdb_id",
+      "year_released", "age_restriction", "anime_status",
+    ]);
+    expect([6, 8, 9, 10, 11, 12, 15, 16].map((index) => values[index])).toEqual(
+      Array(8).fill(null),
+    );
+  });
+
+  test("keeps null_fields empty and sends null values to preserve untouched nullable anime fields", async () => {
+    const fake = fakeDb();
+    await service.updateAnime(fake.db, id, { titleEn: "New title" });
+
+    const values = byName(fake.calls, "UpdateAnimeById")!.values;
+    expect(values[5]).toEqual([]);
+    expect([6, 8, 9, 10, 11, 12, 15, 16].map((index) => values[index])).toEqual(
+      Array(8).fill(null),
+    );
   });
 });

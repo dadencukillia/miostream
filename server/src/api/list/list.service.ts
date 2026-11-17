@@ -78,7 +78,8 @@ export async function updateListUnit(
 		repeatTimes: input.repeatTimes ?? existing.repeatTimes,
 		startedWatching: input.startedWatching !== undefined ? parseListUnitDate(input.startedWatching) : existing.startedWatching,
 		listUnitStatus: input.listUnitStatus ?? existing.listUnitStatus,
-		grade: input.grade !== undefined ? input.grade : existing.grade,
+		nullFields: input.grade === null ? ["grade"] : [],
+		grade: input.grade ?? null,
 	}).catch(mapDbError);
 	if (!row) {
 		throw ListErrors.error("list-not-found");

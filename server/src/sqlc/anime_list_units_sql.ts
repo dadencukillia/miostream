@@ -113,8 +113,11 @@ SET
     repeat_times = $2::int,
     started_watching = $3::date,
     list_unit_status = $4::anime_list_unit_status_enum,
-    grade = $5::smallint
-WHERE user_id = $6::uuid AND anime_id = $7::uuid
+    grade = CASE
+        WHEN 'grade' = ANY($5::text[]) THEN NULL
+        ELSE COALESCE($6::smallint, grade)
+    END
+WHERE user_id = $7::uuid AND anime_id = $8::uuid
 RETURNING user_id, anime_id, watched_episodes, repeat_times, started_watching, list_unit_status, grade`;
 
 export interface UpdateListUnitArgs {
@@ -122,6 +125,7 @@ export interface UpdateListUnitArgs {
     repeatTimes: number;
     startedWatching: Date;
     listUnitStatus: string;
+    nullFields: string[];
     grade: number | null;
     userId: string;
     animeId: string;
@@ -140,7 +144,7 @@ export interface UpdateListUnitRow {
 export async function updateListUnit(client: Client, args: UpdateListUnitArgs): Promise<UpdateListUnitRow | null> {
     const result = await client.query({
         text: updateListUnitQuery,
-        values: [args.watchedEpisodes, args.repeatTimes, args.startedWatching, args.listUnitStatus, args.grade, args.userId, args.animeId],
+        values: [args.watchedEpisodes, args.repeatTimes, args.startedWatching, args.listUnitStatus, args.nullFields, args.grade, args.userId, args.animeId],
         rowMode: "array"
     });
     if (result.rows.length !== 1) {

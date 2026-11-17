@@ -123,7 +123,6 @@ export async function createAnime(client: Client, args: CreateAnimeArgs): Promis
 }
 
 export const createAnimeGenresQuery = `-- name: CreateAnimeGenres :exec
-
 INSERT INTO public.genres (anime_id, genre_type)
 SELECT $1::uuid, g
 FROM unnest($2::genre_type_enum[]) AS g
@@ -696,22 +695,45 @@ SET
     "title_en"             = COALESCE($3::text, title_en),
     "title_original"       = COALESCE($4::text, title_original),
     "anime_description"    = COALESCE($5::text, anime_description),
-    -- TODO: provide the way to reset cover_id
-    "cover_id"             = COALESCE($6::uuid, cover_id),
-    "production_studio"    = COALESCE($7::text, production_studio),
-    "mal_id"               = $8::bigint,
-    "anilist_id"           = $9::bigint,
-    "hikka_id"             = $10::text,
-    "imdb_id"              = $11::text,
-    "year_released"        = COALESCE($12::smallint, year_released),
-    "avg_episode_duration" = COALESCE($13::smallint, avg_episode_duration),
-    "episodes_count"       = COALESCE($14::smallint, episodes_count),
-    "age_restriction"      = COALESCE($15::mpaa_rating_enum, age_restriction),
-    "anime_status"         = COALESCE($16::anime_status_enum, anime_status),
-    "anime_format"         = COALESCE($17::anime_format_enum, anime_format),
-    "available"            = COALESCE($18::boolean, available),
+    "cover_id"             = CASE
+        WHEN 'cover_id' = ANY($6::text[]) THEN NULL
+        ELSE COALESCE($7::uuid, cover_id)
+    END,
+    "production_studio"    = COALESCE($8::text, production_studio),
+    "mal_id"               = CASE
+        WHEN 'mal_id' = ANY($6::text[]) THEN NULL
+        ELSE COALESCE($9::bigint, mal_id)
+    END,
+    "anilist_id"           = CASE
+        WHEN 'anilist_id' = ANY($6::text[]) THEN NULL
+        ELSE COALESCE($10::bigint, anilist_id)
+    END,
+    "hikka_id"             = CASE
+        WHEN 'hikka_id' = ANY($6::text[]) THEN NULL
+        ELSE COALESCE($11::text, hikka_id)
+    END,
+    "imdb_id"              = CASE
+        WHEN 'imdb_id' = ANY($6::text[]) THEN NULL
+        ELSE COALESCE($12::text, imdb_id)
+    END,
+    "year_released"        = CASE
+        WHEN 'year_released' = ANY($6::text[]) THEN NULL
+        ELSE COALESCE($13::smallint, year_released)
+    END,
+    "avg_episode_duration" = COALESCE($14::smallint, avg_episode_duration),
+    "episodes_count"       = COALESCE($15::smallint, episodes_count),
+    "age_restriction"      = CASE
+        WHEN 'age_restriction' = ANY($6::text[]) THEN NULL
+        ELSE COALESCE($16::mpaa_rating_enum, age_restriction)
+    END,
+    "anime_status"         = CASE
+        WHEN 'anime_status' = ANY($6::text[]) THEN NULL
+        ELSE COALESCE($17::anime_status_enum, anime_status)
+    END,
+    "anime_format"         = COALESCE($18::anime_format_enum, anime_format),
+    "available"            = COALESCE($19::boolean, available),
     "updated_at"           = NOW()
-WHERE "anime_id" = $19::uuid
+WHERE "anime_id" = $20::uuid
 RETURNING anime_id, slug, title_ua, title_en, title_original, anime_description, production_studio, mal_id, anilist_id, hikka_id, imdb_id, year_released, avg_episode_duration, episodes_count, age_restriction, anime_status, anime_format, available, cover_id`;
 
 export interface UpdateAnimeByIdArgs {
@@ -720,6 +742,7 @@ export interface UpdateAnimeByIdArgs {
     titleEn: string | null;
     titleOriginal: string | null;
     animeDescription: string | null;
+    nullFields: string[];
     coverId: string | null;
     productionStudio: string | null;
     malId: string | null;
@@ -761,7 +784,7 @@ export interface UpdateAnimeByIdRow {
 export async function updateAnimeById(client: Client, args: UpdateAnimeByIdArgs): Promise<UpdateAnimeByIdRow | null> {
     const result = await client.query({
         text: updateAnimeByIdQuery,
-        values: [args.slug, args.titleUa, args.titleEn, args.titleOriginal, args.animeDescription, args.coverId, args.productionStudio, args.malId, args.anilistId, args.hikkaId, args.imdbId, args.yearReleased, args.avgEpisodeDuration, args.episodesCount, args.ageRestriction, args.animeStatus, args.animeFormat, args.available, args.animeId],
+        values: [args.slug, args.titleUa, args.titleEn, args.titleOriginal, args.animeDescription, args.nullFields, args.coverId, args.productionStudio, args.malId, args.anilistId, args.hikkaId, args.imdbId, args.yearReleased, args.avgEpisodeDuration, args.episodesCount, args.ageRestriction, args.animeStatus, args.animeFormat, args.available, args.animeId],
         rowMode: "array"
     });
     if (result.rows.length !== 1) {

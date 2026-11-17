@@ -90,6 +90,17 @@ const uniqueGenres = (genres: GenreType[] | undefined): GenreType[] => [
 	...new Set(genres ?? []),
 ];
 
+const NULLABLE_ANIME_FIELDS = {
+	coverId: "cover_id",
+	malId: "mal_id",
+	anilistId: "anilist_id",
+	hikkaId: "hikka_id",
+	imdbId: "imdb_id",
+	yearReleased: "year_released",
+	ageRestriction: "age_restriction",
+	animeStatus: "anime_status",
+} as const;
+
 export async function listAnimes(
 	db: Pool,
 	query: ListAnimesRequestQueriesType,
@@ -405,23 +416,27 @@ async function repoUpdateAnime(
 		}
 
 		const merged = { ...existing, ...patch };
+		const nullFields = Object.entries(NULLABLE_ANIME_FIELDS)
+			.filter(([key]) => patch[key as keyof UpdateAnimeRecord] === null)
+			.map(([, column]) => column);
 		const updated = await updateAnimeById(client, {
 			slug: merged.slug ?? existing.slug,
 			titleUa: merged.titleUa ?? existing.titleUa,
 			titleEn: merged.titleEn ?? existing.titleEn,
 			titleOriginal: merged.titleOriginal ?? existing.titleOriginal,
 			animeDescription: merged.animeDescription ?? existing.animeDescription,
-			coverId: merged.coverId ?? existing.coverId,
+			nullFields,
+			coverId: patch.coverId ?? null,
 			productionStudio: merged.productionStudio ?? existing.productionStudio,
-			malId: merged.malId === undefined ? existing.malId : (merged.malId === null ? null : String(merged.malId)),
-			anilistId: merged.anilistId === undefined ? existing.anilistId : (merged.anilistId === null ? null : String(merged.anilistId)),
-			hikkaId: merged.hikkaId === undefined ? existing.hikkaId : (merged.hikkaId === null ? null : merged.hikkaId),
-			imdbId: merged.imdbId ?? existing.imdbId,
-			yearReleased: merged.yearReleased ?? existing.yearReleased,
+			malId: patch.malId === undefined || patch.malId === null ? null : String(patch.malId),
+			anilistId: patch.anilistId === undefined || patch.anilistId === null ? null : String(patch.anilistId),
+			hikkaId: patch.hikkaId ?? null,
+			imdbId: patch.imdbId ?? null,
+			yearReleased: patch.yearReleased ?? null,
 			avgEpisodeDuration: merged.avgEpisodeDuration ?? existing.avgEpisodeDuration,
 			episodesCount: merged.episodesCount ?? existing.episodesCount,
-			ageRestriction: merged.ageRestriction ?? existing.ageRestriction,
-			animeStatus: merged.animeStatus ?? existing.animeStatus,
+			ageRestriction: patch.ageRestriction ?? null,
+			animeStatus: patch.animeStatus ?? null,
 			animeFormat: merged.animeFormat ?? existing.animeFormat,
 			available: merged.available ?? existing.available,
 			animeId,

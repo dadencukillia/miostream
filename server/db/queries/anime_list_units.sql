@@ -30,7 +30,10 @@ SET
     repeat_times = sqlc.arg(repeat_times)::int,
     started_watching = sqlc.arg(started_watching)::date,
     list_unit_status = sqlc.arg(list_unit_status)::anime_list_unit_status_enum,
-    grade = sqlc.narg(grade)::smallint
+    grade = CASE
+        WHEN 'grade' = ANY(sqlc.arg('null_fields')::text[]) THEN NULL
+        ELSE COALESCE(sqlc.narg('grade')::smallint, grade)
+    END
 WHERE user_id = sqlc.arg(user_id)::uuid AND anime_id = sqlc.arg(anime_id)::uuid
 RETURNING *;
 
