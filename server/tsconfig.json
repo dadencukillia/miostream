@@ -12,13 +12,12 @@
       "node"
     ],
 
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"],
       "@utils/*": ["./src/utils/*"],
       "@sqlc/*": ["./src/sqlc/*"],
       "@context": ["./src/context.ts"],
-      "@config": ["./src/config.ts"]
+      "@config": ["./src/config.ts"],
+      "@/*": ["./src/*"]
     },
 
     // Bundler mode
