@@ -45,5 +45,9 @@ export const getTodayUtcMsInTimezone = (timezone: string): number => {
         }).format(new Date());
     }
 
-    return parseCalendarDateToUtcMs(formatted)!;
+    const todayUtcMs = parseCalendarDateToUtcMs(formatted);
+    if (todayUtcMs === null) {
+        throw new Error(`Unexpected calendar date format: ${formatted}`);
+    }
+    return todayUtcMs;
 }
