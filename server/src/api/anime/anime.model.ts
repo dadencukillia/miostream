@@ -16,7 +16,6 @@ const includes = (values: readonly string[], value: string) =>
 	values.includes(value);
 
 const toCoverUrl = (_coverId: string | null): string => {
-	// Cover URL resolution is not available yet.
 	return "";
 };
 

@@ -1,7 +1,6 @@
 import Type from "typebox";
 import { ErrorResponse } from "@utils/errorsCollection";
-import { AnimeId } from "./anime.shared";
-import { Nullable, StringEnum } from "@utils/types";
+import { Nullable, StringEnum, UuidType } from "@utils/types";
 
 export const ANIME_FORMATS = [
 	"tv",
@@ -116,6 +115,8 @@ export const ANIME_SORTS = [
 	"year_desc",
 	"year_asc",
 ] as const;
+
+const animeIdSchema = UuidType({ description: "Anime UUID" });
 
 const slugSchema = Type.String({
 	minLength: 1,
@@ -237,13 +238,13 @@ export const AvailableAnimesResponse = Type.Array(Type.Object({
 
 export const AnimeIdOrSlugRequestParams = Type.Object({
   identifier: Type.Union([
-    AnimeId,
+    animeIdSchema,
     Type.String({ description: "URL-friendly anime slug", minLength: 1, maxLength: 200, examples: [ "jujutsu-kaisen-season-1-24242" ] })
   ]),
 });
 
 export const AnimeIdRequestParams = Type.Object({
-  id: AnimeId,
+  id: animeIdSchema,
 });
 
 export const CreateAnimeRequestPayload = Type.Object(
