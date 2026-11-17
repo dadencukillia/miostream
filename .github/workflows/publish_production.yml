@@ -83,9 +83,9 @@ jobs:
             SITE_ADDRESS="${{ secrets.SITE_ADDRESS }}" \
             RUSTFS_ACCESS_KEY="${{ secrets.RUSTFS_ACCESS_KEY }}" \
             RUSTFS_SECRET_KEY="${{ secrets.RUSTFS_SECRET_KEY }}" \
-            AUTH_COOKIE_NAME="${{ vars.AUTH_COOKIE_NAME }}" \
-            GOOGLE_CLIENT_ID="${{ vars.GOOGLE_CLIENT_ID }}" \
-            GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_CLIENT_SECRET }}" \
-            GOOGLE_REDIRECT_URI="${{ vars.GOOGLE_REDIRECT_URI }}" \
-            AUTH_JWT_SECRET="${{ secrets.AUTH_JWT_SECRET }}" \
+            AUTH_PUBLIC_SIGN_KEY="${{ vars.AUTH_PUBLIC_SIGN_KEY }}" \
+            AUTH_SECRET_SIGN_KEY="${{ secrets.AUTH_SECRET_SIGN_KEY }}" \
+            SESSION_HMAC_SECRET="${{ secrets.SESSION_HMAC_SECRET }}" \
+            OAUTH_CLIENT_ID="${{ vars.OAUTH_CLIENT_ID }}" \
+            OAUTH_CLIENT_SECRET="${{ secrets.OAUTH_CLIENT_SECRET }}" \
             docker stack deploy -c docker-stack.yml miostream --with-registry-auth
