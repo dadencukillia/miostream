@@ -5,5 +5,6 @@ export const AuthErrors = new ErrorsSet("auth", {
     "oauth-invalid-state": [400, "invalid oauth state"],
     "oauth-token-exchange-failed": [502, "oauth token exchange failed"],
 
-    "auth-invalid-session-token": [400, "invalid session token"]
+    "auth-invalid-session-token": [400, "invalid session token"],
+    "auth-db-error": [500, "couldn't reach database"],
 });
