@@ -52,6 +52,10 @@ export class OAuthProvider {
     private readonly userInfoUrl: string;
 
     constructor(endpoints: OAuthEndpoints) {
+        if (endpoints.slug.trim().length === 0 || endpoints.slug.includes("_")) {
+            throw new Error("OAuth provider slug must be non-empty and must not contain '_'");
+        }
+
         this.slug = endpoints.slug;
         this.authorizationUrl = endpoints.authorizationUrl;
         this.tokenUrl = endpoints.tokenUrl;
@@ -59,10 +63,10 @@ export class OAuthProvider {
     }
 
     /**
-     * HMAC-SHA256 signature for the `${provider}_${nonce}` payload.
+     * Computes an HMAC-SHA512 signature for the `${provider}_${nonce}` payload.
      */
     private static signPayload(provider: string, nonce: string, secret: string): string {
-        return new Bun.CryptoHasher("sha256", secret)
+        return new Bun.CryptoHasher("sha512", secret)
             .update(`${provider}_${nonce}`)
             .digest("hex");
     }
@@ -71,8 +75,8 @@ export class OAuthProvider {
      * Generates a redirect URL to the provider's login form with a cryptographic nonce.
      */
     public getAuthorizationUrl(config: OAuthConfig): AuthUrlResult {
-        // 96 cryptographically random bytes will become exactly 128 characters in Base64
-        const randomBytes = crypto.getRandomValues(new Uint8Array(96));
+        // 32 cryptographically random bytes -> 44 characters in Base64
+        const randomBytes = crypto.getRandomValues(new Uint8Array(32));
         const nonce = randomBytes.toBase64();
 
         const signature = OAuthProvider.signPayload(this.slug, nonce, config.stateSecret);
@@ -95,14 +99,18 @@ export class OAuthProvider {
     }
 
     /**
-     * Statically verifies the state parameter to nonce.
-     * Returns whether the signature and the provider slug extracted from the state is valid.
+     * Statically verifies the state parameter against the stored nonce.
+     * Returns whether the signature is valid along with the provider slug extracted from the state.
      */
     public static verifyState(
         state: string,
         nonce: string,
         config: Pick<OAuthConfig, "stateSecret">
     ): VerifyStateResult {
+        if (!state || !nonce) {
+            return { valid: false, provider: null };
+        }
+
         const separatorIndex = state.indexOf("_");
         if (separatorIndex <= 0) {
             return { valid: false, provider: null };
