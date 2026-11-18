@@ -1,75 +1,61 @@
-import { AUTH_JWT_SECRET } from "@config";
-import { OAuthProvider, type OAuthConfig } from "@utils/oauthProvider";
-import type * as dto from "./auth.dto";
+import * as config from "@config";
 import { AuthErrors } from "./auth.errors";
 
-export interface OAuthRedirectResult {
-    url: string;
-    provider: string;
+interface ClientSession {
+  clientRefreshToken: Uint8Array,
+  sessionId: bigint
 }
 
-export interface OAuthTokenResult {
-    accessToken: string;
-    tokenType: "Bearer";
-    provider: string;
+/**
+  * Session token is like refresh token, but with session ID prefix.
+  * This method generates a session token in base64url (for cookies usage)
+  * using refresh token and session ID raw values.
+  *
+  * @param clientSession - object containing refresh token and session ID.
+  *
+  * @returns session token.
+  */
+export function extractSessionToken(clientSession: string): ClientSession {
+  let bytes: Uint8Array;
+
+  try {
+    bytes = Uint8Array.fromBase64(clientSession, { alphabet: "base64url" });
+  } catch(e) {
+    throw AuthErrors.error("auth-invalid-session-token").withDetails(e);
+  }
+
+  if (bytes.byteLength !== 8 + 32) { // 8 for sessionId, 32 for refreshToken
+    throw AuthErrors.error("auth-invalid-session-token").withDetails(`byte length: ${bytes.byteLength}`);
+  }
+
+  const clientRefreshToken = bytes.subarray(8);
+  const sessionId = new DataView(bytes.buffer, bytes.byteOffset, 8).getBigInt64(0, false);
+
+  return { clientRefreshToken, sessionId };
 }
 
-const OAUTH_AUTHORIZATION_URL = process.env.OAUTH_AUTHORIZATION_URL ?? "http://localhost/oauth/authorize";
-const OAUTH_REDIRECT_URI = process.env.OAUTH_REDIRECT_URI ?? "";
-const OAUTH_CLIENT_ID = process.env.OAUTH_CLIENT_ID ?? "";
-const OAUTH_CLIENT_SECRET = process.env.OAUTH_CLIENT_SECRET ?? "";
-const OAUTH_TOKEN_URL = process.env.OAUTH_TOKEN_URL ?? "";
-const OAUTH_USER_INFO_URL = process.env.OAUTH_USER_INFO_URL ?? "";
+export function packSessionToken(clientSession: ClientSession): string {
+  const tokenBytes = Buffer.allocUnsafe(8 + clientSession.clientRefreshToken.byteLength);
+  tokenBytes.writeBigInt64BE(clientSession.sessionId, 0);
+  tokenBytes.set(clientSession.clientRefreshToken, 8);
 
-const getOAuthConfig = (): OAuthConfig => ({
-    clientId: OAUTH_CLIENT_ID,
-    clientSecret: OAUTH_CLIENT_SECRET,
-    redirectUri: OAUTH_REDIRECT_URI,
-    stateSecret: AUTH_JWT_SECRET,
-    scopes: ["openid", "email", "profile"],
-});
+  return tokenBytes.toBase64({ alphabet: "base64url", omitPadding: true });
+}
 
-const createOAuthProvider = (providerSlug: string): OAuthProvider => new OAuthProvider({
-    slug: providerSlug,
-    authorizationUrl: OAUTH_AUTHORIZATION_URL,
-    tokenUrl: OAUTH_TOKEN_URL,
-    userInfoUrl: OAUTH_USER_INFO_URL,
-});
+export function generateDBRefreshToken(signKey: Uint8Array, payload: ClientSession & { userId: string }): Uint8Array {
+  const tokenBytes = Buffer.allocUnsafe(8 + 16 + payload.clientRefreshToken.byteLength);
+  tokenBytes.writeBigInt64BE(payload.sessionId, 0);
+  tokenBytes.set(Uint8Array.fromHex(payload.userId.replaceAll("-", "")), 8);
+  tokenBytes.set(payload.clientRefreshToken, 24);
 
-const getProviderSlugFromState = (state: string): string | null => {
-    const separatorIndex = state.indexOf("_");
-    return separatorIndex > 0 ? state.slice(0, separatorIndex) : null;
-};
+  const hashedToken = new Bun.CryptoHasher("sha512", signKey)
+    .update(tokenBytes)
+    .digest("hex");
 
-const resolveProviderSlug = (query: { code?: string; state: string }): string => {
-    if (!query.code) {
-        throw AuthErrors.error("oauth-missing-code");
-    }
+  return Uint8Array.fromHex(hashedToken);
+}
 
-    const provider = getProviderSlugFromState(query.state);
-    if (!provider) {
-        throw AuthErrors.error("oauth-invalid-state");
-    }
+export function newUserSession() {
+}
 
-    return provider;
-};
-
-export const buildOAuthRedirect = (providerSlug: string): OAuthRedirectResult => {
-    const provider = providerSlug.trim().toLowerCase();
-    const { url } = createOAuthProvider(provider).getAuthorizationUrl(getOAuthConfig());
-
-    return { url, provider };
-};
-
-export const exchangeOAuthToken = async (payload: dto.ExchangeTokenRequestPayloadType): Promise<OAuthTokenResult> => {
-    const provider = resolveProviderSlug(payload);
-    let accessToken: string;
-
-    try {
-        accessToken = await createOAuthProvider(provider).exchangeCodeForToken(payload.code, getOAuthConfig());
-    } catch {
-        throw AuthErrors.error("oauth-token-exchange-failed");
-    }
-
-    return { accessToken, tokenType: "Bearer", provider };
-};
+export function useRefreshToken(clientRefreshToken: string) {}
