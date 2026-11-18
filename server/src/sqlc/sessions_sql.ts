@@ -126,8 +126,11 @@ SET
   refresh_token = $1,
   rotated_at = now() AT TIME ZONE 'UTC'
 WHERE
-  $2::NUMBER <= 0
-  OR rotated_at + $2::NUMBER < (now() AT TIME ZONE 'UTC')
+  session_id = $2::BIGINT
+  AND (
+    $3::NUMBER <= 0
+    OR rotated_at + ($3::NUMBER || ' milliseconds')::interval < (now() AT TIME ZONE 'UTC')
+  )
 RETURNING
   session_id, user_id,
   refresh_token, expire_time, previous_refresh_token, rotated_at,
@@ -135,6 +138,7 @@ RETURNING
 
 export interface RotateRefreshTokenArgs {
     refreshToken: Buffer | null;
+    sessionId: string;
     rotationTime: string;
 }
 
@@ -156,7 +160,7 @@ export interface RotateRefreshTokenRow {
 export async function rotateRefreshToken(client: Client, args: RotateRefreshTokenArgs): Promise<RotateRefreshTokenRow | null> {
     const result = await client.query({
         text: rotateRefreshTokenQuery,
-        values: [args.refreshToken, args.rotationTime],
+        values: [args.refreshToken, args.sessionId, args.rotationTime],
         rowMode: "array"
     });
     if (result.rows.length !== 1) {

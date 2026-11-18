@@ -7,5 +7,9 @@ export const AuthErrors = new ErrorsSet("auth", {
 
     "auth-invalid-session-token": [400, "invalid session token"],
     "auth-db-error": [500, "couldn't reach database"],
+<<<<<<< Updated upstream
     "not-implemented": [501, "endpoint is not implemented yet"]
+=======
+    "auth-no-session-access": [403, "no access to the authorization session"],
+>>>>>>> Stashed changes
 });

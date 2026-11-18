@@ -23,8 +23,11 @@ SET
   refresh_token = $1,
   rotated_at = now() AT TIME ZONE 'UTC'
 WHERE
-  @rotation_time::NUMBER <= 0
-  OR rotated_at + @rotation_time::NUMBER < (now() AT TIME ZONE 'UTC')
+  session_id = @session_id::BIGINT
+  AND (
+    @rotation_time::NUMBER <= 0
+    OR rotated_at + (@rotation_time::NUMBER || ' milliseconds')::interval < (now() AT TIME ZONE 'UTC')
+  )
 RETURNING
   session_id, user_id,
   refresh_token, expire_time, previous_refresh_token, rotated_at,
