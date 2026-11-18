@@ -36,9 +36,9 @@ export const RUSTFS_SECRET_KEY = readSecret("RUSTFS_SECRET_KEY", "RUSTFS_SECRET_
 
 // Authentification
 
-export const AUTH_PUBLIC_SIGN_KEY = require(process.env.AUTH_PUBLIC_SIGN_KEY); // base64
-export const AUTH_SECRET_SIGN_KEY = require(readSecret("AUTH_SECRET_SIGN_KEY", "AUTH_SECRET_SIGN_KEY_FILE", "")); // base64
-export const SESSION_HMAC_SECRET = require(readSecret("SESSION_HMAC_SECRET", "SESSION_HMAC_SECRET_FILE", "")); // hex
-export const OAUTH_STATE_HMAC_SECRET = require(readSecret("OAUTH_STATE_HMAC_SECRET", "OAUTH_STATE_HMAC_SECRET_FILE", "")); // hex
+export const AUTH_PUBLIC_SIGN_KEY = Uint8Array.fromBase64(require(process.env.AUTH_PUBLIC_SIGN_KEY));
+export const AUTH_SECRET_SIGN_KEY = Uint8Array.fromBase64(require(readSecret("AUTH_SECRET_SIGN_KEY", "AUTH_SECRET_SIGN_KEY_FILE", "")));
+export const SESSION_HMAC_SECRET = Uint8Array.fromHex(require(readSecret("SESSION_HMAC_SECRET", "SESSION_HMAC_SECRET_FILE", "")));
+export const OAUTH_STATE_HMAC_SECRET = Uint8Array.fromHex(require(readSecret("OAUTH_STATE_HMAC_SECRET", "OAUTH_STATE_HMAC_SECRET_FILE", "")));
 export const OAUTH_CLIENT_ID = process.env.OAUTH_CLIENT_ID ?? "myclientid";
 export const OAUTH_CLIENT_SECRET = readSecret("OAUTH_CLIENT_SECRET", "OAUTH_CLIENT_SECRET_FILE", "myclientsecret");

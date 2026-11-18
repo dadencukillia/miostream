@@ -1,23 +1,79 @@
 import * as config from "@config";
 import { AuthErrors } from "./auth.errors";
-import { createSession, getSessionById, rotateRefreshToken, RotateRefreshTokenRow } from "@sqlc/sessions_sql";
+import { createSession, getSessionById, rotateRefreshToken } from "@sqlc/sessions_sql";
 import { Pool } from "pg";
 
-interface ClientSession {
+// Helpers
+
+const wrapDBError = async <T>(dbReq: Promise<T>): Promise<T> => {
+  try {
+    return await dbReq;
+  } catch(e) {
+    throw AuthErrors.error("auth-db-failed").withDetails(e);
+  }
+};
+
+const unwrapDBNull = async <T>(dbReq: Promise<T|null>): Promise<T> => {
+  const awaited = await dbReq;
+  if (awaited == null) throw AuthErrors.error("auth-db-not-found");
+
+  return awaited;
+}
+
+const unwrapDB = async <T>(dbReq: Promise<T|null>): Promise<T> => unwrapDBNull(wrapDBError(dbReq));
+
+// Interfaces
+
+interface ClientSessionPayload {
   rawRefreshToken: Uint8Array,
-  sessionId: bigint
+  sessionId: string|bigint
+}
+
+interface SessionEntry {
+  rawRefreshToken: Uint8Array,
+  dbRefreshToken: Uint8Array,
+  sessionToken: string,
+  sessionId: BigInt,
+  userId: string,
+}
+
+interface SessionRotationResult {
+  rotated: boolean,
+  newRawRefreshToken?: Uint8Array,
+  dbRefreshToken: Uint8Array,
+  newSessionToken?: string,
+  sessionId: BigInt,
+  userId: string,
+}
+
+// Crypto
+
+/**
+ * Session token is like refresh token, but with session ID prefix.
+ * This function generates a session token in base64url (for cookies usage)
+ * using refresh token and session ID raw values.
+ *
+ * @param clientSession - object containing refresh token and session ID.
+ *
+ * @returns session token.
+ */
+export function packSessionToken<T extends ClientSessionPayload>(clientSession: T): string {
+  const tokenBytes = Buffer.allocUnsafe(8 + clientSession.rawRefreshToken.byteLength);
+  tokenBytes.writeBigInt64BE(BigInt(clientSession.sessionId), 0);
+  tokenBytes.set(clientSession.rawRefreshToken, 8);
+
+  return tokenBytes.toBase64({ alphabet: "base64url", omitPadding: true });
 }
 
 /**
-  * Session token is like refresh token, but with session ID prefix.
-  * This method generates a session token in base64url (for cookies usage)
-  * using refresh token and session ID raw values.
-  *
-  * @param clientSession - object containing refresh token and session ID.
-  *
-  * @returns session token.
-  */
-export function extractSessionToken(clientSession: string): ClientSession {
+ * A reverse operation of {@link packSessionToken}. It extracts refresh token and
+ * session ID from session token received from client's cookies.
+ * 
+ * @param clientSession - base64url session token.
+ *
+ * @returns session ID and refresh token.
+ */
+export function extractSessionToken(clientSession: string): ClientSessionPayload {
   let bytes: Uint8Array;
 
   try {
@@ -36,17 +92,17 @@ export function extractSessionToken(clientSession: string): ClientSession {
   return { rawRefreshToken, sessionId };
 }
 
-export function packSessionToken(clientSession: ClientSession): string {
-  const tokenBytes = Buffer.allocUnsafe(8 + clientSession.rawRefreshToken.byteLength);
-  tokenBytes.writeBigInt64BE(clientSession.sessionId, 0);
-  tokenBytes.set(clientSession.rawRefreshToken, 8);
-
-  return tokenBytes.toBase64({ alphabet: "base64url", omitPadding: true });
-}
-
-export function generateDBRefreshToken(signKey: Uint8Array, payload: ClientSession & { userId: string }): Uint8Array {
+/**
+ * Hashes refresh token with a secret key to make it ready for storing in database.
+ *
+ * @param signKey - 64 bytes key to be used in HMAC-SHA512.
+ * @param payload - HMAC hash payload.
+ *
+ * @returns database refresh token (hashed token)
+ */
+export function generateDBRefreshToken<T extends ClientSessionPayload & { userId: string }>(signKey: Uint8Array, payload: T): Uint8Array {
   const tokenBytes = Buffer.allocUnsafe(8 + 16 + payload.rawRefreshToken.byteLength);
-  tokenBytes.writeBigInt64BE(payload.sessionId, 0);
+  tokenBytes.writeBigInt64BE(BigInt(payload.sessionId), 0);
   tokenBytes.set(Uint8Array.fromHex(payload.userId.replaceAll("-", "")), 8);
   tokenBytes.set(payload.rawRefreshToken, 24);
 
@@ -57,6 +113,47 @@ export function generateDBRefreshToken(signKey: Uint8Array, payload: ClientSessi
   return Uint8Array.fromHex(hashedToken);
 }
 
+/**
+ * Generates a full set of tokens.
+ *
+ * @param signKey - 64 bytes key to be used in HMAC-SHA512.
+ * @param payload - HMAC hash payload.
+ *
+ * @returns a full set of tokens to be saved in database and cookies.
+ */
+export function generateTokens<T extends {
+  userId: string,
+  sessionId: string|bigint
+}>(signKey: Uint8Array, payload: T): {
+  rawRefreshToken: Uint8Array,
+  dbRefreshToken: Uint8Array,
+  sessionToken: string
+} {
+  const rawRefreshToken = crypto.getRandomValues(new Uint8Array(32));
+  const dbRefreshToken = generateDBRefreshToken(signKey, {
+    sessionId: BigInt(payload.sessionId),
+    userId: payload.userId,
+    rawRefreshToken
+  });
+  const sessionToken = packSessionToken({
+    sessionId: BigInt(payload.sessionId),
+    rawRefreshToken
+  });
+
+  return { rawRefreshToken, dbRefreshToken, sessionToken };
+}
+
+// Sessions
+
+/**
+ * Creates a new session for user in database.
+ *
+ * @param client - database pool connection instance.
+ * @param userId - a user session will be created for.
+ * @param [signMetadata={}] - additional sign information.
+ *
+ * @returns tokens, session ID and user ID.
+ */
 export async function newUserSession(
   client: Pool,
   userId: string,
@@ -67,102 +164,96 @@ export async function newUserSession(
     browser?: string,
     userLocation?: string,
     ipAddress?: string
-  }
-): Promise<{
-  rawRefreshToken: Uint8Array,
-  dbRefreshToken: Uint8Array,
-  sessionToken: string,
-  sessionId: BigInt,
-  userId: string,
-}> {
-  const rawRefreshToken = crypto.getRandomValues(new Uint8Array(32));
-  const metadata = {
+  } = {}
+): Promise<SessionEntry> {
+  const metadata: { [Key in keyof typeof signMetadata]-?: typeof signMetadata[Key]|null } = {
     deviceType: signMetadata.deviceType ?? null,
     deviceName: signMetadata.deviceName ?? null,
     os: signMetadata.os ?? null,
     browser: signMetadata.browser ?? null,
     userLocation: signMetadata.userLocation ?? null,
-    ipAddress: signMetadata.ipAddress ?? null,
+    ipAddress: signMetadata.ipAddress ?? null
   };
 
   const con = await client.connect();
-  let actualSession: RotateRefreshTokenRow|null;
 
   try {
     await con.query("BEGIN;");
 
-    const createdSession = await createSession(client, {
+    // Create session entry and receive session ID
+
+    const createdSession = await unwrapDB(createSession(con, {
       userId, refreshToken: null,
       ...metadata
+    }));
+
+    // Generate refresh token using session ID
+
+    const tokens = generateTokens(config.SESSION_HMAC_SECRET, {
+      userId, sessionId: createdSession.sessionId
     });
 
-    if (!createdSession) throw AuthErrors.error("auth-db-error");
+    // Update refresh token in session entry
 
-    const sessionId = BigInt(createdSession.sessionId);
-    const dbRefreshToken = generateDBRefreshToken(Uint8Array.fromHex(config.SESSION_HMAC_SECRET), {
-      sessionId, userId, rawRefreshToken: rawRefreshToken
-    });
-
-    actualSession = await rotateRefreshToken(con, {
-      refreshToken: new Buffer(dbRefreshToken),
+    const actualSession = await unwrapDB(rotateRefreshToken(con, {
+      refreshToken: Buffer.from(tokens.dbRefreshToken),
       rotationTime: "-1",
       sessionId: createdSession.sessionId
-    });
+    }));
 
-    if (!actualSession || !actualSession.refreshToken) throw AuthErrors.error("auth-db-error");
+    if (!actualSession.refreshToken) throw AuthErrors.error("auth-db-failed");
 
     await con.query("COMMIT;");
+
+    return {
+      rawRefreshToken: tokens.rawRefreshToken,
+      dbRefreshToken: tokens.dbRefreshToken,
+      sessionId: BigInt(actualSession.sessionId),
+      userId: userId,
+      sessionToken: tokens.sessionToken
+    };
   } catch(e) {
+    await con.query("ROLLBACK;").catch(_ => {});
     throw e;
   } finally {
-    await con.query("ROLLBACK;").catch(_ => {});
     con.release();
   }
-
-  const sessionToken = packSessionToken({
-    sessionId: BigInt(actualSession.sessionId),
-    rawRefreshToken
-  });
-
-  return {
-    rawRefreshToken,
-    dbRefreshToken: new Uint8Array(actualSession.refreshToken),
-    sessionId: BigInt(actualSession.sessionId),
-    userId: actualSession.userId,
-    sessionToken: sessionToken
-  };
 }
 
+/**
+ * Validates a session and rotate refresh token if needed.
+ *
+ * @param client - database pool connection instance.
+ * @param sessionToken - a session token received from user's cookies.
+ * @param [opts={}] - token rotation adjustments.
+ *
+ * @returns new tokens (if rotated), session ID and user ID.
+ */
 export async function useRefreshToken(
   client: Pool,
-  clientSessionToken: string,
-  opts?: {
-    previousTokenWindowMillis: number,
-    tokenRotationMillis: number
-  }
-): Promise<{
-  rotated: boolean,
-  newRawRefreshToken?: Uint8Array,
-  dbRefreshToken: Uint8Array,
-  newSessionToken?: string,
-  sessionId: BigInt,
-  userId: string,
-}> {
-  const { sessionId, rawRefreshToken } = extractSessionToken(clientSessionToken);
-  const previousTokenWindowMillis = opts?.previousTokenWindowMillis ?? 60_000;
-  const tokenRotationMillis = opts?.tokenRotationMillis ?? 180_000;
+  sessionToken: string,
+  opts: {
+    previousTokenWindowMillis?: number,
+    tokenRotationMillis?: number
+  } = {}
+): Promise<SessionRotationResult> {
+  const sessionPayload = extractSessionToken(sessionToken);
+  const previousTokenWindowMillis = opts.previousTokenWindowMillis ?? 60_000;
+  const tokenRotationMillis = opts.tokenRotationMillis ?? 180_000;
   const utcTimestamp = Date.now();
 
-  let session = await getSessionById(client, {
-    sessionId: sessionId.toString()
-  });
+  // Get session
 
-  if (!session || session.expireTime.getTime() <= utcTimestamp) throw AuthErrors.error("auth-no-session-access");
+  let session = await unwrapDB(getSessionById(client, {
+    sessionId: sessionPayload.sessionId.toString()
+  }));
 
-  const userId = session.userId;
-  const dbRefreshToken = generateDBRefreshToken(Uint8Array.fromHex(config.SESSION_HMAC_SECRET), {
-    userId, sessionId, rawRefreshToken
-  });
+  // Verify session
+
+  if (!session.refreshToken || session.expireTime.getTime() <= utcTimestamp) throw AuthErrors.error("auth-no-session-access");
+  const fullInfo = { ...session, ...sessionPayload };
+
+  const dbRefreshToken = generateDBRefreshToken(config.SESSION_HMAC_SECRET, fullInfo);
 
   if (
     !(session.refreshToken?.length === dbRefreshToken.length && crypto.timingSafeEqual(session.refreshToken, dbRefreshToken)) &&
@@ -174,37 +265,33 @@ export async function useRefreshToken(
     throw AuthErrors.error("auth-no-session-access");
   }
 
-  let rotated = false;
-  let newRawRefreshToken: undefined|Uint8Array;
-  let newSessionToken: undefined|string;
+  // Check rotation and fulfil
 
   if (session.rotatedAt.getTime() + tokenRotationMillis <= utcTimestamp) {
-    newRawRefreshToken = crypto.getRandomValues(new Uint8Array(32));
-    newSessionToken = packSessionToken({ sessionId: sessionId, rawRefreshToken });
-    const dbRefreshToken = generateDBRefreshToken(Uint8Array.fromHex(config.SESSION_HMAC_SECRET), {
-      userId, sessionId, rawRefreshToken
-    });
-
-    const updatedSession = await rotateRefreshToken(client, {
-      refreshToken: new Buffer(dbRefreshToken),
+    const tokens = generateTokens(config.SESSION_HMAC_SECRET, fullInfo);
+    const updatedSession = await wrapDBError(rotateRefreshToken(client, {
+      sessionId: fullInfo.sessionId.toString(),
+      refreshToken: Buffer.from(tokens.dbRefreshToken),
       rotationTime: tokenRotationMillis.toString(),
-      sessionId: sessionId.toString()
-    });
+    }));
 
-    if (updatedSession) {
-      rotated = true;
-      session = updatedSession;
+    if (updatedSession && updatedSession.refreshToken) {
+      return {
+        rotated: true,
+        newRawRefreshToken: tokens.rawRefreshToken,
+        dbRefreshToken: updatedSession.refreshToken,
+        newSessionToken: tokens.sessionToken,
+        sessionId: BigInt(fullInfo.sessionId),
+        userId: fullInfo.userId
+      };
     }
   }
 
-  if (!session.refreshToken) throw AuthErrors.error("auth-no-session-access");
 
   return {
-    rotated,
-    newRawRefreshToken,
+    rotated: false,
     dbRefreshToken: session.refreshToken,
-    newSessionToken,
-    sessionId,
-    userId: session.userId,
+    sessionId: BigInt(fullInfo.sessionId),
+    userId: fullInfo.userId,
   };
 }
