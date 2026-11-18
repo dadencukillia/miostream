@@ -1,33 +1,42 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import type * as dto from "./auth.dto";
-import * as services from "./auth.service";
+import { AuthErrors } from "./auth.errors";
 
 export const redirectToProvider = async (
-    request: FastifyRequest<{
+    _request: FastifyRequest<{
         Querystring: dto.OAuthRedirectRequestQueriesType;
         Reply: dto.RedirectToProviderReturnType;
     }>,
-    reply: FastifyReply<{
+    _reply: FastifyReply<{
         Querystring: dto.OAuthRedirectRequestQueriesType;
         Reply: dto.RedirectToProviderReturnType;
     }>
 ) => {
-    const { url, provider } = services.buildOAuthRedirect(request.query.provider);
-
-    return reply.status(302).header("Location", url).send({ ok: true, provider });
+    throw AuthErrors.error("not-implemented").withDetails("oauth redirect");
 };
 
-export const exchangeToken = async (
-    request: FastifyRequest<{
-        Body: dto.ExchangeTokenRequestPayloadType;
-        Reply: dto.ExchangeTokenReturnType;
+export const oauthCallback = async (
+    _request: FastifyRequest<{
+        Querystring: dto.OAuthCallbackRequestQueriesType;
+        Reply: dto.OAuthCallbackReturnType;
     }>,
-    reply: FastifyReply<{
-        Body: dto.ExchangeTokenRequestPayloadType;
-        Reply: dto.ExchangeTokenReturnType;
+    _reply: FastifyReply<{
+        Querystring: dto.OAuthCallbackRequestQueriesType;
+        Reply: dto.OAuthCallbackReturnType;
     }>
 ) => {
-    const result = await services.exchangeOAuthToken(request.body);
+    throw AuthErrors.error("not-implemented").withDetails("oauth callback");
+};
 
-    return reply.status(200).send({ ok: true, ...result });
+export const accessToken = async (
+    _request: FastifyRequest<{
+        Body: dto.AccessTokenRequestPayloadType;
+        Reply: dto.AccessTokenReturnType;
+    }>,
+    _reply: FastifyReply<{
+        Body: dto.AccessTokenRequestPayloadType;
+        Reply: dto.AccessTokenReturnType;
+    }>
+) => {
+    throw AuthErrors.error("not-implemented").withDetails("access token");
 };

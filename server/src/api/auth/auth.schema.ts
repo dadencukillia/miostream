@@ -1,77 +1,98 @@
-import Type from "typebox";
+import { Type } from "typebox";
 import { ErrorResponse } from "@utils/errorsCollection";
 
 export const TAG_AUTH = "Auth";
 
+// Provider slug is encoded as the state prefix; '_' is the separator.
+export const OAUTH_PROVIDER_PATTERN = "^[a-z][a-z0-9-]*$";
+
+// Requests
+
 export const OAuthRedirectRequestQueries = Type.Object({
     provider: Type.String({
-        pattern: "^[a-z][a-z0-9_-]*$",
-        description: "Any OAuth provider slug; it is encoded into the state and resolved back from it",
-        examples: ["google", "github", "discord"],
-    }),
-}, {
-    additionalProperties: false,
-});
-
-export const OAuthRedirectResponse = Type.Object({
-    ok: Type.Literal(true, { description: "Indicates a successful operation" }),
-    provider: Type.String({
-        description: "OAuth provider slug used for this redirect",
+        pattern: OAUTH_PROVIDER_PATTERN,
+        description: "Provider slug. No per-provider endpoints: it is encoded into the state.",
         examples: ["google"],
     }),
 }, {
     additionalProperties: false,
-    description: "OAuth redirect stub response; the target URL is provided in the Location header",
 });
 
-export const ExchangeTokenRequestPayload = Type.Object({
-    code: Type.String({
+export const OAuthCallbackRequestQueries = Type.Object({
+    code: Type.Optional(Type.String({
         minLength: 1,
         description: "Authorization code returned by the provider",
-    }),
+    })),
+    state: Type.Optional(Type.String({
+        minLength: 1,
+        description: "Opaque state; its prefix identifies the provider",
+        examples: ["google_9f2c..."],
+    })),
+    error: Type.Optional(Type.String({
+        minLength: 1,
+        description: "Error code reported by the provider",
+    })),
+}, {
+    additionalProperties: false,
+    description: "Single callback for every provider",
+});
+
+export const AccessTokenRequestPayload = Type.Object({
     state: Type.String({
         minLength: 1,
-        description: "Opaque state value; its prefix identifies the OAuth provider",
+        description: "State from the OAuth flow; its prefix identifies the provider",
         examples: ["google_9f2c..."],
     }),
 }, {
     additionalProperties: false,
+    description: "Provider is resolved from the state, not from a dedicated endpoint",
 });
 
-export const TokenResponse = Type.Object({
-    ok: Type.Literal(true, { description: "Indicates a successful operation" }),
-    accessToken: Type.String({ description: "OAuth access token" }),
-    tokenType: Type.Literal("Bearer", { description: "Access token type" }),
-    provider: Type.String({
-        description: "OAuth provider slug extracted from state",
-        examples: ["google"],
-    }),
+// Responses
+
+export const OAuthRedirectResponse = Type.Object({
+    ok: Type.Literal(true),
 }, {
     additionalProperties: false,
-    description: "OAuth access token response",
+    description: "Target URL is returned in the Location header",
 });
+
+export const OAuthCallbackResponse = Type.Object({
+    ok: Type.Literal(true),
+}, {
+    additionalProperties: false,
+});
+
+export const AccessTokenResponse = Type.Object({
+    ok: Type.Literal(true),
+    accessToken: Type.String({ description: "Application access token" }),
+    tokenType: Type.Literal("Bearer"),
+}, {
+    additionalProperties: false,
+});
+
+// Route schemas
 
 export const RedirectToProviderSchema = {
     tags: [TAG_AUTH],
     summary: "Redirect to OAuth provider",
-    description: "Builds an authorization URL for the requested provider and redirects the client to its login form. The provider slug is encoded into the OAuth state.",
+    description: "Generic redirect: the provider is passed as a slug and encoded into the state.",
     querystring: OAuthRedirectRequestQueries,
-    response: {
-        302: OAuthRedirectResponse,
-        400: ErrorResponse,
-        500: ErrorResponse,
-    },
+    response: { 302: OAuthRedirectResponse, 400: ErrorResponse, 500: ErrorResponse },
 } as const;
 
-export const ExchangeTokenSchema = {
+export const OAuthCallbackSchema = {
     tags: [TAG_AUTH],
-    summary: "Exchange OAuth code for access token",
-    description: "Generic access token stub. The provider is resolved from the state parameter.",
-    body: ExchangeTokenRequestPayload,
-    response: {
-        200: TokenResponse,
-        400: ErrorResponse,
-        500: ErrorResponse,
-        502: ErrorResponse,
-    },
+    summary: "OAuth provider callback",
+    description: "Single callback for all providers; the provider is taken from the state.",
+    querystring: OAuthCallbackRequestQueries,
+    response: { 200: OAuthCallbackResponse, 400: ErrorResponse, 501: ErrorResponse },
+} as const;
+
+export const AccessTokenSchema = {
+    tags: [TAG_AUTH],
+    summary: "Get access token",
+    description: "Returns an application access token; the provider is taken from the state.",
+    body: AccessTokenRequestPayload,
+    response: { 200: AccessTokenResponse, 400: ErrorResponse, 501: ErrorResponse },
 } as const;

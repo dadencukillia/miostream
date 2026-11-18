@@ -7,7 +7,8 @@ const modulePlugin: FastifyPluginAsync = async (fastify: FastifyInstance, _opts:
     AuthErrors.setupErrorHandler(fastify, [AuthErrors], true, true);
 
     fastify.get("/oauth/redirect", { schema: schemas.RedirectToProviderSchema }, controllers.redirectToProvider);
-    fastify.post("/oauth/token", { schema: schemas.ExchangeTokenSchema }, controllers.exchangeToken);
+    fastify.get("/oauth/callback", { schema: schemas.OAuthCallbackSchema }, controllers.oauthCallback);
+    fastify.post("/auth/accessToken", { schema: schemas.AccessTokenSchema }, controllers.accessToken);
 };
 
 export default modulePlugin;

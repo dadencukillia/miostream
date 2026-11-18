@@ -1,24 +1,27 @@
 import type { Static } from "typebox";
 import { ErrorResponse } from "@utils/errorsCollection";
 import {
-    ExchangeTokenRequestPayload,
+    AccessTokenRequestPayload,
+    AccessTokenResponse,
+    OAuthCallbackRequestQueries,
+    OAuthCallbackResponse,
     OAuthRedirectRequestQueries,
     OAuthRedirectResponse,
-    TokenResponse,
 } from "./auth.schema";
 
 export type ErrorResponseType = Static<typeof ErrorResponse>;
 
 // Responses
 export type OAuthRedirectResponseType = Static<typeof OAuthRedirectResponse>;
-export type TokenResponseType = Static<typeof TokenResponse>;
+export type OAuthCallbackResponseType = Static<typeof OAuthCallbackResponse>;
+export type AccessTokenResponseType = Static<typeof AccessTokenResponse>;
 
-// Request Queries
+// Requests
 export type OAuthRedirectRequestQueriesType = Static<typeof OAuthRedirectRequestQueries>;
-
-// Request Payloads
-export type ExchangeTokenRequestPayloadType = Static<typeof ExchangeTokenRequestPayload>;
+export type OAuthCallbackRequestQueriesType = Static<typeof OAuthCallbackRequestQueries>;
+export type AccessTokenRequestPayloadType = Static<typeof AccessTokenRequestPayload>;
 
 // Controller Return Types
 export type RedirectToProviderReturnType = OAuthRedirectResponseType | ErrorResponseType;
-export type ExchangeTokenReturnType = TokenResponseType | ErrorResponseType;
+export type OAuthCallbackReturnType = OAuthCallbackResponseType | ErrorResponseType;
+export type AccessTokenReturnType = AccessTokenResponseType | ErrorResponseType;
