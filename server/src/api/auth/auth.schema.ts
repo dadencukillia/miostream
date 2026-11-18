@@ -37,31 +37,7 @@ export const OAuthCallbackRequestQueries = Type.Object({
     description: "Single callback for every provider",
 });
 
-export const AccessTokenRequestPayload = Type.Object({
-    state: Type.String({
-        minLength: 1,
-        description: "State from the OAuth flow; its prefix identifies the provider",
-        examples: ["google_9f2c..."],
-    }),
-}, {
-    additionalProperties: false,
-    description: "Provider is resolved from the state, not from a dedicated endpoint",
-});
-
 // Responses
-
-export const OAuthRedirectResponse = Type.Object({
-    ok: Type.Literal(true),
-}, {
-    additionalProperties: false,
-    description: "Target URL is returned in the Location header",
-});
-
-export const OAuthCallbackResponse = Type.Object({
-    ok: Type.Literal(true),
-}, {
-    additionalProperties: false,
-});
 
 export const AccessTokenResponse = Type.Object({
     ok: Type.Literal(true),
@@ -76,23 +52,22 @@ export const AccessTokenResponse = Type.Object({
 export const RedirectToProviderSchema = {
     tags: [TAG_AUTH],
     summary: "Redirect to OAuth provider",
-    description: "Generic redirect: the provider is passed as a slug and encoded into the state.",
+    description: "Generic redirect: the provider is passed as a slug and encoded into the state. No response body.",
     querystring: OAuthRedirectRequestQueries,
-    response: { 302: OAuthRedirectResponse, 400: ErrorResponse, 500: ErrorResponse },
+    response: { 302: Type.Any(), 400: ErrorResponse, 500: ErrorResponse, 501: ErrorResponse },
 } as const;
 
 export const OAuthCallbackSchema = {
     tags: [TAG_AUTH],
     summary: "OAuth provider callback",
-    description: "Single callback for all providers; the provider is taken from the state.",
+    description: "Single callback for all providers; the provider is taken from the state. No response body.",
     querystring: OAuthCallbackRequestQueries,
-    response: { 200: OAuthCallbackResponse, 400: ErrorResponse, 501: ErrorResponse },
+    response: { 302: Type.Any(), 400: ErrorResponse, 500: ErrorResponse, 501: ErrorResponse },
 } as const;
 
 export const AccessTokenSchema = {
     tags: [TAG_AUTH],
     summary: "Get access token",
-    description: "Returns an application access token; the provider is taken from the state.",
-    body: AccessTokenRequestPayload,
+    description: "Returns an application access token; the provider is taken from the state. No request payload.",
     response: { 200: AccessTokenResponse, 400: ErrorResponse, 501: ErrorResponse },
 } as const;

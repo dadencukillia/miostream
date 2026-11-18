@@ -30,11 +30,9 @@ export const oauthCallback = async (
 
 export const accessToken = async (
     _request: FastifyRequest<{
-        Body: dto.AccessTokenRequestPayloadType;
         Reply: dto.AccessTokenReturnType;
     }>,
     _reply: FastifyReply<{
-        Body: dto.AccessTokenRequestPayloadType;
         Reply: dto.AccessTokenReturnType;
     }>
 ) => {
