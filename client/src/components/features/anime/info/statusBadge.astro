@@ -1,6 +1,7 @@
 ---
 import type { HTMLAttributes } from 'astro/types';
 import { Badge } from "@ui/badge";
+import { cn } from 'cn';
 
 // Config
 
@@ -44,7 +45,7 @@ const statusValues = animeStatuses[animeStatus];
 <Badge
   variant="secondary"
   style={{ backgroundColor: statusValues.color }}
-  className={ className }
+  className={ cn("text-background dark:text-foreground", className) }
   { ...spanAttrs }
 >
   { statusValues.label }

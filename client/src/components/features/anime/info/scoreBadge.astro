@@ -1,6 +1,7 @@
 ---
 import type { HTMLAttributes } from 'astro/types';
 import { Badge } from "@ui/badge";
+import { cn } from 'cn';
 
 import ThumbsUpIcon from "~icons/hugeicons/thumbs-up";
 import ThumbsDownIcon from "~icons/hugeicons/thumbs-down";
@@ -50,7 +51,7 @@ const scoreColor = getColorByScore(scoreValue);
   variant="secondary"
   title="Середня оцінка від -5 до 5"
   style={{ backgroundColor: scoreColor }}
-  className={ className }
+  className={ cn("text-background dark:text-foreground", className) }
   { ...spanAttrs }
 >
   <ScoreIcon />

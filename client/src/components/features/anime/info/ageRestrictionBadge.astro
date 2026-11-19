@@ -3,6 +3,7 @@ import type { HTMLAttributes } from 'astro/types';
 import { Badge } from "@ui/badge";
 
 import BabyIcon from "~icons/hugeicons/baby-01";
+import { cn } from 'cn';
 
 // Config
 
@@ -57,7 +58,7 @@ const restrictionValues = restrictions[restriction];
   variant="secondary"
   title={ restrictionValues.summary }
   style={{ backgroundColor: restrictionValues.color }}
-  className={ className }
+  className={ cn("text-background dark:text-foreground", className) }
   { ...spanAttrs }
 >
   <BabyIcon />
