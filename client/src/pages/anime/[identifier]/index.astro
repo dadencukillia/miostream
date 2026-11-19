@@ -12,9 +12,9 @@ import EpisodesBadge from "@components/features/anime/info/episodesBadge.astro";
 import GenreBadgesLine, { animeGenres } from "@components/features/anime/info/genreBadgesLine";
 import FormatLabel, { animeFormats } from "@components/features/anime/info/formatLabel.astro";
 import ProductionLabel from "@components/features/anime/info/productionLabel.astro";
-
 import AnimePlayer from "@components/features/anime/player/player";
 import AnimeEpisodes, { Episode } from "@components/features/anime/player/episodes";
+import TextShortcutter from "@components/common/textShortcutter";
 
 import ArrowRightDoubleIcon from "~icons/hugeicons/arrow-right-double";
 import ArrowLeftDoubleIcon from "~icons/hugeicons/arrow-left-double";
@@ -213,7 +213,9 @@ const episodesMock: Episode[] = [
         <FormatLabel class="mt-5" animeFormat={ animeInfo.animeFormat } />
         <ProductionLabel studio={ animeInfo.productionStudio } yearReleased={ animeInfo.yearReleased } />
 
-        <p class="mt-2 text-sm text-secondary-foreground">{ animeInfo.animeDescription }</p>
+        <p class="mt-2 text-sm text-secondary-foreground">
+          <TextShortcutter linesLimit={ 3 } client:idle>{ animeInfo.animeDescription }</TextShortcutter>
+        </p>
       </div>
     </div>
   </AppShell>
