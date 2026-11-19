@@ -14,7 +14,7 @@ import FormatLabel, { animeFormats } from "@components/features/anime/info/forma
 import ProductionLabel from "@components/features/anime/info/productionLabel.astro";
 
 import AnimePlayer from "@components/features/anime/player/player";
-import AnimeEpisodes from "@components/features/anime/player/episodes";
+import AnimeEpisodes, { Episode } from "@components/features/anime/player/episodes";
 
 import ArrowRightDoubleIcon from "~icons/hugeicons/arrow-right-double";
 import ArrowLeftDoubleIcon from "~icons/hugeicons/arrow-left-double";
@@ -60,16 +60,8 @@ const animeInfo: AnimeInfo = {
 };
 
 const score5 = convScore10toSymetric5(animeInfo.score);
----
 
-<HtmlLayout title={ `${ animeInfo.titleUa } — MioStream` }>
-  <AppShell>
-    <div class="flex flex-col-reverse lg:flex-row w-full">
-
-      {/* player, comments section */}
-
-      <div class="flex-1 pt-3 pb-7 lg:mt-5 px-container">
-        <AnimeEpisodes episodes={[
+const episodesMock: Episode[] = [
   {
     localizationStudio: "ShoDo",
     localizationType: "dub",
@@ -166,7 +158,17 @@ const score5 = convScore10toSymetric5(animeInfo.score);
     episodeName: "Серія 8: Нудна ніч",
     sourceUrl: "https://example.com/stream/jujutsu-kaisen/8/sub"
   }
-         ]} client:load>
+];
+---
+
+<HtmlLayout title={ `${ animeInfo.titleUa } — MioStream` }>
+  <AppShell>
+    <div class="flex flex-col-reverse lg:flex-row w-full">
+
+      {/* player, comments section */}
+
+      <div class="flex-1 pt-3 pb-7 lg:mt-5 px-container">
+        <AnimeEpisodes episodes={ episodesMock } client:load>
           <AnimePlayer sourceUrl="" />
         </AnimeEpisodes>
       </div>
@@ -213,7 +215,6 @@ const score5 = convScore10toSymetric5(animeInfo.score);
 
         <p class="mt-2 text-sm text-secondary-foreground">{ animeInfo.animeDescription }</p>
       </div>
-
     </div>
   </AppShell>
 </HtmlLayout>

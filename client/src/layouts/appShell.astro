@@ -11,16 +11,16 @@ interface Props {
 const { class: className } = Astro.props;
 ---
 
-<div class="flex w-screen">
+<div class="fixed inset-0 flex flex-row min-w-0">
   <NavSidebar class="hidden md:flex" />
 
-  <div class="flex flex-1 flex-col h-screen">
+  <div class="flex flex-1 flex-col min-h-0 min-w-0">
     <TopBar />
 
-    <main class={cn("flex-1 overflow-y-auto", className)}>
+    <main class={cn("flex-1 min-h-0 overflow-y-auto", className)}>
       <slot />
     </main>
 
-    <BottomNav class="flex md:hidden" />
+    <BottomNav class="flex md:hidden shrink-0" />
   </div>
 </div>

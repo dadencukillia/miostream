@@ -1,8 +1,9 @@
 import { Button } from "@ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@ui/tabs";
+import { useEffect, useRef, type EventHandler } from "react";
 import type React from "react";
 
-interface Episode {
+export interface Episode {
   localizationStudio: string,
   localizationType: "dub"|"sub",
   episodeName: string,
@@ -74,10 +75,25 @@ export default function EpisodesList({ episodes, children }: {
 function TeamsList({ teams }: {
   teams: Record<string, { episodeName: string, sourceUrl: string }[]>,
 }) {
+  let tabsListRef = useRef<null|HTMLDivElement>(null);
   const tabs = Object.keys(teams);
+  const wheelHandler = (e: WheelEvent) => {
+    if (!tabsListRef.current) return;
+
+    e.preventDefault();
+    if (e.deltaY !== 0) tabsListRef.current.scrollLeft += e.deltaY;
+  };
+
+  useEffect(() => {
+    if (!tabsListRef.current) return;
+    tabsListRef.current.addEventListener("wheel", wheelHandler);
+  }, []);
+
   return (
     <Tabs defaultValue={ tabs[0] } className="px-2">
-      <TabsList className="bg-transparent p-0 m-0">
+      <TabsList
+        className="bg-transparent p-0 m-0 w-full justify-start overflow-x-auto overflow-y-hidden"
+        ref={ tabsListRef }>
         { tabs.map(team => (
           <TabsTrigger key={ team } value={ "team-" + team } className="text-xs">{ team }</TabsTrigger>
         )) }
