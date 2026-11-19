@@ -1,18 +1,22 @@
 import type { Static } from "typebox";
 import type * as userSchema from "./user.schema";
 import type { TransformedType } from "@utils/modelTransformer";
-import type { toPublicUserModel } from "./user.model";
+import type { userTransformPublic } from "./user.model";
+import { ErrorResponse } from "@utils/errorsCollection";
 
 // Enums
 export type UserRoleType = (typeof userSchema.USER_ROLE)[number];
 export type UserStatusType = (typeof userSchema.USER_STATUS)[number];
 
 // Responses
-export type ErrorResponseType = Static<typeof userSchema.ErrorResponse>;
+export type ErrorResponseType = Static<typeof ErrorResponse>;
 export type UserResponseType = Static<typeof userSchema.UserResponse>;
-export type PublicUserResponseType = TransformedType<UserResponseType, typeof toPublicUserModel>;
+export type UserType = Omit<UserResponseType, "ok">;
+export type PublicUserResponseType = TransformedType<UserResponseType, typeof userTransformPublic>;
+export type PublicUserType = TransformedType<UserType, typeof userTransformPublic>;
+export type UserLinkItemType = Static<typeof userSchema.UserLinkItem>;
 export type UserLinkResponseType = Static<typeof userSchema.UserLinkResponse>;
-export type UserLinkListResponseType = UserLinkResponseType[];
+export type UserLinkListResponseType = Static<typeof userSchema.UserLinkListResponse>;
 
 // Request Params
 export type UserIdentifierRequestParamsType = Static<typeof userSchema.UserIdentifierRequestParams>;
@@ -43,6 +47,6 @@ export type UpdateUserRoleReturnType = UserResponseType | ErrorResponseType;
 export type DeleteUserReturnType = null | ErrorResponseType;
 export type DeleteUserByIdReturnType = null | ErrorResponseType;
 export type CreateUserLinkReturnType = UserLinkResponseType | ErrorResponseType;
-export type ListUserLinksReturnType = UserLinkResponseType[] | ErrorResponseType;
+export type ListUserLinksReturnType = UserLinkListResponseType | ErrorResponseType;
 export type UpdateUserLinkReturnType = UserLinkResponseType | ErrorResponseType;
 export type DeleteUserLinkReturnType = null | ErrorResponseType;

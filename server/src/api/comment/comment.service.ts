@@ -2,12 +2,16 @@ import type { Pool } from "pg";
 import * as commentsSqlc from "@sqlc/comments_sql";
 import { CommentErrors } from "./comment.errors";
 import type * as dto from "./comment.dto";
+import { commentTransformAuthor } from "./comment.model";
+
+const DB_INVALID_ID_CODES: readonly string[] = ["22P02", "22003"];
+const DB_INVALID_INPUT_CODES: readonly string[] = ["23514", "22P02", "22003", "22001"];
 
 export const getComments = async (
     client: Pool,
     animeId: string,
     query: dto.GetCommentsRequestQueriesType
-): Promise<dto.CommentsResponseType> => {
+): Promise<dto.CommentsType> => {
     const maxCount = query.limit ?? 20;
     const lastLoadedId = query.cursor ?? "0";
 
@@ -20,23 +24,13 @@ export const getComments = async (
             maxCount,
         });
     } catch (e: any) {
-        if (e?.code === "22P02" || e?.code === "22003") {
+        if (DB_INVALID_ID_CODES.includes(e?.code)) {
             throw CommentErrors.error("comment-db-invalid-error").withDetails(e);
         }
         throw CommentErrors.error("comment-db-error").withDetails(e);
     }
 
-    const comments: dto.CommentResponseType[] = commentsRaw.map((cr) => ({
-        commentId: String(cr.commentId),
-        content: cr.content,
-        createdAt: cr.createdAt,
-        isEdited: cr.isEdited,
-        author: {
-            userId: cr.userId,
-            nickname: cr.nickname,
-            avatarId: cr.avatarId,
-        },
-    }));
+    const comments: dto.CommentType[] = commentsRaw.map(commentTransformAuthor);
 
     const lastComment = commentsRaw.length === maxCount ? commentsRaw[commentsRaw.length - 1] : undefined;
     const nextCursor = lastComment ? String(lastComment.commentId) : null;
@@ -52,7 +46,7 @@ export const postComment = async (
     animeId: string,
     authorId: string,
     data: dto.PostCommentRequestPayloadType
-): Promise<dto.CommentResponseType> => {
+): Promise<dto.CommentType> => {
     let created: commentsSqlc.CreateCommentRow | null;
 
     try {
@@ -65,7 +59,7 @@ export const postComment = async (
         if (e?.code === "23503") {
             throw CommentErrors.error("comment-db-data-not-found").withDetails(e);
         }
-        if (e?.code === "23514" || e?.code === "22P02" || e?.code === "22003" || e?.code === "22001") {
+        if (DB_INVALID_INPUT_CODES.includes(e?.code)) {
             throw CommentErrors.error("comment-db-invalid-error").withDetails(e);
         }
         throw CommentErrors.error("comment-db-error").withDetails(e);
@@ -75,17 +69,7 @@ export const postComment = async (
         throw CommentErrors.error("comment-db-error");
     }
 
-    return {
-        commentId: String(created.commentId),
-        content: created.content,
-        createdAt: created.createdAt,
-        isEdited: created.isEdited,
-        author: {
-            userId: created.userId,
-            nickname: created.nickname,
-            avatarId: created.avatarId,
-        },
-    };
+    return commentTransformAuthor(created);
 };
 
 export const updateComment = async (
@@ -94,7 +78,7 @@ export const updateComment = async (
     commentId: string,
     authorId: string,
     data: dto.UpdateCommentRequestPayloadType
-): Promise<dto.CommentResponseType> => {
+): Promise<dto.CommentType> => {
     let updated: commentsSqlc.UpdateCommentRow | null;
 
     try {
@@ -105,7 +89,7 @@ export const updateComment = async (
             content: data.content.trim(),
         });
     } catch (e: any) {
-        if (e?.code === "23514" || e?.code === "22P02" || e?.code === "22003" || e?.code === "22001") {
+        if (DB_INVALID_INPUT_CODES.includes(e?.code)) {
             throw CommentErrors.error("comment-db-invalid-error").withDetails(e);
         }
         throw CommentErrors.error("comment-db-error").withDetails(e);
@@ -115,17 +99,7 @@ export const updateComment = async (
         throw CommentErrors.error("comment-not-found");
     }
 
-    return {
-        commentId: String(updated.commentId),
-        content: updated.content,
-        createdAt: updated.createdAt,
-        isEdited: updated.isEdited,
-        author: {
-            userId: updated.userId,
-            nickname: updated.nickname,
-            avatarId: updated.avatarId,
-        },
-    };
+    return commentTransformAuthor(updated);
 };
 
 export const deleteComment = async (
@@ -145,7 +119,7 @@ export const deleteComment = async (
             isPrivileged,
         });
     } catch (e: any) {
-        if (e?.code === "22P02" || e?.code === "22003") {
+        if (DB_INVALID_ID_CODES.includes(e?.code)) {
             throw CommentErrors.error("comment-db-invalid-error").withDetails(e);
         }
         throw CommentErrors.error("comment-db-error").withDetails(e);

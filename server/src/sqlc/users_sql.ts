@@ -1,4 +1,4 @@
-import type { QueryArrayConfig, QueryArrayResult } from "pg";
+import { QueryArrayConfig, QueryArrayResult } from "pg";
 
 interface Client {
     query: (config: QueryArrayConfig) => Promise<QueryArrayResult>;
@@ -426,12 +426,12 @@ export async function getPasswordHashById(client: Client, args: GetPasswordHashB
 }
 
 export const updateUserProfileQuery = `-- name: UpdateUserProfile :one
-UPDATE public.users
+UPDATE public.users 
 SET 
-    "nickname"   = $1,
-    "full_name"  = $2,
-    "bio"        = $3,
-    "timezone"   = $4,
+    "nickname"   = COALESCE($1::text, nickname),
+    "full_name"  = COALESCE($2::text, full_name),
+    "bio"        = COALESCE($3::text, bio),
+    "timezone"   = COALESCE($4::text, timezone),
     "updated_at" = now()
 WHERE "user_id" = $5::uuid
 RETURNING 
@@ -453,10 +453,10 @@ RETURNING
     "updated_at"`;
 
 export interface UpdateUserProfileArgs {
-    nickname: string;
-    fullName: string;
-    bio: string;
-    timezone: string;
+    nickname: string | null;
+    fullName: string | null;
+    bio: string | null;
+    timezone: string | null;
     userId: string;
 }
 
@@ -513,15 +513,15 @@ export const updateUserCustomizationQuery = `-- name: UpdateUserCustomization :o
 UPDATE public.users 
 SET 
     "profile_frame_url" = CASE 
-        WHEN $1::boolean
-        THEN $2::text
-        ELSE profile_frame_url END,
+        WHEN 'profile_frame_url' = ANY($1::text[]) THEN NULL
+        ELSE COALESCE($2::text, profile_frame_url)
+    END,
     "profile_background_url" = CASE 
-        WHEN $3::boolean
-        THEN $4::text
-        ELSE profile_background_url END,
+        WHEN 'profile_background_url' = ANY($1::text[]) THEN NULL
+        ELSE COALESCE($3::text, profile_background_url)
+    END,
     "updated_at" = now()
-WHERE "user_id" = $5::uuid
+WHERE "user_id" = $4::uuid
 RETURNING 
     "user_id",
     "nickname",
@@ -541,9 +541,8 @@ RETURNING
     "updated_at"`;
 
 export interface UpdateUserCustomizationArgs {
-    setFrame: boolean;
+    nullFields: string[];
     profileFrameUrl: string | null;
-    setBackground: boolean;
     profileBackgroundUrl: string | null;
     userId: string;
 }
@@ -570,7 +569,7 @@ export interface UpdateUserCustomizationRow {
 export async function updateUserCustomization(client: Client, args: UpdateUserCustomizationArgs): Promise<UpdateUserCustomizationRow | null> {
     const result = await client.query({
         text: updateUserCustomizationQuery,
-        values: [args.setFrame, args.profileFrameUrl, args.setBackground, args.profileBackgroundUrl, args.userId],
+        values: [args.nullFields, args.profileFrameUrl, args.profileBackgroundUrl, args.userId],
         rowMode: "array"
     });
     if (result.rows.length !== 1) {

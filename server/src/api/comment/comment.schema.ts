@@ -3,28 +3,12 @@ import {
     Nullable,
     DateTimeType
 } from "@utils/types";
+import { ErrorResponse } from "@utils/errorsCollection";
 
 // Tags
-export const TAG_COMMENT = "comment";
+export const TAG_COMMENT = "Comment";
 
 // Responses
-export const ErrorResponse = Type.Object({
-    ok: Type.Literal(false, { description: "Indicates an unsuccessful operation" }),
-    message: Type.String({
-        description: "Human-readable error details",
-        examples: ["database read error"]
-    }),
-}, {
-    additionalProperties: false,
-    description: "Standard error response payload",
-    examples: [
-        {
-            ok: false,
-            message: "database read error"
-        }
-    ]
-});
-
 export const CommentAuthorResponse = Type.Object({
     userId: Type.String({ format: "uuid", description: "Author user UUID" }),
     nickname: Type.String({ description: "Author nickname" }),
@@ -34,7 +18,7 @@ export const CommentAuthorResponse = Type.Object({
     description: "Author information"
 });
 
-export const CommentResponse = Type.Object({
+export const Comment = Type.Object({
     commentId: Type.String({ description: "Unique comment ID (bigint string)" }),
     content: Type.String({ description: "Comment body text" }),
     createdAt: DateTimeType,
@@ -45,8 +29,21 @@ export const CommentResponse = Type.Object({
     description: "Single comment record"
 });
 
+export const CommentResponse = Type.Object({
+    ok: Type.Literal(true, { description: "Indicates a successful operation" }),
+    commentId: Type.String({ description: "Unique comment ID (bigint string)" }),
+    content: Type.String({ description: "Comment body text" }),
+    createdAt: DateTimeType,
+    isEdited: Type.Boolean({ description: "Indicates if the comment was edited" }),
+    author: CommentAuthorResponse,
+}, {
+    additionalProperties: false,
+    description: "Single comment response payload"
+});
+
 export const CommentsResponse = Type.Object({
-    comments: Type.Array(CommentResponse, { description: "List of comments" }),
+    ok: Type.Literal(true, { description: "Indicates a successful operation" }),
+    comments: Type.Array(Comment, { description: "List of comments" }),
     nextCursor: Nullable(Type.String({ description: "Cursor for the next page, or null if end of list" })),
 }, {
     additionalProperties: false,
@@ -155,6 +152,7 @@ export const PostCommentSchema = {
     response: {
         201: CommentResponse,
         400: ErrorResponse,
+        403: ErrorResponse,
         404: ErrorResponse,
         500: ErrorResponse,
     },
@@ -169,6 +167,7 @@ export const UpdateCommentSchema = {
     response: {
         200: CommentResponse,
         400: ErrorResponse,
+        403: ErrorResponse,
         404: ErrorResponse,
         500: ErrorResponse,
     },

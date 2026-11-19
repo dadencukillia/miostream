@@ -137,7 +137,7 @@ const grantAuthDefaultFilters: Required<GrantAuthFilters> = {
   userHasRole: [],
   userHasStatus: ["active"],
   fallback: (_req, resp) => {
-    resp.status(403).send({ ok: false, message: "no access" });
+    resp.status(403).send({ ok: false, message: "no access", error: "no-access" });
   }
 };
 
