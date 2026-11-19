@@ -18,3 +18,12 @@ export const RESERVED_NICKNAMES = new Set([
 export const isReservedNickname = (nickname: string): boolean => {
     return RESERVED_NICKNAMES.has(nickname.trim().toLowerCase());
 };
+
+/**
+ * TODO: write functionality for this generator
+ * Generates completely unique valid nickname 
+ */
+export const generateNickname = (): string => {
+    const nickname = `user${Date.now()}`;
+    return nickname;
+};
