@@ -16,7 +16,7 @@ export default function TextShortcutter({ children, linesLimit }: {
         lineClamp: unfolded || linesLimit < 1 ? undefined : linesLimit,
         WebkitLineClamp: unfolded || linesLimit < 1 ? undefined : linesLimit,
       }}
-      onClick={() => { setUnfolded(true) }}
+      onClick={() => { setUnfolded(fs => !fs) }}
     >{ children }</span>
   );
 }
