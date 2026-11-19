@@ -97,7 +97,11 @@ export const redirectToProvider = async (
         maxAge: NONCE_MAX_AGE_SECONDS,
     });
 
-    return reply.status(302).header("Location", url);
+    reply
+        .header("Accept-CH", "Sec-CH-UA-Model, Sec-CH-UA-Platform")
+        .header("Critical-CH", "Sec-CH-UA-Model, Sec-CH-UA-Platform");
+
+    return reply.redirect(url, 302);
 };
 
 export const oauthCallback = async (
@@ -165,9 +169,6 @@ export const oauthCallback = async (
         throw AuthErrors.error("auth-no-session-access");
     }
 
-    // Tell modern browsers to send the device model on future requests
-    reply.header("Accept-CH", "Sec-CH-UA-Model, Sec-CH-UA-Platform");
-
     const parser = new UAParser(request.headers["user-agent"]);
     const { browser, os, device } = parser.getResult();
 
@@ -176,7 +177,6 @@ export const oauthCallback = async (
         ? chModelHeader.replace(/^"|"$/g, "").trim()
         : undefined;
 
-    // Common parsing
     const deviceModel = chModel || device.model;
     const deviceName = [device.vendor, deviceModel].filter(Boolean).join(" ") || undefined;
     const deviceType = device.type ?? (os.name || browser.name ? "desktop" : undefined);
