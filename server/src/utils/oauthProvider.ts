@@ -17,7 +17,7 @@ export interface OAuthConfig {
     clientId: string;
     clientSecret: string;
     redirectUri: string;
-    stateSecret: string;
+    stateSecret: string | Uint8Array;
     /** Optional list of OAuth scopes requested from the user. */
     scopes?: string[];
 }
@@ -65,7 +65,7 @@ export class OAuthProvider {
     /**
      * Computes an HMAC-SHA512 signature for the `${provider}_${nonce}` payload.
      */
-    private static signPayload(provider: string, nonce: string, secret: string): string {
+    private static signPayload(provider: string, nonce: string, secret: string | Uint8Array): string {
         return new Bun.CryptoHasher("sha512", secret)
             .update(`${provider}_${nonce}`)
             .digest("hex");
@@ -77,7 +77,7 @@ export class OAuthProvider {
     public getAuthorizationUrl(config: OAuthConfig): AuthUrlResult {
         // 32 cryptographically random bytes -> 44 characters in Base64
         const randomBytes = crypto.getRandomValues(new Uint8Array(32));
-        const nonce = randomBytes.toBase64();
+        const nonce = randomBytes.toBase64({ alphabet: "base64url", omitPadding: true });
 
         const signature = OAuthProvider.signPayload(this.slug, nonce, config.stateSecret);
         const state = `${this.slug}_${signature}`;

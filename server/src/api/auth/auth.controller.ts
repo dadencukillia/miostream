@@ -7,6 +7,7 @@ import * as userServices from "@/api/user/user.shared";
 import { cookieValue, setCookie } from "@utils/cookies";
 import { OAuthProvider, type OAuthConfig } from "@utils/oauthProvider";
 import { generateNickname } from "@utils/nickname";
+import { UAParser } from "ua-parser-js";
 
 // TODO: move it somewhere into config
 const FRONTEND_SUCCESS_URL = "/";
@@ -14,7 +15,7 @@ const NONCE_COOKIE_NAME = "oauth_nonce";
 const NONCE_MAX_AGE_SECONDS = 10 * 60;
 const SESSION_COOKIE_NAME = "session_token";
 const SESSION_MAX_AGE_SECONDS = 180 * 24 * 60 * 60;
-const OAUTH_STATE_SECRET = config.OAUTH_STATE_HMAC_SECRET as unknown as string;
+const OAUTH_STATE_SECRET = config.OAUTH_STATE_HMAC_SECRET;
 
 export interface GoogleOAuthUserInfo {
     /** Unique Google Account ID (immutable) */
@@ -56,6 +57,16 @@ const oauthProviders: Record<string, { provider: OAuthProvider; config: OAuthCon
     },
 };
 
+const sanitizeFullName = (rawName?: string): string => {
+    const cleaned = (rawName ?? "")
+        .replace(/[^\p{L} '\u2019\u02BC.-]/gu, "")
+        .replace(/^[^\p{L}]+|[^\p{L}.]+$/gu, "")
+        .trim()
+        .slice(0, 100);
+
+    return cleaned.length >= 2 ? cleaned : "User";
+};
+
 const clearNonceCookie = (reply: FastifyReply) =>
     setCookie(reply, NONCE_COOKIE_NAME, "", {
         httpOnly: true,
@@ -86,7 +97,7 @@ export const redirectToProvider = async (
         maxAge: NONCE_MAX_AGE_SECONDS,
     });
 
-    return reply.status(302).header("Location", url).send(undefined);
+    return reply.status(302).header("Location", url);
 };
 
 export const oauthCallback = async (
@@ -101,17 +112,12 @@ export const oauthCallback = async (
 ) => {
     const { code, state, error } = request.query;
 
-    if (error) {
-        clearNonceCookie(reply);
-        throw AuthErrors.error("oauth-missing-code").withDetails(error);
-    }
-    if (!code) throw AuthErrors.error("oauth-missing-code");
-    if (!state) throw AuthErrors.error("oauth-invalid-state");
-
     const nonce = cookieValue(request, NONCE_COOKIE_NAME);
-    if (!nonce) throw AuthErrors.error("oauth-invalid-state");
+    if (nonce) clearNonceCookie(reply);
 
-    clearNonceCookie(reply);
+    if (error) throw AuthErrors.error("oauth-missing-code").withDetails(error);
+    if (!code) throw AuthErrors.error("oauth-missing-code");
+    if (!state || !nonce) throw AuthErrors.error("oauth-invalid-state");
 
     const stateVerification = OAuthProvider.verifyState(state, nonce, { stateSecret: OAUTH_STATE_SECRET });
     if (!stateVerification.valid || !stateVerification.provider) throw AuthErrors.error("oauth-invalid-state");
@@ -129,34 +135,72 @@ export const oauthCallback = async (
         throw AuthErrors.error("oauth-missing-code").withDetails(e);
     }
 
+    if (!profile.sub || !profile.email || !profile.email_verified) {
+        throw AuthErrors.error("oauth-invalid-state").withDetails("unverified or incomplete provider profile");
+    }
+
     let user;
 
     user = await userServices.getUserByGoogleId(request.server.pg, profile.sub).catch((e: any) => {
         if (e?.slug === "user-not-found") return null;
         throw e;
     });
-    if (!user) user = await userServices.createUser(request.server.pg, {
-        googleId: profile.sub,
-        email: profile.email,
-        nickname: generateNickname(),
-        fullName: profile.name?.trim() || "User"
-    });
+    if (!user) {
+        for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+                user = await userServices.createUser(request.server.pg, {
+                    googleId: profile.sub,
+                    email: profile.email,
+                    nickname: generateNickname(),
+                    fullName: sanitizeFullName(profile.name),
+                });
+                break;
+            } catch (e: any) {
+                if (e?.slug !== "user-nickname-already-taken" || attempt === 2) throw e;
+            }
+        }
+    }
 
     if (!user || user.userStatus !== "active") {
         throw AuthErrors.error("auth-no-session-access");
     }
 
-    // TODO: add user-agent parsing to give it into session
-    const session = await authServices.newUserSession(request.server.pg, user.userId, { ipAddress: request.ip });
+    // Tell modern browsers to send the device model on future requests
+    reply.header("Accept-CH", "Sec-CH-UA-Model, Sec-CH-UA-Platform");
+
+    const parser = new UAParser(request.headers["user-agent"]);
+    const { browser, os, device } = parser.getResult();
+
+    const chModelHeader = request.headers["sec-ch-ua-model"];
+    const chModel = typeof chModelHeader === "string"
+        ? chModelHeader.replace(/^"|"$/g, "").trim()
+        : undefined;
+
+    // Common parsing
+    const deviceModel = chModel || device.model;
+    const deviceName = [device.vendor, deviceModel].filter(Boolean).join(" ") || undefined;
+    const deviceType = device.type ?? (os.name || browser.name ? "desktop" : undefined);
+    const osName = [os.name, os.version].filter(Boolean).join(" ") || undefined;
+    const majorVersion = browser.version?.split(".")[0];
+    const browserName = [browser.name, majorVersion].filter(Boolean).join(" ") || undefined;
+
+    const session = await authServices.newUserSession(request.server.pg, user.userId, {
+        deviceType,
+        deviceName,
+        os: osName,
+        browser: browserName,
+        ipAddress: request.ip || undefined,
+    });
 
     setCookie(reply, SESSION_COOKIE_NAME, session.sessionToken, {
         httpOnly: true,
         secure: true,
         sameSite: "Strict",
         maxAge: SESSION_MAX_AGE_SECONDS,
+        path: "/api/auth/accessToken",
     });
 
-    return reply.status(302).redirect(FRONTEND_SUCCESS_URL);
+    return reply.redirect(FRONTEND_SUCCESS_URL, 302);
 };
 
 export const accessToken = async (

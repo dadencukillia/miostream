@@ -24,6 +24,6 @@ export const isReservedNickname = (nickname: string): boolean => {
  * Generates completely unique valid nickname 
  */
 export const generateNickname = (): string => {
-    const nickname = `user${Date.now()}`;
-    return nickname;
+    const suffix = Buffer.from(crypto.getRandomValues(new Uint8Array(5))).toString("hex");
+    return `user_${suffix}`;
 };
