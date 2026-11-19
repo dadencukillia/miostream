@@ -62,7 +62,14 @@ export const OAuthCallbackSchema = {
     summary: "OAuth provider callback",
     description: "Single callback for all providers; the provider is taken from the state. No response body.",
     querystring: OAuthCallbackRequestQueries,
-    response: { 302: Type.Any(), 400: ErrorResponse, 500: ErrorResponse, 501: ErrorResponse },
+    response: {
+        302: Type.Any(),
+        400: ErrorResponse,
+        403: ErrorResponse,
+        409: ErrorResponse,
+        500: ErrorResponse,
+        501: ErrorResponse,
+    },
 } as const;
 
 export const AccessTokenSchema = {
