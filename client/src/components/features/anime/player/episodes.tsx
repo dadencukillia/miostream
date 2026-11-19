@@ -114,6 +114,7 @@ function TeamEpisodesList({ episodes }: {
     <div className="flex flex-col lg:flex-row flex-wrap gap-1">
     { episodes.map(ep => (
       <Button 
+        key={ `${ep.episodeName} ${ep.sourceUrl}` }
         variant="secondary" 
         className="rounded-lg"
         title={ ep.episodeName }>
