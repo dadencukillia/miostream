@@ -92,7 +92,7 @@ function TeamsList({ teams }: {
   }, []);
 
   return (
-    <Tabs defaultValue={ tabs[0] } className="px-2">
+    <Tabs defaultValue={ tabs[0] } className="px-0">
       <TabsList
         variant="line"
         className="bg-transparent m-0 p-0 w-full justify-start overflow-x-auto overflow-y-hidden"
@@ -105,7 +105,7 @@ function TeamsList({ teams }: {
         )) }
       </TabsList>
       { tabs.map(team => (
-        <TabsContent key={ team } value={ "team-" + team } className="pt-3">
+        <TabsContent key={ team } value={ "team-" + team } className="pt-3 px-2">
           <TeamEpisodesList episodes={ teams[team] } />
         </TabsContent>
       )) }
