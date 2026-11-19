@@ -167,9 +167,11 @@ const episodesMock: Episode[] = [
 
       {/* player, comments section */}
 
-      <div class="flex-1 pt-3 pb-7 lg:mt-5 px-container">
+      <div class="flex-1 pt-3 pb-7 lg:mt-5">
         <AnimeEpisodes episodes={ episodesMock } client:load>
-          <AnimePlayer sourceUrl="" previewImageUrl="https://m.media-amazon.com/images/M/MV5BMmIyNGE1OTctMzlkMS00YzYyLWEwODctZjBhZWIyYTZkNmEwXkEyXkFqcGc@._V1_.jpg" />
+          <div class="px-container">
+            <AnimePlayer sourceUrl="" previewImageUrl="https://m.media-amazon.com/images/M/MV5BMmIyNGE1OTctMzlkMS00YzYyLWEwODctZjBhZWIyYTZkNmEwXkEyXkFqcGc@._V1_.jpg" />
+          </div>
         </AnimeEpisodes>
       </div>
 
@@ -207,7 +209,7 @@ const episodesMock: Episode[] = [
         </div>
 
         <div class="mt-2 gap-1 flex flex-row flex-wrap">
-          <GenreBadgesLine genres={ animeInfo.genres } limit={ 9 } client:load />
+          <GenreBadgesLine genres={ animeInfo.genres } limit={ 9 } client:idle />
         </div>
 
         <FormatLabel class="mt-5" animeFormat={ animeInfo.animeFormat } />

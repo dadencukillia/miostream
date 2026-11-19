@@ -57,10 +57,12 @@ export default function EpisodesList({ episodes, children }: {
 
   return (
     <Tabs defaultValue={ defaultTab }>
-      <TabsList variant="line">
-        <TabsTrigger value="dub" disabled={ Object.keys(tree.dub).length === 0 }>Дубляж</TabsTrigger>
-        <TabsTrigger value="sub" disabled={ Object.keys(tree.sub).length === 0 }>Субтитри</TabsTrigger>
-      </TabsList>
+      <div className="px-container">
+        <TabsList variant="line">
+          <TabsTrigger value="dub" disabled={ Object.keys(tree.dub).length === 0 }>Дубляж</TabsTrigger>
+          <TabsTrigger value="sub" disabled={ Object.keys(tree.sub).length === 0 }>Субтитри</TabsTrigger>
+        </TabsList>
+      </div>
       { children }
       <TabsContent value="dub">
         <TeamsList teams={ tree.dub } />
@@ -92,7 +94,11 @@ function TeamsList({ teams }: {
   return (
     <Tabs defaultValue={ tabs[0] } className="px-2">
       <TabsList
-        className="bg-transparent p-0 m-0 w-full justify-start overflow-x-auto overflow-y-hidden"
+        variant="line"
+        className="bg-transparent m-0 p-0 w-full justify-start overflow-x-auto overflow-y-hidden"
+        style={{
+          scrollbarWidth: "none",
+        }}
         ref={ tabsListRef }>
         { tabs.map(team => (
           <TabsTrigger key={ team } value={ "team-" + team } className="text-xs">{ team }</TabsTrigger>
@@ -111,7 +117,7 @@ function TeamEpisodesList({ episodes }: {
   episodes: { episodeName: string, sourceUrl: string }[]
 }) {
   return (
-    <div className="flex flex-col lg:flex-row flex-wrap gap-1">
+    <div className="flex flex-col lg:flex-row flex-wrap gap-1 px-container">
     { episodes.map(ep => (
       <Button 
         key={ `${ep.episodeName} ${ep.sourceUrl}` }
