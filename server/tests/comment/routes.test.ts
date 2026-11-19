@@ -204,7 +204,7 @@ describe("comment routes", () => {
             method: "GET",
         });
         expect(page3.statusCode).toBe(200);
-        expect(page3.json()).toEqual({ comments: [], nextCursor: null });
+        expect(page3.json()).toEqual({ ok: true, comments: [], nextCursor: null });
 
         const invalidParams = await fastify.inject({
             path: `/anime/not-a-uuid/comment?limit=100`,
@@ -301,6 +301,6 @@ describe("comment routes", () => {
             method: "GET",
         });
         expect(listAfter.statusCode).toBe(200);
-        expect(listAfter.json()).toEqual({ comments: [], nextCursor: null });
+        expect(listAfter.json()).toEqual({ ok: true, comments: [], nextCursor: null });
     });
 });

@@ -127,12 +127,12 @@ WHERE "user_id" = @user_id::uuid
 LIMIT 1;
 
 -- name: UpdateUserProfile :one
-UPDATE public.users
+UPDATE public.users 
 SET 
-    "nickname"   = @nickname,
-    "full_name"  = @full_name,
-    "bio"        = @bio,
-    "timezone"   = @timezone,
+    "nickname"   = COALESCE(sqlc.narg('nickname')::text, nickname),
+    "full_name"  = COALESCE(sqlc.narg('full_name')::text, full_name),
+    "bio"        = COALESCE(sqlc.narg('bio')::text, bio),
+    "timezone"   = COALESCE(sqlc.narg('timezone')::text, timezone),
     "updated_at" = now()
 WHERE "user_id" = @user_id::uuid
 RETURNING 
@@ -157,13 +157,13 @@ RETURNING
 UPDATE public.users 
 SET 
     "profile_frame_url" = CASE 
-        WHEN @set_frame::boolean
-        THEN sqlc.narg('profile_frame_url')::text
-        ELSE profile_frame_url END,
+        WHEN 'profile_frame_url' = ANY(sqlc.arg('null_fields')::text[]) THEN NULL
+        ELSE COALESCE(sqlc.narg('profile_frame_url')::text, profile_frame_url)
+    END,
     "profile_background_url" = CASE 
-        WHEN @set_background::boolean
-        THEN sqlc.narg('profile_background_url')::text
-        ELSE profile_background_url END,
+        WHEN 'profile_background_url' = ANY(sqlc.arg('null_fields')::text[]) THEN NULL
+        ELSE COALESCE(sqlc.narg('profile_background_url')::text, profile_background_url)
+    END,
     "updated_at" = now()
 WHERE "user_id" = @user_id::uuid
 RETURNING 

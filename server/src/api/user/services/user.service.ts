@@ -4,8 +4,12 @@ import * as userLinksSqlc from "@sqlc/user_links_sql";
 import { UserErrors } from "../user.errors";
 import type * as dto from "../user.dto";
 import { hashPassword, verifyPassword } from "@utils/password";
+import { userTransformPublic, userTransformStreak } from "../user.model";
 
-export const createUser = async (client: Pool, data: dto.CreateUserRequestPayloadType) => {
+const DB_INVALID_INPUT_CODES: readonly string[] = ["23514", "22P02", "22003", "22001"];
+const DB_INVALID_ENUM_CODES: readonly string[] = ["23514", "22P02"];
+
+export const createUser = async (client: Pool, data: dto.CreateUserRequestPayloadType): Promise<dto.UserType> => {
     const passwordHash = data.password ? await hashPassword(data.password) : null;
 
     let user;
@@ -32,7 +36,7 @@ export const createUser = async (client: Pool, data: dto.CreateUserRequestPayloa
             }
             throw UserErrors.error("user-already-exists").withDetails(e);
         }
-        if (e?.code === "23514" || e?.code === "22P02" || e?.code === "22003" || e?.code === "22001") {
+        if (DB_INVALID_INPUT_CODES.includes(e?.code)) {
             throw UserErrors.error("user-db-invalid-error").withDetails(e);
         }
         throw UserErrors.error("user-db-error").withDetails(e);
@@ -40,10 +44,10 @@ export const createUser = async (client: Pool, data: dto.CreateUserRequestPayloa
 
     if (!user) throw UserErrors.error("user-db-error");
 
-    return user;
+    return userTransformStreak(user);
 };
 
-export const getUserById = async (client: Pool, userId: string) => {
+export const getUserById = async (client: Pool, userId: string): Promise<dto.UserType> => {
     let user;
     try {
         user = await usersSqlc.getUserById(client, { userId });
@@ -55,10 +59,10 @@ export const getUserById = async (client: Pool, userId: string) => {
     }
 
     if (!user) throw UserErrors.error("user-not-found");
-    return user;
+    return userTransformStreak(user);
 };
 
-export const getUserByNickname = async (client: Pool, nickname: string) => {
+export const getUserByNickname = async (client: Pool, nickname: string): Promise<dto.UserType> => {
     let user;
     try {
         user = await usersSqlc.getUserByNickname(client, { nickname });
@@ -67,7 +71,17 @@ export const getUserByNickname = async (client: Pool, nickname: string) => {
     }
 
     if (!user) throw UserErrors.error("user-not-found");
-    return user;
+    return userTransformStreak(user);
+};
+
+export const getPublicUserById = async (client: Pool, userId: string): Promise<dto.PublicUserType> => {
+    const user = await getUserById(client, userId);
+    return userTransformPublic(user);
+};
+
+export const getPublicUserByNickname = async (client: Pool, nickname: string): Promise<dto.PublicUserType> => {
+    const user = await getUserByNickname(client, nickname);
+    return userTransformPublic(user);
 };
 
 // TODO(auth): move getUserByEmail/getUserByGoogleId to an auth module; keep email/googleId out of client-facing errors.
@@ -109,15 +123,23 @@ export const deleteUserById = async (client: Pool, userId: string) => {
     if (!deleted) throw UserErrors.error("user-not-found");
 };
 
-export const updateUserProfile = async (client: Pool, userId: string, data: dto.UpdateUserProfileRequestPayloadType) => {
+export const updateUserProfile = async (
+    client: Pool,
+    userId: string,
+    data: dto.UpdateUserProfileRequestPayloadType
+): Promise<dto.UserType> => {
+    if (!data || Object.keys(data).length === 0) {
+        throw UserErrors.error("user-invalid").withMessage("Update payload cannot be empty");
+    }
+
     let user;
     try {
         user = await usersSqlc.updateUserProfile(client, {
             userId: userId,
-            nickname: data.nickname,
-            fullName: data.fullName,
-            bio: data.bio,
-            timezone: data.timezone
+            nickname: data.nickname ?? null,
+            fullName: data.fullName ?? null,
+            bio: data.bio ?? null,
+            timezone: data.timezone ?? null
         });
     } catch (e: any) {
         if (e?.code === "23505") {
@@ -127,35 +149,42 @@ export const updateUserProfile = async (client: Pool, userId: string, data: dto.
             }
             throw UserErrors.error("user-already-exists").withDetails(e);
         }
-        if (e?.code === "23514" || e?.code === "22P02" || e?.code === "22003" || e?.code === "22001") {
+        if (DB_INVALID_INPUT_CODES.includes(e?.code)) {
             throw UserErrors.error("user-db-invalid-error").withDetails(e);
         }
         throw UserErrors.error("user-db-error").withDetails(e);
     }
 
     if (!user) throw UserErrors.error("user-not-found");
-    return user;
+    return userTransformStreak(user);
 };
 
-export const updateUserCustomization = async (client: Pool, userId: string, data: dto.UpdateUserCustomizationRequestPayloadType) => {
+export const updateUserCustomization = async (
+    client: Pool,
+    userId: string,
+    data: dto.UpdateUserCustomizationRequestPayloadType
+): Promise<dto.UserType> => {
+    const nullFields: string[] = [];
+    if (data.profileFrameUrl === null) nullFields.push("profile_frame_url");
+    if (data.profileBackgroundUrl === null) nullFields.push("profile_background_url");
+
     let user;
     try {
         user = await usersSqlc.updateUserCustomization(client, {
             userId,
-            setFrame: data.profileFrameUrl !== undefined,
+            nullFields,
             profileFrameUrl: data.profileFrameUrl ?? null,
-            setBackground: data.profileBackgroundUrl !== undefined,
             profileBackgroundUrl: data.profileBackgroundUrl ?? null
         });
     } catch (e: any) {
-        if (e?.code === "23514" || e?.code === "22P02" || e?.code === "22003" || e?.code === "22001") {
+        if (DB_INVALID_INPUT_CODES.includes(e?.code)) {
             throw UserErrors.error("user-db-invalid-error").withDetails(e);
         }
         throw UserErrors.error("user-db-error").withDetails(e);
     }
 
     if (!user) throw UserErrors.error("user-not-found");
-    return user;
+    return userTransformStreak(user);
 };
 
 export const updateUserPassword = async (client: Pool, userId: string, data: dto.UpdateUserPasswordRequestPayloadType) => {
@@ -193,7 +222,11 @@ export const updateUserPassword = async (client: Pool, userId: string, data: dto
     if (!updated) throw UserErrors.error("user-not-found");
 };
 
-export const updateUserStatus = async (client: Pool, userId: string, status: dto.UserStatusType) => {
+export const updateUserStatus = async (
+    client: Pool,
+    userId: string,
+    status: dto.UserStatusType
+): Promise<dto.UserType> => {
     let user;
     try {
         user = await usersSqlc.updateUserStatus(client, {
@@ -201,18 +234,22 @@ export const updateUserStatus = async (client: Pool, userId: string, status: dto
             userStatus: status
         });
     } catch (e: any) {
-        if (e?.code === "23514" || e?.code === "22P02") {
+        if (DB_INVALID_ENUM_CODES.includes(e?.code)) {
             throw UserErrors.error("user-db-invalid-error").withDetails(e);
         }
         throw UserErrors.error("user-db-error").withDetails(e);
     }
 
     if (!user) throw UserErrors.error("user-not-found");
-    return user;
+    return userTransformStreak(user);
 };
 
 // TODO(admin): add check of last-admin rule.
-export const updateUserRole = async (client: Pool, userId: string, role: dto.UserRoleType) => {
+export const updateUserRole = async (
+    client: Pool,
+    userId: string,
+    role: dto.UserRoleType
+): Promise<dto.UserType> => {
     let user;
     try {
         user = await usersSqlc.updateUserRole(client, {
@@ -220,14 +257,14 @@ export const updateUserRole = async (client: Pool, userId: string, role: dto.Use
             userRole: role
         });
     } catch (e: any) {
-        if (e?.code === "23514" || e?.code === "22P02") {
+        if (DB_INVALID_ENUM_CODES.includes(e?.code)) {
             throw UserErrors.error("user-db-invalid-error").withDetails(e);
         }
         throw UserErrors.error("user-db-error").withDetails(e);
     }
 
     if (!user) throw UserErrors.error("user-not-found");
-    return user;
+    return userTransformStreak(user);
 };
 
 export const createUserLink = async (client: Pool, userId: string, url: string) => {
@@ -248,7 +285,7 @@ export const createUserLink = async (client: Pool, userId: string, url: string) 
             }
             throw UserErrors.error("user-db-data-not-found").withDetails(e);
         }
-        if (e?.code === "23514" || e?.code === "22P02" || e?.code === "22003" || e?.code === "22001") {
+        if (DB_INVALID_INPUT_CODES.includes(e?.code)) {
             throw UserErrors.error("user-db-invalid-error").withDetails(e);
         }
         throw UserErrors.error("user-db-error").withDetails(e);
@@ -286,7 +323,7 @@ export const updateUserLink = async (
         if (e?.code === "23505") {
             throw UserErrors.error("user-link-already-exists").withDetails(e);
         }
-        if (e?.code === "23514" || e?.code === "22P02" || e?.code === "22003" || e?.code === "22001") {
+        if (DB_INVALID_INPUT_CODES.includes(e?.code)) {
             throw UserErrors.error("user-db-invalid-error").withDetails(e);
         }
         throw UserErrors.error("user-db-error").withDetails(e);

@@ -1,5 +1,9 @@
 import { Type, type TSchema, type TSchemaOptions } from "typebox";
 
+// Plain
+
+export type Plain<T> = { [K in keyof T]: T[K] };
+
 // Enums
 
 export const StringEnum = <T extends readonly string[]>(

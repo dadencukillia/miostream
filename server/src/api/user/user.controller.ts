@@ -7,7 +7,7 @@ import { isSafeHttpUrl } from "@utils/urls";
 import { isValidTimezone } from "@utils/timezones";
 import { isUuid, normalizeUuid } from "@utils/uuid";
 import { isReservedNickname } from "@utils/nickname";
-import { toPublicUserModel, toUserModel } from "./user.model";
+import { transformOk } from "@utils/transformers";
 
 export const createUser = async (
     request: FastifyRequest<{ Body: dto.CreateUserRequestPayloadType }>,
@@ -21,7 +21,7 @@ export const createUser = async (
     if (isUuid(nickname) || isReservedNickname(nickname)) throw UserErrors.error("user-invalid");
 
     const user = await services.createUser(request.server.pg, request.body);
-    return reply.status(201).send(toUserModel(user));
+    return reply.status(201).send(transformOk(user));
 };
 
 export const getUser = async (
@@ -31,10 +31,10 @@ export const getUser = async (
     const { identifier } = request.params;
 
     const user = isUuid(identifier)
-        ? await services.getUserById(request.server.pg, normalizeUuid(identifier)!)
-        : await services.getUserByNickname(request.server.pg, identifier);
+        ? await services.getPublicUserById(request.server.pg, normalizeUuid(identifier)!)
+        : await services.getPublicUserByNickname(request.server.pg, identifier);
 
-    return reply.status(200).send(toPublicUserModel(toUserModel(user)));
+    return reply.status(200).send(transformOk(user));
 };
 
 export const deleteUser = async (
@@ -59,16 +59,18 @@ export const updateUserProfile = async (
 ) => {
     const { timezone, nickname, fullName } = request.body;
 
-    if (!isValidTimezone(timezone)) throw UserErrors.error("user-invalid");
-    if (nickname.trim().length === 0 || fullName.trim().length === 0) throw UserErrors.error("user-invalid");
-    if (isUuid(nickname) || isReservedNickname(nickname)) throw UserErrors.error("user-invalid");
+    if (timezone !== undefined && !isValidTimezone(timezone)) throw UserErrors.error("user-invalid");
+    if (nickname !== undefined && (nickname.trim().length === 0 || isUuid(nickname) || isReservedNickname(nickname))) {
+        throw UserErrors.error("user-invalid");
+    }
+    if (fullName !== undefined && fullName.trim().length === 0) throw UserErrors.error("user-invalid");
 
     const user = await services.updateUserProfile(
         request.server.pg,
         request.auth!.userId,
         request.body
     );
-    return reply.status(200).send(toUserModel(user));
+    return reply.status(200).send(transformOk(user));
 };
 
 export const updateUserAvatar = async (
@@ -82,7 +84,7 @@ export const updateUserAvatar = async (
         request.auth!.userId,
         Buffer.from(request.body, "base64")
     );
-    return reply.status(200).send(user);
+    return reply.status(200).send(transformOk(user));
 };
 
 export const deleteUserAvatar = async (
@@ -113,7 +115,7 @@ export const updateUserCustomization = async (
         request.auth!.userId,
         request.body
     );
-    return reply.status(200).send(toUserModel(user));
+    return reply.status(200).send(transformOk(user));
 };
 
 export const updateUserPassword = async (
@@ -140,7 +142,7 @@ export const updateUserStatus = async (
         request.params.userId,
         request.body.userStatus
     );
-    return reply.status(200).send(toUserModel(user));
+    return reply.status(200).send(transformOk(user));
 };
 
 export const updateUserRole = async (
@@ -152,7 +154,7 @@ export const updateUserRole = async (
         request.params.userId,
         request.body.userRole
     );
-    return reply.status(200).send(toUserModel(user));
+    return reply.status(200).send(transformOk(user));
 };
 
 export const createUserLink = async (
@@ -168,7 +170,7 @@ export const createUserLink = async (
         request.auth!.userId,
         userLinkUrl
     );
-    return reply.status(201).send(link);
+    return reply.status(201).send(transformOk(link));
 };
 
 export const listUserLinks = async (
@@ -176,7 +178,7 @@ export const listUserLinks = async (
     reply: FastifyReply<{ Reply: dto.ListUserLinksReturnType }>
 ) => {
     const links = await services.listUserLinksByUserId(request.server.pg, request.auth!.userId);
-    return reply.status(200).send(links);
+    return reply.status(200).send(transformOk({ links }));
 };
 
 export const listUserLinksByUserId = async (
@@ -184,7 +186,7 @@ export const listUserLinksByUserId = async (
     reply: FastifyReply<{ Params: dto.UserIdRequestParamsType; Reply: dto.ListUserLinksReturnType }>
 ) => {
     const links = await services.listUserLinksByUserId(request.server.pg, request.params.userId);
-    return reply.status(200).send(links);
+    return reply.status(200).send(transformOk({ links }));
 };
 
 export const updateUserLink = async (
@@ -201,7 +203,7 @@ export const updateUserLink = async (
         request.params.userLinkId,
         userLinkUrl
     );
-    return reply.status(200).send(link);
+    return reply.status(200).send(transformOk(link));
 };
 
 export const deleteUserLink = async (

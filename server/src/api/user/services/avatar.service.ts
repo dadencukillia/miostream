@@ -12,7 +12,10 @@ import {
     type UpdateUserAvatarReturningOldRow
 } from "@sqlc/users_sql";
 import type * as dto from "../user.dto";
-import { toUserModel, toUserWithoutOldAvatarModel } from "../user.model";
+import {
+    userTransformOldAvatar,
+    userTransformStreak,
+} from "../user.model";
 
 const AVATAR_WIDTH = 256;
 const AVATAR_HEIGHT = 256;
@@ -24,7 +27,7 @@ export async function updateUserAvatarImage(
     logger: FastifyBaseLogger,
     userId: string,
     imageContent: Buffer
-): Promise<dto.UserResponseType> {
+): Promise<dto.UserType> {
     const newAvatarId = crypto.randomUUID();
 
     // Process image
@@ -81,7 +84,7 @@ export async function updateUserAvatarImage(
         }
     }
 
-    return toUserModel(toUserWithoutOldAvatarModel(dbResponse));
+    return userTransformStreak(userTransformOldAvatar(dbResponse));
 }
 
 export async function resetUserAvatar(
@@ -89,7 +92,7 @@ export async function resetUserAvatar(
     db: Pool,
     logger: FastifyBaseLogger,
     userId: string
-): Promise<dto.UserResponseType> {
+): Promise<dto.UserType> {
     // Update avatar id in database, return old
 
     let dbResponse: UpdateUserAvatarReturningOldRow | null;
@@ -121,5 +124,5 @@ export async function resetUserAvatar(
         throw AvatarErrors.error("avatar-s3-remove").withDetails(e);
     }
 
-    return toUserModel(toUserWithoutOldAvatarModel(dbResponse));
+    return userTransformStreak(userTransformOldAvatar(dbResponse));
 }

@@ -1,42 +1,7 @@
+import { getTodayUtcMsInTimezone } from "@utils/timezones";
 import { generateTransformer } from "@utils/modelTransformer";
-
-const MS_PER_DAY = 86_400_000;
-
-function parseCalendarDateToUtcMs(value: string | Date): number | null {
-    if (value instanceof Date) {
-        if (Number.isNaN(value.getTime())) return null;
-        return Date.UTC(value.getFullYear(), value.getMonth(), value.getDate());
-    }
-
-    const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value.trim());
-    if (!match) return null;
-
-    const year = Number(match[1]);
-    const month = Number(match[2]);
-    const day = Number(match[3]);
-    return Date.UTC(year, month - 1, day);
-}
-
-function getTodayUtcMsInTimezone(timezone: string): number {
-    let formatted: string;
-    try {
-        formatted = new Intl.DateTimeFormat("en-CA", {
-            timeZone: timezone,
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-        }).format(new Date());
-    } catch {
-        formatted = new Intl.DateTimeFormat("en-CA", {
-            timeZone: "UTC",
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-        }).format(new Date());
-    }
-
-    return parseCalendarDateToUtcMs(formatted)!;
-}
+import { MS_PER_DAY, parseCalendarDateToUtcMs } from "@utils/time";
+import { Plain } from "@utils/types";
 
 export function calculateUserStreak(
     streakStartDate: string | Date | null,
@@ -62,23 +27,47 @@ export function calculateUserStreak(
     return Math.round((lastUtcMs - startUtcMs) / MS_PER_DAY) + 1;
 }
 
-export const toUserModel = generateTransformer({
+// Streak Transformation
+
+export interface UserTransformStreakInput {
+    streakStartDate: string | Date | null;
+    lastWatchDate: string | Date | null;
+    timezone: string;
+}
+
+export interface UserTransformStreakOutput {
+    streak: number;
+}
+
+export const userTransformStreak = generateTransformer({
     delete: ["streakStartDate", "lastWatchDate"],
-    map: (user: {
-        streakStartDate: string | Date | null;
-        lastWatchDate: string | Date | null;
-        timezone: string;
-    }) => ({
+    map: (user: Plain<UserTransformStreakInput>): Plain<UserTransformStreakOutput> => ({
         streak: calculateUserStreak(user.streakStartDate, user.lastWatchDate, user.timezone),
     }),
 });
 
-export const toPublicUserModel = generateTransformer({
+// Public User Transformation
+
+export interface UserTransformPublicInput {
+    email: string;
+}
+
+export interface UserTransformPublicOutput { }
+
+export const userTransformPublic = generateTransformer({
     delete: ["email"],
-    map: (_user: { email: string }) => ({}),
+    map: (_user: Plain<UserTransformPublicInput>): Plain<UserTransformPublicOutput> => ({}),
 });
 
-export const toUserWithoutOldAvatarModel = generateTransformer({
+// Old Avatar Cleanup Transformation
+
+export interface UserTransformOldAvatarInput {
+    oldAvatarId: string | null;
+}
+
+export interface UserTransformOldAvatarOutput { }
+
+export const userTransformOldAvatar = generateTransformer({
     delete: ["oldAvatarId"],
-    map: (_row: { oldAvatarId: string | null }) => ({}),
+    map: (_row: Plain<UserTransformOldAvatarInput>): Plain<UserTransformOldAvatarOutput> => ({}),
 });
