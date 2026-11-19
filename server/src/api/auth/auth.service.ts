@@ -2,6 +2,15 @@ import * as config from "@config";
 import { AuthErrors } from "./auth.errors";
 import { createSession, getSessionById, rotateRefreshToken } from "@sqlc/sessions_sql";
 import { Pool } from "pg";
+import { PublicProtocol } from "paseto";
+import {
+    PublicKeyFromCryptoKey,
+    SecretKeyFromCryptoKey,
+    SignFactory,
+    VerifyFactory,
+    type PublicKey,
+    type SecretKey,
+} from "paseto/v4/public";
 
 // Helpers
 
@@ -47,6 +56,70 @@ interface SessionRotationResult {
 }
 
 // Crypto
+
+const ACCESS_TOKEN_TTL_SECONDS = 5 * 60;
+const ED25519_PKCS8_PREFIX = "302e020100300506032b657004220420";
+const ED25519_SPKI_PREFIX = "302a300506032b6570032100";
+const paseto = new PublicProtocol(SignFactory, VerifyFactory);
+
+export interface AccessTokenPayload {
+  sessionId: string;
+  userId: string;
+  exp: string;
+  iat?: string;
+}
+
+let signingKeyPromise: Promise<SecretKey>|undefined;
+let verificationKeyPromise: Promise<PublicKey>|undefined;
+
+const signingKey = () => signingKeyPromise ??= (async () => {
+  const key = config.AUTH_SECRET_SIGN_KEY;
+  const seed = key.byteLength === 64 ? key.subarray(0, 32) : key;
+  if (seed.byteLength !== 32) throw new Error("Invalid Ed25519 secret key length");
+
+  const pkcs8 = Uint8Array.fromHex(ED25519_PKCS8_PREFIX + Buffer.from(seed).toString("hex"));
+  const cryptoKey = await crypto.subtle.importKey("pkcs8", pkcs8, "Ed25519", false, ["sign"]);
+
+  return SecretKeyFromCryptoKey(cryptoKey);
+})();
+
+const verificationKey = () => verificationKeyPromise ??= (async () => {
+  const key = config.AUTH_PUBLIC_SIGN_KEY;
+  if (key.byteLength !== 32) throw new Error("Invalid Ed25519 public key length");
+
+  const spki = Uint8Array.fromHex(ED25519_SPKI_PREFIX + Buffer.from(key).toString("hex"));
+  const cryptoKey = await crypto.subtle.importKey("spki", spki, "Ed25519", false, ["verify"]);
+
+  return PublicKeyFromCryptoKey(cryptoKey);
+})();
+
+/** Generates a 5-minute v4.public PASETO with session and user identifiers. */
+export async function generateAccessToken(sessionId: string|bigint, userId: string): Promise<string> {
+  const exp = new Date(Date.now() + ACCESS_TOKEN_TTL_SECONDS * 1000).toISOString();
+
+  return paseto.Sign(await signingKey(), {
+    sessionId: sessionId.toString(),
+    userId,
+    exp
+  });
+}
+
+/** Verifies the signature and expiration only, then returns the full payload. */
+export async function validateAccessToken(token: string): Promise<AccessTokenPayload> {
+  let claims;
+
+  try {
+    ({ claims } = await paseto.Verify(await verificationKey(), token, { now: new Date() }));
+  } catch(e) {
+    throw AuthErrors.error("auth-invalid-access-token").withDetails(e);
+  }
+
+  if (typeof claims.exp !== "string" || Date.parse(claims.exp) <= Date.now()) {
+    throw AuthErrors.error("auth-invalid-access-token");
+  }
+
+  return claims as unknown as AccessTokenPayload;
+}
 
 /**
  * Session token is like refresh token, but with session ID prefix.
@@ -238,7 +311,7 @@ export async function useRefreshToken(
   } = {}
 ): Promise<SessionRotationResult> {
   const sessionPayload = extractSessionToken(sessionToken);
-  const previousTokenWindowMillis = opts.previousTokenWindowMillis ?? 60_000;
+  const previousTokenWindowMillis = opts.previousTokenWindowMillis ?? 180_000;
   const tokenRotationMillis = opts.tokenRotationMillis ?? 180_000;
   const utcTimestamp = Date.now();
 

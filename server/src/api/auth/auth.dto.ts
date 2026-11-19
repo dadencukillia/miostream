@@ -16,6 +16,6 @@ export type OAuthRedirectRequestQueriesType = Static<typeof OAuthRedirectRequest
 export type OAuthCallbackRequestQueriesType = Static<typeof OAuthCallbackRequestQueries>;
 
 // Controller Return Types
-export type RedirectToProviderReturnType = ErrorResponseType;
-export type OAuthCallbackReturnType = ErrorResponseType;
+export type RedirectToProviderReturnType = ErrorResponseType | undefined;
+export type OAuthCallbackReturnType = ErrorResponseType | undefined;
 export type AccessTokenReturnType = AccessTokenResponseType | ErrorResponseType;
