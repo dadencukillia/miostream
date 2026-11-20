@@ -5,21 +5,14 @@ import { AuthErrors } from "./auth.errors";
 import * as authServices from "./auth.service";
 import { cookieValue, setCookie } from "@utils/cookies";
 
-const setNonceCookie = (reply: FastifyReply, nonce: string) =>
+// Helpers
+
+const setNonceCookie = (reply: FastifyReply, nonce: string, maxAge: number) =>
     setCookie(reply, config.AuthAdjustments.OAUTH_NONCE_COOKIE_NAME, nonce, {
         httpOnly: true,
         secure: config.COOKIE_SECURE,
         sameSite: "Lax",
-        maxAge: config.AuthAdjustments.OAUTH_NONCE_MAX_AGE_SECONDS,
-        path: config.AuthAdjustments.OAUTH_NONCE_COOKIE_PATH,
-    });
-
-const clearNonceCookie = (reply: FastifyReply) =>
-    setCookie(reply, config.AuthAdjustments.OAUTH_NONCE_COOKIE_NAME, "", {
-        httpOnly: true,
-        secure: config.COOKIE_SECURE,
-        sameSite: "Lax",
-        maxAge: 0,
+        maxAge: maxAge,
         path: config.AuthAdjustments.OAUTH_NONCE_COOKIE_PATH,
     });
 
@@ -44,7 +37,7 @@ export const redirectToProvider = async (
 ) => {
     const { url, nonce } = authServices.createOAuthAuthorization(request.query.provider);
 
-    setNonceCookie(reply, nonce);
+    setNonceCookie(reply, nonce, config.AuthAdjustments.OAUTH_NONCE_MAX_AGE_SECONDS);
 
     reply
         .header("Accept-CH", "Sec-CH-UA-Model, Sec-CH-UA-Platform")
@@ -66,7 +59,7 @@ export const oauthCallback = async (
     const { code, state, error } = request.query;
 
     const nonce = cookieValue(request, config.AuthAdjustments.OAUTH_NONCE_COOKIE_NAME);
-    if (nonce) clearNonceCookie(reply);
+    if (nonce) setNonceCookie(reply, "", 0);
 
     if (error) throw AuthErrors.error("oauth-missing-code").withDetails(error);
     if (!code) throw AuthErrors.error("oauth-missing-code");
