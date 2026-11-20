@@ -5,39 +5,31 @@ import { AuthErrors } from "./auth.errors";
 import * as authServices from "./auth.service";
 import { cookieValue, setCookie } from "@utils/cookies";
 
-const OAUTH_NONCE_COOKIE_NAME = "oauth_nonce";
-const OAUTH_NONCE_COOKIE_PATH = "/";
-const OAUTH_NONCE_MAX_AGE_SECONDS = 10 * 60;
-
-const SESSION_COOKIE_NAME = "session_token";
-const SESSION_COOKIE_PATH = "/api/auth/accessToken";
-const SESSION_MAX_AGE_SECONDS = 180 * 24 * 60 * 60;
-
 const setNonceCookie = (reply: FastifyReply, nonce: string) =>
-    setCookie(reply, OAUTH_NONCE_COOKIE_NAME, nonce, {
+    setCookie(reply, config.AuthAdjustments.OAUTH_NONCE_COOKIE_NAME, nonce, {
         httpOnly: true,
         secure: config.COOKIE_SECURE,
         sameSite: "Lax",
-        maxAge: OAUTH_NONCE_MAX_AGE_SECONDS,
-        path: OAUTH_NONCE_COOKIE_PATH,
+        maxAge: config.AuthAdjustments.OAUTH_NONCE_MAX_AGE_SECONDS,
+        path: config.AuthAdjustments.OAUTH_NONCE_COOKIE_PATH,
     });
 
 const clearNonceCookie = (reply: FastifyReply) =>
-    setCookie(reply, OAUTH_NONCE_COOKIE_NAME, "", {
+    setCookie(reply, config.AuthAdjustments.OAUTH_NONCE_COOKIE_NAME, "", {
         httpOnly: true,
         secure: config.COOKIE_SECURE,
         sameSite: "Lax",
         maxAge: 0,
-        path: OAUTH_NONCE_COOKIE_PATH,
+        path: config.AuthAdjustments.OAUTH_NONCE_COOKIE_PATH,
     });
 
 const setSessionCookie = (reply: FastifyReply, sessionToken: string) =>
-    setCookie(reply, SESSION_COOKIE_NAME, sessionToken, {
+    setCookie(reply, config.AuthAdjustments.SESSION_COOKIE_NAME, sessionToken, {
         httpOnly: true,
         secure: config.COOKIE_SECURE,
         sameSite: "Strict",
-        maxAge: SESSION_MAX_AGE_SECONDS,
-        path: SESSION_COOKIE_PATH,
+        maxAge: config.AuthAdjustments.SESSION_MAX_AGE_SECONDS,
+        path: config.AuthAdjustments.SESSION_COOKIE_PATH,
     });
 
 export const redirectToProvider = async (
@@ -73,7 +65,7 @@ export const oauthCallback = async (
 ) => {
     const { code, state, error } = request.query;
 
-    const nonce = cookieValue(request, OAUTH_NONCE_COOKIE_NAME);
+    const nonce = cookieValue(request, config.AuthAdjustments.OAUTH_NONCE_COOKIE_NAME);
     if (nonce) clearNonceCookie(reply);
 
     if (error) throw AuthErrors.error("oauth-missing-code").withDetails(error);
@@ -103,7 +95,7 @@ export const accessToken = async (
         Reply: dto.AccessTokenReturnType;
     }>
 ) => {
-    const sessionToken = cookieValue(request, SESSION_COOKIE_NAME);
+    const sessionToken = cookieValue(request, config.AuthAdjustments.SESSION_COOKIE_NAME);
     if (!sessionToken) throw AuthErrors.error("auth-no-session-access");
 
     const session = await authServices.useRefreshToken(

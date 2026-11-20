@@ -46,3 +46,13 @@ export const OAUTH_CLIENT_ID = process.env.OAUTH_CLIENT_ID ?? "myclientid";
 export const OAUTH_CLIENT_SECRET = readSecret("OAUTH_CLIENT_SECRET", "OAUTH_CLIENT_SECRET_FILE", "myclientsecret");
 export const OAUTH_REDIRECT_URI = process.env.OAUTH_REDIRECT_URI ?? `http://${PUBLIC_URL}/api/oauth/callback`;
 export const COOKIE_SECURE = process.env.COOKIE_SECURE !== "false";
+
+export const AuthAdjustments = {
+	OAUTH_NONCE_COOKIE_NAME: "oauth_nonce",
+	OAUTH_NONCE_COOKIE_PATH: "/",
+	OAUTH_NONCE_MAX_AGE_SECONDS: 10 * 60,
+
+	SESSION_COOKIE_NAME: "session_token",
+	SESSION_COOKIE_PATH: "/api/auth/accessToken",
+	SESSION_MAX_AGE_SECONDS: 180 * 24 * 60 * 60,
+}
