@@ -37,6 +37,7 @@ export type UpdateUserLinkRequestPayloadType = Static<typeof userSchema.UpdateUs
 // Controller Return Types
 export type CreateUserReturnType = UserResponseType | ErrorResponseType;
 export type GetUserReturnType = PublicUserResponseType | ErrorResponseType;
+export type GetMeUserReturnType = UserResponseType | ErrorResponseType;
 export type UpdateUserProfileReturnType = UserResponseType | ErrorResponseType;
 export type UpdateUserAvatarReturnType = UserResponseType | ErrorResponseType;
 export type DeleteUserAvatarReturnType = null | ErrorResponseType;
@@ -50,3 +51,10 @@ export type CreateUserLinkReturnType = UserLinkResponseType | ErrorResponseType;
 export type ListUserLinksReturnType = UserLinkListResponseType | ErrorResponseType;
 export type UpdateUserLinkReturnType = UserLinkResponseType | ErrorResponseType;
 export type DeleteUserLinkReturnType = null | ErrorResponseType;
+
+export interface GetOrCreateGoogleUserType {
+    googleId: string;
+    email: string;
+    fullName?: string;
+    timezone?: string | null;
+}

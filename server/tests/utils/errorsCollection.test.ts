@@ -8,7 +8,6 @@ import {
   ErrorsSet,
   fastifyErrSerializer,
 } from "@utils/errorsCollection";
-import { error } from "node:console";
 
 describe("ErrorsCollection", () => {
   test("identifies collections by instance even when their names match", () => {
