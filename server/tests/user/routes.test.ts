@@ -51,7 +51,8 @@ describe("user routes", () => {
         expect(body).not.toHaveProperty("googleId");
 
         const session = await newUserSession(fastify.pg, userId);
-        userAuth = await generateAccessToken(session.sessionId, session.userId);
+        const userAccessToken = await generateAccessToken(session.sessionId, session.userId);
+        userAuth = `Bearer ${userAccessToken}`;
 
         adminAuth = (await newTestAuth("admin", "active")).authorization;
     });

@@ -7,6 +7,7 @@ import { GoogleOAuthUserInfo } from "../auth.dto";
 import * as userServices from "@/api/user/user.shared";
 import { UAParser } from "ua-parser-js";
 import { SignMetadata } from "./session.service";
+import { UserType } from "@/api/user/user.dto";
 
 const REDIRECT_URI = `https://${config.SITE_ADDRESS}/api/auth/callback`;
 
@@ -61,11 +62,21 @@ export async function authenticateOAuthCallback(
 		throw AuthErrors.error("oauth-invalid-state").withDetails("unverified or incomplete provider profile");
 	}
 
-	const user = await userServices.getOrCreateUserByGoogleId(client, {
-		googleId: profile.sub,
-		email: profile.email,
-		fullName: profile.name,
-	});
+  let user: UserType|null = null;
+  for (let i = 2; i > 0; i--) {
+    try {
+      user = await userServices.getOrCreateUserByGoogleId(client, {
+        googleId: profile.sub,
+        email: profile.email,
+        fullName: profile.name,
+      });
+      break;
+    } catch(e) {
+      if (i === 1) throw e;
+    }
+  }
+
+  if (!user) throw AuthErrors.error("auth-db-failed");
 
 	if (user.userStatus !== "active") {
 		throw AuthErrors.error("auth-no-session-access");

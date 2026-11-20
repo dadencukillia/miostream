@@ -21,12 +21,12 @@ UPDATE public.sessions
 SET
   previous_refresh_token = refresh_token,
   refresh_token = $1,
-  rotated_at = timezone('UTC', now())
+  rotated_at = now()
 WHERE
   session_id = @session_id::bigint
   AND (
     @rotation_time::integer <= 0
-    OR rotated_at + (@rotation_time::integer || ' milliseconds')::interval < timezone('UTC', now())
+    OR rotated_at + (@rotation_time::integer || ' milliseconds')::interval < now()
   )
 RETURNING
   session_id, user_id,
@@ -35,7 +35,7 @@ RETURNING
 
 -- name: DeleteExpiredSessions :exec
 DELETE FROM public.sessions
-WHERE expire_time < timezone('UTC', now());
+WHERE expire_time < now();
 
 -- name: DeleteSessionById :one
 DELETE FROM public.sessions

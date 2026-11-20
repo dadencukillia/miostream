@@ -7,6 +7,7 @@ import * as tokenServices from "./services/token.service";
 import * as sessionServices from "./services/session.service";
 import { cookieValue, setCookie } from "@utils/cookies";
 import { deleteSessionById } from "@sqlc/sessions_sql";
+import PG from "pg";
 
 // Helpers
 
@@ -19,12 +20,12 @@ const setNonceCookie = (reply: FastifyReply, nonce: string, maxAge: number) =>
         path: "/api/auth/callback",
     });
 
-const setSessionCookie = (reply: FastifyReply, sessionToken: string) =>
+const setSessionCookie = (reply: FastifyReply, sessionToken: string, maxAge: number) =>
     setCookie(reply, config.AuthAdjustments.SESSION_COOKIE_NAME, sessionToken, {
         httpOnly: true,
         secure: true,
         sameSite: "Strict",
-        maxAge: config.AuthAdjustments.SESSION_MAX_AGE_SECONDS,
+        maxAge: maxAge,
         path: "/api/auth/session",
     });
 
@@ -80,7 +81,7 @@ export const oauthCallback = async (
     const metadata = oauthProviderServices.parseClientMetadata(request.headers, request.ip);
     const session = await sessionServices.newUserSession(request.server.pg, userId, metadata);
 
-    setSessionCookie(reply, session.sessionToken);
+    setSessionCookie(reply, session.sessionToken, config.AuthAdjustments.SESSION_MAX_AGE_SECONDS);
 
     return reply.redirect(config.AuthAdjustments.SUCCESS_REDIRECT_URL, 302);
 };
@@ -107,7 +108,7 @@ export const accessToken = async (
     );
 
     if (session.rotated && session.newSessionToken) {
-        setSessionCookie(reply, session.newSessionToken);
+        setSessionCookie(reply, session.newSessionToken, config.AuthAdjustments.SESSION_MAX_AGE_SECONDS);
     }
 
     return reply.send({
@@ -139,10 +140,14 @@ export const logout = async (
   try {
     await deleteSessionById(request.server.pg, { sessionId: sessionId.toString() });
   } catch(e) {
-    throw AuthErrors.error("auth-db-failed").withDetails(e);
+    if (!(e instanceof PG.DatabaseError)) throw AuthErrors
+      .error("auth-db-failed")
+      .withDetails(e);
   }
 
-  setCookie(reply, config.AuthAdjustments.SESSION_COOKIE_NAME, "", { maxAge: 0 });
+  setSessionCookie(reply, "", 0);
+
+  // TODO: make denylist in Redis
 
   return redirect();
 }

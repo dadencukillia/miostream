@@ -2,10 +2,8 @@
 CREATE TABLE IF NOT EXISTS public.sessions(
     session_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES public.users(user_id) ON DELETE CASCADE,
-    refresh_token BYTEA UNIQUE DEFAULT NULL CHECK(refresh_token IS NULL OR length(refresh_token) = 64),
-    previous_refresh_token BYTEA UNIQUE DEFAULT NULL CHECK(previous_refresh_token IS NULL OR length(previous_refresh_token) = 64),
-    rotated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('UTC', now()),
-    expire_time TIMESTAMPTZ NOT NULL DEFAULT timezone('UTC', now()) + INTERVAL '180 days',
+    refresh_token BYTEA NOT NULL UNIQUE CHECK(length(refresh_token) = 96),
+    expire_time TIMESTAMPTZ NOT NULL DEFAULT now() + INTERVAL '180 days',
     device_type TEXT,
     device_name TEXT,
     os TEXT,

@@ -19,8 +19,8 @@ CREATE TABLE IF NOT EXISTS public.users(
     profile_background_url TEXT,
     user_role user_role_enum NOT NULL DEFAULT 'user',
     user_status user_status_enum NOT NULL DEFAULT 'active',
-    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('UTC', now()),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('UTC', now()),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 
     CONSTRAINT check_user_auth_method CHECK(password_hash IS NOT NULL OR google_id IS NOT NULL)
 );

@@ -25,7 +25,7 @@ services:
       AUTH_PUBLIC_SIGN_KEY: ${AUTH_PUBLIC_SIGN_KEY}
       AUTH_SECRET_SIGN_KEY_FILE: /run/secrets/auth_secret_sign_key
       SESSION_HMAC_SECRET_FILE: /run/secrets/session_hmac_secret
-      OAUTH_STATE_HMAC_SECRET: /run/secrets/oauth_state_hmac_secret
+      OAUTH_STATE_HMAC_SECRET_FILE: /run/secrets/oauth_state_hmac_secret
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
       OAUTH_CLIENT_SECRET_FILE: /run/secrets/oauth_client_secret
       POSTGRES_HOST: postgresql:5432
