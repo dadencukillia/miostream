@@ -1,7 +1,7 @@
 import * as config from "@config";
 import { AuthErrors } from "./auth.errors";
 import { createSession, getSessionById, rotateRefreshToken } from "@sqlc/sessions_sql";
-import { Pool } from "pg";
+import { Client, Pool } from "pg";
 import { PublicProtocol } from "paseto";
 import {
     PublicKeyFromCryptoKey,
@@ -53,6 +53,15 @@ interface SessionRotationResult {
   newSessionToken?: string,
   sessionId: BigInt,
   userId: string,
+}
+
+interface SignMetadata {
+  deviceType?: string,
+  deviceName?: string,
+  os?: string,
+  browser?: string,
+  userLocation?: string,
+  ipAddress?: string
 }
 
 // Crypto
@@ -212,6 +221,52 @@ export function generateTokens<T extends {
 
 // Sessions
 
+export async function newUserSessionClient(
+  client: Client,
+  userId: string,
+  signMetadata: SignMetadata = {}
+) {
+  const metadata: { [Key in keyof SignMetadata]-?: SignMetadata[Key]|null } = {
+    deviceType: signMetadata.deviceType ?? null,
+    deviceName: signMetadata.deviceName ?? null,
+    os: signMetadata.os ?? null,
+    browser: signMetadata.browser ?? null,
+    userLocation: signMetadata.userLocation ?? null,
+    ipAddress: signMetadata.ipAddress ?? null
+  };
+
+  // Create session entry and receive session ID
+
+  const createdSession = await unwrapDB(createSession(client, {
+    userId, refreshToken: null,
+    ...metadata
+  }));
+
+  // Generate refresh token using session ID
+
+  const tokens = generateTokens(config.SESSION_HMAC_SECRET, {
+    userId, sessionId: createdSession.sessionId
+  });
+
+  // Update refresh token in session entry
+
+  const actualSession = await unwrapDB(rotateRefreshToken(client, {
+    refreshToken: Buffer.from(tokens.dbRefreshToken),
+    rotationTime: "-1",
+    sessionId: createdSession.sessionId
+  }));
+
+  if (!actualSession.refreshToken) throw AuthErrors.error("auth-db-failed");
+
+  return {
+    rawRefreshToken: tokens.rawRefreshToken,
+    dbRefreshToken: tokens.dbRefreshToken,
+    sessionId: BigInt(actualSession.sessionId),
+    userId: userId,
+    sessionToken: tokens.sessionToken
+  };
+}
+
 /**
  * Creates a new session for user in database.
  *
@@ -224,61 +279,16 @@ export function generateTokens<T extends {
 export async function newUserSession(
   client: Pool,
   userId: string,
-  signMetadata: {
-    deviceType?: string,
-    deviceName?: string,
-    os?: string,
-    browser?: string,
-    userLocation?: string,
-    ipAddress?: string
-  } = {}
+  signMetadata: SignMetadata = {}
 ): Promise<SessionEntry> {
-  const metadata: { [Key in keyof typeof signMetadata]-?: typeof signMetadata[Key]|null } = {
-    deviceType: signMetadata.deviceType ?? null,
-    deviceName: signMetadata.deviceName ?? null,
-    os: signMetadata.os ?? null,
-    browser: signMetadata.browser ?? null,
-    userLocation: signMetadata.userLocation ?? null,
-    ipAddress: signMetadata.ipAddress ?? null
-  };
-
   const con = await client.connect();
 
   try {
-    await con.query("BEGIN;");
+    await wrapDBError(con.query("BEGIN;"));
+    const resp = await newUserSessionClient(con, userId, signMetadata);
+    await wrapDBError(con.query("COMMIT;"));
 
-    // Create session entry and receive session ID
-
-    const createdSession = await unwrapDB(createSession(con, {
-      userId, refreshToken: null,
-      ...metadata
-    }));
-
-    // Generate refresh token using session ID
-
-    const tokens = generateTokens(config.SESSION_HMAC_SECRET, {
-      userId, sessionId: createdSession.sessionId
-    });
-
-    // Update refresh token in session entry
-
-    const actualSession = await unwrapDB(rotateRefreshToken(con, {
-      refreshToken: Buffer.from(tokens.dbRefreshToken),
-      rotationTime: "-1",
-      sessionId: createdSession.sessionId
-    }));
-
-    if (!actualSession.refreshToken) throw AuthErrors.error("auth-db-failed");
-
-    await con.query("COMMIT;");
-
-    return {
-      rawRefreshToken: tokens.rawRefreshToken,
-      dbRefreshToken: tokens.dbRefreshToken,
-      sessionId: BigInt(actualSession.sessionId),
-      userId: userId,
-      sessionToken: tokens.sessionToken
-    };
+    return resp;
   } catch(e) {
     await con.query("ROLLBACK;").catch(_ => {});
     throw e;
@@ -297,7 +307,7 @@ export async function newUserSession(
  * @returns new tokens (if rotated), session ID and user ID.
  */
 export async function useRefreshToken(
-  client: Pool,
+  client: Pool|Client,
   sessionToken: string,
   opts: {
     previousTokenWindowMillis?: number,
