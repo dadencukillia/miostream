@@ -37,6 +37,10 @@ export const OAuthCallbackRequestQueries = Type.Object({
     description: "Single callback for every provider",
 });
 
+export const LogoutRequestQueries = Type.Object({
+  redirect: Type.Optional(Type.String({ format: "url" }))
+});
+
 // Responses
 
 export const AccessTokenResponse = Type.Object({
@@ -84,4 +88,13 @@ export const AccessTokenSchema = {
         500: ErrorResponse,
         501: ErrorResponse,
     },
+} as const;
+
+export const LogoutSchema = {
+  tags: [TAG_AUTH],
+  summary: "Logouts from user account",
+  querystring: LogoutRequestQueries,
+  response: {
+    302: Type.Any()
+  }
 } as const;

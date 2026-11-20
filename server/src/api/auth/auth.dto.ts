@@ -4,6 +4,7 @@ import {
     AccessTokenResponse,
     OAuthCallbackRequestQueries,
     OAuthRedirectRequestQueries,
+    LogoutRequestQueries
 } from "./auth.schema";
 
 export type ErrorResponseType = Static<typeof ErrorResponse>;
@@ -14,6 +15,7 @@ export type AccessTokenResponseType = Static<typeof AccessTokenResponse>;
 // Requests
 export type OAuthRedirectRequestQueriesType = Static<typeof OAuthRedirectRequestQueries>;
 export type OAuthCallbackRequestQueriesType = Static<typeof OAuthCallbackRequestQueries>;
+export type LogoutRequestQueriesType = Static<typeof LogoutRequestQueries>;
 
 // Controller Return Types
 export type RedirectToProviderReturnType = ErrorResponseType | undefined;

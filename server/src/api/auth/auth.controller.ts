@@ -6,6 +6,7 @@ import * as oauthProviderServices from "./services/oauthProvider.service";
 import * as tokenServices from "./services/token.service";
 import * as sessionServices from "./services/session.service";
 import { cookieValue, setCookie } from "@utils/cookies";
+import { request } from "node:http";
 
 // Helpers
 
@@ -115,3 +116,18 @@ export const accessToken = async (
         tokenType: "Bearer",
     });
 };
+
+export const logout = async (
+  request: FastifyRequest<{
+    Querystring: dto.LogoutRequestQueriesType;
+    Reply: null
+  }>,
+  reply: FastifyReply<{
+    Querystring: dto.LogoutRequestQueriesType;
+    Reply: null
+  }>
+) => {
+  if (!request.auth) return;
+  await request.auth.logout(request, reply);
+  return reply.status(302).header("Location", request.query.redirect ?? "/");
+}
