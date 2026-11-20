@@ -1,60 +1,36 @@
 import type { FastifyInstance, FastifyPluginOptions, FastifyReply, FastifyRequest, preHandlerAsyncHookHandler, RawReplyDefaultExpression, RawRequestDefaultExpression, RawServerDefault } from "fastify";
 import "@context";
 import fp from "fastify-plugin";
+import { deleteSessionById } from "@sqlc/sessions_sql";
+import { AuthErrors } from "./auth.errors";
+import { setCookie } from "@utils/cookies";
+import { getUserById, GetUserByIdRow } from "@sqlc/users_sql";
+import { Client, Pool } from "pg";
+import { validateAccessToken } from "./auth.service";
 
 /**
  * Represents the authenticated user's context and session details.
  * Attached to the Fastify request object (`req.auth`) during successful authentication.
  */
 export class AuthContext {
-  private _sessionId: number;
+  private _sessionId: bigint;
   private _userId: string;
-  private _nickname: string;
-  private _fullName: string;
-  private _avatarId: string;
-  private _role: string;
-  private _status: string;
+  private _user: Promise<GetUserByIdRow|null>|null = null;
 
-  public constructor(sessionId: number, userId: string, nickname: string, fullName: string, avatarId: string, role: string, status: string) {
+  public constructor(sessionId: bigint, userId: string) {
     this._sessionId = sessionId;
     this._userId = userId.trim().toLowerCase();
-    this._nickname = nickname.trim();
-    this._fullName = fullName.trim();
-    this._avatarId = avatarId.trim();
-    this._role = role.trim().toLowerCase();
-    this._status = status.trim().toLowerCase();
-  }
-
-  public get userId(): string {
-    return this._userId;
-  }
-
-  public get nickname(): string {
-    return this._nickname;
-  }
-
-  public get fullName(): string {
-    return this._fullName;
-  }
-
-  public get avatarId(): string {
-    return this._avatarId;
-  }
-
-  public get role(): string {
-    return this._role;
-  }
-
-  public get status(): string {
-    return this._status;
   }
 
   /**
    * Synchronizes internal class fields (model) with the current database state.
    */
-  public syncUser() {
-    // TODO: update class fields according
-    // to the database's state
+  public async getUser(pg: Client|Pool): Promise<GetUserByIdRow|null> {
+    if (!this._user) {
+      this._user = getUserById(pg, { userId: this._userId });
+    }
+
+    return this._user;
   }
 
   /**
@@ -62,8 +38,14 @@ export class AuthContext {
    * @param req - The Fastify request object.
    * @param resp - The Fastify reply object.
    */
-  public logout(_request: FastifyRequest, _reply: FastifyReply) {
-    // TODO: real session deletion, cookies cleaning
+  public async logout(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      await deleteSessionById(request.server.pg, { sessionId: this._sessionId.toString() });
+    } catch {
+      throw AuthErrors.error("auth-db-failed");
+    }
+
+    setCookie(reply, "session_token", "", { maxAge: 0 });
   }
 }
 
@@ -101,15 +83,10 @@ export const authMiddleware: AnyRoutePreHandler = async (request: FastifyRequest
   const split = authHeader.split(" ");
   const token = split[split.length - 1];
 
-  const role = token?.toLowerCase().includes("admin") ? "admin" : "user";
+  if (!token) return;
 
-  request.auth = new AuthContext(
-    Math.round(Date.now()),
-    "00000000-0000-0000-0000-000000000000",
-    "exampleUser", "Jack Jackson",
-    "https://i.pravatar.cc/256",
-    role, "active"
-  );
+  const accessTokenPayload = await validateAccessToken(token);
+  request.auth = new AuthContext(BigInt(accessTokenPayload.sessionId), accessTokenPayload.sub);
 }
 
 /**
@@ -184,18 +161,17 @@ export const grantAuthMiddleware = (opts: GrantAuthFilters = grantAuthDefaultFil
   }
 
   if (!request.auth) {
-    await handleFallback();
-    return;
+    return await handleFallback();
   }
 
-  if (userHasRole.length > 0 && !userHasRole.includes(request.auth.role)) {
-    await handleFallback();
-    return;
+  if (userHasRole.length > 0) {
+    const user = await request.auth.getUser(request.server.pg);
+    if (!user || !userHasRole.includes(user.userRole)) return await handleFallback();
   }
 
-  if (userHasStatus.length > 0 && !userHasStatus.includes(request.auth.status)) {
-    await handleFallback();
-    return;
+  if (userHasStatus.length > 0) {
+    const user = await request.auth.getUser(request.server.pg);
+    if (!user || !userHasStatus.includes(user.userStatus)) return await handleFallback();
   }
 };
 
