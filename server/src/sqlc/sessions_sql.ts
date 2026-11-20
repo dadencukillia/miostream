@@ -127,7 +127,10 @@ SET
   rotated_at = now()
 WHERE
   session_id = $2::bigint
-  AND refresh_token = $3::bytea
+  AND (
+    (refresh_token IS NULL AND $3::bytea IS NULL)
+    OR (refresh_token = $3::bytea)
+  )
   AND (
     $4::integer <= 0
     OR rotated_at + ($4::integer || ' milliseconds')::interval < now()
