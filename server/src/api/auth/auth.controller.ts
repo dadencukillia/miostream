@@ -2,7 +2,9 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import type * as dto from "./auth.dto";
 import * as config from "@config";
 import { AuthErrors } from "./auth.errors";
-import * as authServices from "./auth.service";
+import * as oauthProviderServices from "./services/oauthProvider.service";
+import * as tokenServices from "./services/token.service";
+import * as sessionServices from "./services/session.service";
 import { cookieValue, setCookie } from "@utils/cookies";
 
 // Helpers
@@ -25,6 +27,8 @@ const setSessionCookie = (reply: FastifyReply, sessionToken: string) =>
         path: config.AuthAdjustments.SESSION_COOKIE_PATH,
     });
 
+// Controllers
+
 export const redirectToProvider = async (
     request: FastifyRequest<{
         Querystring: dto.OAuthRedirectRequestQueriesType;
@@ -35,7 +39,7 @@ export const redirectToProvider = async (
         Reply: dto.RedirectToProviderReturnType;
     }>
 ) => {
-    const { url, nonce } = authServices.createOAuthAuthorization(request.query.provider);
+    const { url, nonce } = oauthProviderServices.createOAuthAuthorization(request.query.provider);
 
     setNonceCookie(reply, nonce, config.AuthAdjustments.OAUTH_NONCE_MAX_AGE_SECONDS);
 
@@ -65,15 +69,15 @@ export const oauthCallback = async (
     if (!code) throw AuthErrors.error("oauth-missing-code");
     if (!state || !nonce) throw AuthErrors.error("oauth-invalid-state");
 
-    const { userId } = await authServices.authenticateOAuthCallback(
+    const { userId } = await oauthProviderServices.authenticateOAuthCallback(
         request.server.pg,
         state,
         nonce,
         code
     );
 
-    const metadata = authServices.parseClientMetadata(request.headers, request.ip);
-    const session = await authServices.newUserSession(request.server.pg, userId, metadata);
+    const metadata = oauthProviderServices.parseClientMetadata(request.headers, request.ip);
+    const session = await sessionServices.newUserSession(request.server.pg, userId, metadata);
 
     setSessionCookie(reply, session.sessionToken);
 
@@ -91,12 +95,12 @@ export const accessToken = async (
     const sessionToken = cookieValue(request, config.AuthAdjustments.SESSION_COOKIE_NAME);
     if (!sessionToken) throw AuthErrors.error("auth-no-session-access");
 
-    const session = await authServices.useRefreshToken(
+    const session = await sessionServices.useRefreshToken(
         request.server.pg,
         sessionToken
     );
 
-    const accessToken = await authServices.generateAccessToken(
+    const accessToken = await tokenServices.generateAccessToken(
         session.sessionId,
         session.userId
     );

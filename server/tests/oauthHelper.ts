@@ -1,7 +1,8 @@
 import { getDatabasePool, wipeDatabaseTables } from "./dbHelper";
 import { Client, Pool } from "pg";
 import { faker } from "@faker-js/faker";
-import { extractSessionToken, generateAccessToken, newUserSessionClient } from "@/api/auth/auth.service";
+import { extractSessionToken, generateAccessToken } from "@/api/auth/services/token.service";
+import { newUserSessionClient } from "@/api/auth/services/session.service";
 import { getSessionById, GetSessionByIdRow } from "@sqlc/sessions_sql";
 import { getUserById, GetUserByIdRow } from "@sqlc/users_sql";
 

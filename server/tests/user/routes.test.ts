@@ -2,7 +2,8 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { fastifyInstance } from "../fastifyHelper";
 import { newTestAuth, wipeOAuthUsers } from "../oauthHelper";
 import { FastifyInstance } from "fastify";
-import { generateAccessToken, newUserSession } from "@/api/auth/auth.service";
+import { generateAccessToken } from "@/api/auth/services/token.service";
+import { newUserSession } from "@/api/auth/services/session.service";
 
 describe("user routes", () => {
     let fastify: FastifyInstance;
