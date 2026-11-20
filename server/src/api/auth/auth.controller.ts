@@ -12,7 +12,7 @@ import { cookieValue, setCookie } from "@utils/cookies";
 const setNonceCookie = (reply: FastifyReply, nonce: string, maxAge: number) =>
     setCookie(reply, config.AuthAdjustments.OAUTH_NONCE_COOKIE_NAME, nonce, {
         httpOnly: true,
-        secure: config.COOKIE_SECURE,
+        secure: true,
         sameSite: "Lax",
         maxAge: maxAge,
         path: config.AuthAdjustments.OAUTH_NONCE_COOKIE_PATH,
@@ -21,7 +21,7 @@ const setNonceCookie = (reply: FastifyReply, nonce: string, maxAge: number) =>
 const setSessionCookie = (reply: FastifyReply, sessionToken: string) =>
     setCookie(reply, config.AuthAdjustments.SESSION_COOKIE_NAME, sessionToken, {
         httpOnly: true,
-        secure: config.COOKIE_SECURE,
+        secure: true,
         sameSite: "Strict",
         maxAge: config.AuthAdjustments.SESSION_MAX_AGE_SECONDS,
         path: config.AuthAdjustments.SESSION_COOKIE_PATH,
@@ -81,7 +81,7 @@ export const oauthCallback = async (
 
     setSessionCookie(reply, session.sessionToken);
 
-    return reply.redirect(config.FRONTEND_URL, 302);
+    return reply.redirect(config.AuthAdjustments.SUCCESS_REDIRECT_URL, 302);
 };
 
 export const accessToken = async (

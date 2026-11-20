@@ -23,11 +23,10 @@ export const DB_NAME = "miostream";
 
 // Services host
 
+export const SITE_ADDRESS = process.env.SITE_ADDRESS ?? "localhost";
 export const POSTGRES_HOST = process.env.POSTGRES_HOST ?? "localhost:5432";
 export const REDIS_HOST = process.env.REDIS_HOST ?? "localhost:6379";
 export const RUSTFS_HOST = process.env.RUSTFS_HOST ?? "localhost:9000";
-export const PUBLIC_URL = process.env.PUBLIC_URL ?? "localhost:8080";
-export const FRONTEND_URL = process.env.FRONTEND_URL ?? "/";
 
 // Secrets
 
@@ -44,10 +43,10 @@ export const SESSION_HMAC_SECRET = Uint8Array.fromHex(require(readSecret("SESSIO
 export const OAUTH_STATE_HMAC_SECRET = Uint8Array.fromHex(require(readSecret("OAUTH_STATE_HMAC_SECRET", "OAUTH_STATE_HMAC_SECRET_FILE", "")));
 export const OAUTH_CLIENT_ID = process.env.OAUTH_CLIENT_ID ?? "myclientid";
 export const OAUTH_CLIENT_SECRET = readSecret("OAUTH_CLIENT_SECRET", "OAUTH_CLIENT_SECRET_FILE", "myclientsecret");
-export const OAUTH_REDIRECT_URI = process.env.OAUTH_REDIRECT_URI ?? `http://${PUBLIC_URL}/api/oauth/callback`;
-export const COOKIE_SECURE = process.env.COOKIE_SECURE !== "false";
 
 export const AuthAdjustments = {
+  SUCCESS_REDIRECT_URL: "/",
+
 	OAUTH_NONCE_COOKIE_NAME: "oauth_nonce",
 	OAUTH_NONCE_COOKIE_PATH: "/",
 	OAUTH_NONCE_MAX_AGE_SECONDS: 10 * 60,

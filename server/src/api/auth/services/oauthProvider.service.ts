@@ -6,6 +6,9 @@ import { Pool } from "pg";
 import { GoogleOAuthUserInfo } from "../auth.dto";
 import * as userServices from "@/api/user/user.shared";
 import { UAParser } from "ua-parser-js";
+import { SignMetadata } from "./session.service";
+
+const REDIRECT_URI = `https://${config.SITE_ADDRESS}/api/auth/callback`;
 
 const oauthProviders: Record<string, { provider: OAuthProvider; config: OAuthConfig }> = {
 	google: {
@@ -13,7 +16,7 @@ const oauthProviders: Record<string, { provider: OAuthProvider; config: OAuthCon
 		config: {
 			clientId: config.OAUTH_CLIENT_ID,
 			clientSecret: config.OAUTH_CLIENT_SECRET,
-			redirectUri: config.OAUTH_REDIRECT_URI,
+			redirectUri: REDIRECT_URI,
 			stateSecret: config.OAUTH_STATE_HMAC_SECRET,
 			scopes: ["openid", "email", "profile"],
 		},

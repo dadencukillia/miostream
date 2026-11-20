@@ -18,6 +18,7 @@ services:
     command: serve
     restart: always
     environment:
+      SITE_ADDRESS: ${SITE_ADDRESS}
       DB_PASS_FILE: /run/secrets/db_pass
       RUSTFS_ACCESS_KEY_FILE: /run/secrets/rustfs_access_key
       RUSTFS_SECRET_KEY_FILE: /run/secrets/rustfs_secret_key
