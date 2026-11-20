@@ -50,3 +50,11 @@ export type CreateUserLinkReturnType = UserLinkResponseType | ErrorResponseType;
 export type ListUserLinksReturnType = UserLinkListResponseType | ErrorResponseType;
 export type UpdateUserLinkReturnType = UserLinkResponseType | ErrorResponseType;
 export type DeleteUserLinkReturnType = null | ErrorResponseType;
+
+
+export interface GetOrCreateGoogleUserType {
+    googleId: string;
+    email: string;
+    fullName?: string;
+    timezone?: string | null;
+}
