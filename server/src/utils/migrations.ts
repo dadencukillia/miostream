@@ -198,7 +198,7 @@ export class Migrator {
     await this.db.query(`
       CREATE TABLE IF NOT EXISTS ${this.schema}.${MIGRATIONS_TABLE}(
         operation_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-        executed_at TIMESTAMPTZ NOT NULL DEFAULT now() AT TIME ZONE 'UTC',
+        executed_at TIMESTAMPTZ NOT NULL DEFAULT timezone('UTC', now()),
         from_migration BIGINT NOT NULL,
         to_migration BIGINT NOT NULL
       );
