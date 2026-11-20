@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS public.anime_list_units(
   anime_id UUID NOT NULL REFERENCES public.animes(anime_id) ON DELETE CASCADE,
   watched_episodes INT NOT NULL DEFAULT 0 CHECK(watched_episodes >= 0),
   repeat_times INT NOT NULL DEFAULT 0 CHECK(repeat_times >= 0),
-  started_watching DATE NOT NULL DEFAULT (now() AT TIME ZONE 'UTC')::date,
+  started_watching DATE NOT NULL DEFAULT timezone('UTC', now())::date,
   list_unit_status anime_list_unit_status_enum NOT NULL DEFAULT 'watching',
   grade SMALLINT CHECK(grade BETWEEN -5 AND 5),
 

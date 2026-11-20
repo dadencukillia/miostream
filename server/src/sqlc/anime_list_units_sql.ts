@@ -31,13 +31,13 @@ INSERT INTO public.anime_list_units (
     grade`;
 
 export interface CreateListUnitArgs {
-    userId: string;
-    animeId: string;
-    watchedEpisodes: number;
-    repeatTimes: number;
-    startedWatching: Date;
-    listUnitStatus: string;
-    grade: number;
+    : string;
+    : string;
+    : number;
+    : number;
+    : Date;
+    : string;
+    : number;
 }
 
 export interface CreateListUnitRow {
@@ -53,14 +53,13 @@ export interface CreateListUnitRow {
 export async function createListUnit(client: Client, args: CreateListUnitArgs): Promise<CreateListUnitRow | null> {
     const result = await client.query({
         text: createListUnitQuery,
-        values: [args.userId, args.animeId, args.watchedEpisodes, args.repeatTimes, args.startedWatching, args.listUnitStatus, args.grade],
+        values: [args., args., args., args., args., args., args.],
         rowMode: "array"
     });
     if (result.rows.length !== 1) {
         return null;
     }
     const row = result.rows[0];
-    if (!row) return null;
     return {
         userId: row[0],
         animeId: row[1],

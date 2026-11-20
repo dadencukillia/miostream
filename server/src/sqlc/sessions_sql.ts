@@ -10,7 +10,7 @@ SELECT
   refresh_token, expire_time, previous_refresh_token, rotated_at,
   device_type, device_name, os, browser, user_location, ip_address
 FROM public.sessions
-WHERE session_id = $1::BIGINT`;
+WHERE session_id = $1::bigint`;
 
 export interface GetSessionByIdArgs {
     sessionId: string;
@@ -124,12 +124,12 @@ UPDATE public.sessions
 SET
   previous_refresh_token = refresh_token,
   refresh_token = $1,
-  rotated_at = now() AT TIME ZONE 'UTC'
+  rotated_at = timezone('UTC', now())
 WHERE
-  session_id = $2::BIGINT
+  session_id = $2::bigint
   AND (
-    $3::NUMBER <= 0
-    OR rotated_at + ($3::NUMBER || ' milliseconds')::interval < (now() AT TIME ZONE 'UTC')
+    $3::integer <= 0
+    OR rotated_at + ($3::integer || ' milliseconds')::interval < timezone('UTC', now())
   )
 RETURNING
   session_id, user_id,
@@ -139,7 +139,7 @@ RETURNING
 export interface RotateRefreshTokenArgs {
     refreshToken: Buffer | null;
     sessionId: string;
-    rotationTime: string;
+    rotationTime: number;
 }
 
 export interface RotateRefreshTokenRow {
@@ -185,7 +185,7 @@ export async function rotateRefreshToken(client: Client, args: RotateRefreshToke
 
 export const deleteExpiredSessionsQuery = `-- name: DeleteExpiredSessions :exec
 DELETE FROM public.sessions
-WHERE expire_time < (now() AT TIME ZONE 'UTC')`;
+WHERE expire_time < timezone('UTC', now())`;
 
 export async function deleteExpiredSessions(client: Client): Promise<void> {
     await client.query({
@@ -197,7 +197,7 @@ export async function deleteExpiredSessions(client: Client): Promise<void> {
 
 export const deleteSessionByIdQuery = `-- name: DeleteSessionById :one
 DELETE FROM public.sessions
-WHERE session_id = $1::BIGINT
+WHERE session_id = $1::bigint
 RETURNING
   session_id, user_id,
   refresh_token, expire_time, previous_refresh_token, rotated_at,
