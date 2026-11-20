@@ -187,3 +187,12 @@ export class OAuthProvider {
         return (await response.json()) as T;
     }
 }
+
+export const providers = {
+    google: new OAuthProvider({
+        slug: "google",
+        authorizationUrl: "https://accounts.google.com/o/oauth2/v2/auth",
+        tokenUrl: "https://oauth2.googleapis.com/token",
+        userInfoUrl: "https://openidconnect.googleapis.com/v1/userinfo",
+    })
+} as const;

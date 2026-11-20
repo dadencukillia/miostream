@@ -3,76 +3,41 @@ import type * as dto from "./auth.dto";
 import * as config from "@config";
 import { AuthErrors } from "./auth.errors";
 import * as authServices from "./auth.service";
-import * as userServices from "@/api/user/user.shared";
 import { cookieValue, setCookie } from "@utils/cookies";
-import { OAuthProvider, type OAuthConfig } from "@utils/oauthProvider";
-import { generateNickname } from "@utils/nickname";
-import { UAParser } from "ua-parser-js";
 
-// TODO: move it somewhere into config
-const FRONTEND_SUCCESS_URL = "/";
-const NONCE_COOKIE_NAME = "oauth_nonce";
-const NONCE_MAX_AGE_SECONDS = 10 * 60;
+const OAUTH_NONCE_COOKIE_NAME = "oauth_nonce";
+const OAUTH_NONCE_COOKIE_PATH = "/";
+const OAUTH_NONCE_MAX_AGE_SECONDS = 10 * 60;
+
 const SESSION_COOKIE_NAME = "session_token";
+const SESSION_COOKIE_PATH = "/api/auth/accessToken";
 const SESSION_MAX_AGE_SECONDS = 180 * 24 * 60 * 60;
-const OAUTH_STATE_SECRET = config.OAUTH_STATE_HMAC_SECRET;
 
-export interface GoogleOAuthUserInfo {
-    /** Unique Google Account ID (immutable) */
-    sub: string;
-    /** Full name of the user */
-    name: string;
-    /** First name */
-    given_name: string;
-    /** Last name */
-    family_name: string;
-    /** URL to the user's profile picture */
-    picture: string;
-    /** User's email address */
-    email: string;
-    /** Whether the email address has been verified by Google */
-    email_verified: boolean;
-    /** User's preferred locale (e.g., "en" or "uk") */
-    locale?: string;
-    /** Hosted Google Workspace domain (if applicable) */
-    hd?: string;
-}
-
-// TODO: configure it better and move it somewhere into config
-const oauthProviders: Record<string, { provider: OAuthProvider; config: OAuthConfig }> = {
-    google: {
-        provider: new OAuthProvider({
-            slug: "google",
-            authorizationUrl: "https://accounts.google.com/o/oauth2/v2/auth",
-            tokenUrl: "https://oauth2.googleapis.com/token",
-            userInfoUrl: "https://openidconnect.googleapis.com/v1/userinfo",
-        }),
-        config: {
-            clientId: process.env.GOOGLE_CLIENT_ID ?? config.OAUTH_CLIENT_ID,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? config.OAUTH_CLIENT_SECRET,
-            redirectUri: process.env.GOOGLE_REDIRECT_URI ?? "",
-            stateSecret: OAUTH_STATE_SECRET,
-            scopes: ["openid", "email", "profile"],
-        },
-    },
-};
-
-const sanitizeFullName = (rawName?: string): string => {
-    const cleaned = (rawName ?? "")
-        .replace(/[^\p{L} '\u2019\u02BC.-]/gu, "")
-        .replace(/^[^\p{L}]+|[^\p{L}.]+$/gu, "")
-        .trim()
-        .slice(0, 100);
-
-    return cleaned.length >= 2 ? cleaned : "User";
-};
+const setNonceCookie = (reply: FastifyReply, nonce: string) =>
+    setCookie(reply, OAUTH_NONCE_COOKIE_NAME, nonce, {
+        httpOnly: true,
+        secure: config.COOKIE_SECURE,
+        sameSite: "Lax",
+        maxAge: OAUTH_NONCE_MAX_AGE_SECONDS,
+        path: OAUTH_NONCE_COOKIE_PATH,
+    });
 
 const clearNonceCookie = (reply: FastifyReply) =>
-    setCookie(reply, NONCE_COOKIE_NAME, "", {
+    setCookie(reply, OAUTH_NONCE_COOKIE_NAME, "", {
         httpOnly: true,
-        secure: true,
+        secure: config.COOKIE_SECURE,
         sameSite: "Lax",
         maxAge: 0,
+        path: OAUTH_NONCE_COOKIE_PATH,
+    });
+
+const setSessionCookie = (reply: FastifyReply, sessionToken: string) =>
+    setCookie(reply, SESSION_COOKIE_NAME, sessionToken, {
+        httpOnly: true,
+        secure: config.COOKIE_SECURE,
+        sameSite: "Strict",
+        maxAge: SESSION_MAX_AGE_SECONDS,
+        path: SESSION_COOKIE_PATH,
     });
 
 export const redirectToProvider = async (
@@ -85,17 +50,9 @@ export const redirectToProvider = async (
         Reply: dto.RedirectToProviderReturnType;
     }>
 ) => {
-    const entry = oauthProviders[request.query.provider];
-    if (!entry) throw AuthErrors.error("oauth-unsupported-provider");
+    const { url, nonce } = authServices.createOAuthAuthorization(request.query.provider);
 
-    const { url, nonce } = entry.provider.getAuthorizationUrl(entry.config);
-
-    setCookie(reply, NONCE_COOKIE_NAME, nonce, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "Lax",
-        maxAge: NONCE_MAX_AGE_SECONDS,
-    });
+    setNonceCookie(reply, nonce);
 
     reply
         .header("Accept-CH", "Sec-CH-UA-Model, Sec-CH-UA-Platform")
@@ -116,91 +73,26 @@ export const oauthCallback = async (
 ) => {
     const { code, state, error } = request.query;
 
-    const nonce = cookieValue(request, NONCE_COOKIE_NAME);
+    const nonce = cookieValue(request, OAUTH_NONCE_COOKIE_NAME);
     if (nonce) clearNonceCookie(reply);
 
     if (error) throw AuthErrors.error("oauth-missing-code").withDetails(error);
     if (!code) throw AuthErrors.error("oauth-missing-code");
     if (!state || !nonce) throw AuthErrors.error("oauth-invalid-state");
 
-    const stateVerification = OAuthProvider.verifyState(state, nonce, { stateSecret: OAUTH_STATE_SECRET });
-    if (!stateVerification.valid || !stateVerification.provider) throw AuthErrors.error("oauth-invalid-state");
+    const { userId } = await authServices.authenticateOAuthCallback(
+        request.server.pg,
+        state,
+        nonce,
+        code
+    );
 
-    const entry = oauthProviders[stateVerification.provider];
-    if (!entry) throw AuthErrors.error("oauth-unsupported-provider");
+    const metadata = authServices.parseClientMetadata(request.headers, request.ip);
+    const session = await authServices.newUserSession(request.server.pg, userId, metadata);
 
-    let accessToken;
-    let profile;
+    setSessionCookie(reply, session.sessionToken);
 
-    try {
-        accessToken = await entry.provider.exchangeCodeForToken(code, entry.config);
-        profile = await entry.provider.getUserInfo<GoogleOAuthUserInfo>(accessToken);
-    } catch (e) {
-        throw AuthErrors.error("oauth-missing-code").withDetails(e);
-    }
-
-    if (!profile.sub || !profile.email || !profile.email_verified) {
-        throw AuthErrors.error("oauth-invalid-state").withDetails("unverified or incomplete provider profile");
-    }
-
-    let user;
-
-    user = await userServices.getUserByGoogleId(request.server.pg, profile.sub).catch((e: any) => {
-        if (e?.slug === "user-not-found") return null;
-        throw e;
-    });
-    if (!user) {
-        for (let attempt = 0; attempt < 3; attempt++) {
-            try {
-                user = await userServices.createUser(request.server.pg, {
-                    googleId: profile.sub,
-                    email: profile.email,
-                    nickname: generateNickname(),
-                    fullName: sanitizeFullName(profile.name),
-                });
-                break;
-            } catch (e: any) {
-                if (e?.slug !== "user-nickname-already-taken" || attempt === 2) throw e;
-            }
-        }
-    }
-
-    if (!user || user.userStatus !== "active") {
-        throw AuthErrors.error("auth-no-session-access");
-    }
-
-    const parser = new UAParser(request.headers["user-agent"]);
-    const { browser, os, device } = parser.getResult();
-
-    const chModelHeader = request.headers["sec-ch-ua-model"];
-    const chModel = typeof chModelHeader === "string"
-        ? chModelHeader.replace(/^"|"$/g, "").trim()
-        : undefined;
-
-    const deviceModel = chModel || device.model;
-    const deviceName = [device.vendor, deviceModel].filter(Boolean).join(" ") || undefined;
-    const deviceType = device.type ?? (os.name || browser.name ? "desktop" : undefined);
-    const osName = [os.name, os.version].filter(Boolean).join(" ") || undefined;
-    const majorVersion = browser.version?.split(".")[0];
-    const browserName = [browser.name, majorVersion].filter(Boolean).join(" ") || undefined;
-
-    const session = await authServices.newUserSession(request.server.pg, user.userId, {
-        deviceType,
-        deviceName,
-        os: osName,
-        browser: browserName,
-        ipAddress: request.ip || undefined,
-    });
-
-    setCookie(reply, SESSION_COOKIE_NAME, session.sessionToken, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "Strict",
-        maxAge: SESSION_MAX_AGE_SECONDS,
-        path: "/api/auth/accessToken",
-    });
-
-    return reply.redirect(FRONTEND_SUCCESS_URL, 302);
+    return reply.redirect(config.FRONTEND_URL, 302);
 };
 
 export const accessToken = async (
@@ -219,24 +111,18 @@ export const accessToken = async (
         sessionToken
     );
 
-    const accessToken = await authServices.generateAccessToken(
-        session.sessionId.toString(),
+    const token = await authServices.generateAccessToken(
+        session.sessionId,
         session.userId
     );
 
     if (session.rotated && session.newSessionToken) {
-        setCookie(reply, SESSION_COOKIE_NAME, session.newSessionToken, {
-            httpOnly: true,
-            secure: true,
-            sameSite: "Strict",
-            maxAge: SESSION_MAX_AGE_SECONDS,
-            path: "/api/auth/accessToken",
-        });
+        setSessionCookie(reply, session.newSessionToken);
     }
 
     return reply.send({
         ok: true,
-        accessToken,
-        tokenType: "Bearer"
+        accessToken: token,
+        tokenType: "Bearer",
     });
 };

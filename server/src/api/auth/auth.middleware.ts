@@ -1,12 +1,16 @@
 import type { FastifyInstance, FastifyPluginOptions, FastifyReply, FastifyRequest, preHandlerAsyncHookHandler, RawReplyDefaultExpression, RawRequestDefaultExpression, RawServerDefault } from "fastify";
 import "@context";
 import fp from "fastify-plugin";
+import * as config from "@config";
 import { deleteSessionById, getSessionById, GetSessionByIdRow } from "@sqlc/sessions_sql";
 import { AuthErrors } from "./auth.errors";
 import { setCookie } from "@utils/cookies";
 import { getUserById, GetUserByIdRow } from "@sqlc/users_sql";
 import { Client, Pool } from "pg";
 import { validateAccessToken } from "./auth.service";
+
+const SESSION_COOKIE_NAME = "session_token";
+const SESSION_COOKIE_PATH = "/api/auth/accessToken";
 
 /**
  * Represents the authenticated user's context and session details.
@@ -15,8 +19,8 @@ import { validateAccessToken } from "./auth.service";
 export class AuthContext {
   private _sessionId: bigint;
   private _userId: string;
-  private _user: Promise<GetUserByIdRow|null>|null = null;
-  private _session: Promise<GetSessionByIdRow|null>|null = null;
+  private _user: Promise<GetUserByIdRow | null> | null = null;
+  private _session: Promise<GetSessionByIdRow | null> | null = null;
 
   public constructor(sessionId: bigint, userId: string) {
     this._sessionId = sessionId;
@@ -26,7 +30,7 @@ export class AuthContext {
   /**
    * Receives user information from database.
    */
-  public async getUser(pg: Client|Pool): Promise<GetUserByIdRow|null> {
+  public async getUser(pg: Client | Pool): Promise<GetUserByIdRow | null> {
     if (!this._user) {
       this._user = getUserById(pg, { userId: this._userId });
     }
@@ -37,7 +41,7 @@ export class AuthContext {
   /**
    * Receives session information from database.
    */
-  public async getSession(pg: Client|Pool): Promise<GetSessionByIdRow|null> {
+  public async getSession(pg: Client | Pool): Promise<GetSessionByIdRow | null> {
     if (!this._session) {
       this._session = getSessionById(pg, { sessionId: this._sessionId.toString() });
     }
@@ -65,7 +69,13 @@ export class AuthContext {
       throw AuthErrors.error("auth-db-failed");
     }
 
-    setCookie(reply, "session_token", "", { maxAge: 0 });
+    setCookie(reply, SESSION_COOKIE_NAME, "", {
+      httpOnly: true,
+      secure: config.COOKIE_SECURE,
+      sameSite: "Strict",
+      maxAge: 0,
+      path: SESSION_COOKIE_PATH,
+    });
   }
 }
 

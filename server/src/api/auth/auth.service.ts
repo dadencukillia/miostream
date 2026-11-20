@@ -1,15 +1,21 @@
+import type { IncomingHttpHeaders } from "node:http";
 import * as config from "@config";
 import { AuthErrors } from "./auth.errors";
+import type { GoogleOAuthUserInfo } from "./auth.dto";
 import { createSession, getSessionById, rotateRefreshToken } from "@sqlc/sessions_sql";
+import * as userServices from "@/api/user/user.shared";
+import { OAuthProvider, type OAuthConfig, providers } from "@utils/oauthProvider";
+import { generateNickname } from "@utils/nickname";
+import { UAParser } from "ua-parser-js";
 import { Client, Pool } from "pg";
 import { PublicProtocol } from "paseto";
 import {
-    PublicKeyFromCryptoKey,
-    SecretKeyFromCryptoKey,
-    SignFactory,
-    VerifyFactory,
-    type PublicKey,
-    type SecretKey,
+  PublicKeyFromCryptoKey,
+  SecretKeyFromCryptoKey,
+  SignFactory,
+  VerifyFactory,
+  type PublicKey,
+  type SecretKey,
 } from "paseto/v4/public";
 
 // Helpers
@@ -17,32 +23,32 @@ import {
 const wrapDBError = async <T>(dbReq: Promise<T>): Promise<T> => {
   try {
     return await dbReq;
-  } catch(e) {
+  } catch (e) {
     throw AuthErrors.error("auth-db-failed").withDetails(e);
   }
 };
 
-const unwrapDBNull = async <T>(dbReq: Promise<T|null>): Promise<T> => {
+const unwrapDBNull = async <T>(dbReq: Promise<T | null>): Promise<T> => {
   const awaited = await dbReq;
   if (awaited == null) throw AuthErrors.error("auth-db-not-found");
 
   return awaited;
 }
 
-const unwrapDB = async <T>(dbReq: Promise<T|null>): Promise<T> => unwrapDBNull(wrapDBError(dbReq));
+const unwrapDB = async <T>(dbReq: Promise<T | null>): Promise<T> => unwrapDBNull(wrapDBError(dbReq));
 
 // Interfaces
 
 interface ClientSessionPayload {
   rawRefreshToken: Uint8Array,
-  sessionId: string|bigint
+  sessionId: string | bigint
 }
 
 interface SessionEntry {
   rawRefreshToken: Uint8Array,
   dbRefreshToken: Uint8Array,
   sessionToken: string,
-  sessionId: BigInt,
+  sessionId: bigint,
   userId: string,
 }
 
@@ -51,17 +57,139 @@ interface SessionRotationResult {
   newRawRefreshToken?: Uint8Array,
   dbRefreshToken: Uint8Array,
   newSessionToken?: string,
-  sessionId: BigInt,
+  sessionId: bigint,
   userId: string,
 }
 
-interface SignMetadata {
+export interface SignMetadata {
   deviceType?: string,
   deviceName?: string,
   os?: string,
   browser?: string,
   userLocation?: string,
   ipAddress?: string
+}
+
+// OAuth Providers
+
+const NICKNAME_GENERATION_RETRIES = 3;
+
+const oauthProviders: Record<string, { provider: OAuthProvider; config: OAuthConfig }> = {
+  google: {
+    provider: providers.google,
+    config: {
+      clientId: config.OAUTH_CLIENT_ID,
+      clientSecret: config.OAUTH_CLIENT_SECRET,
+      redirectUri: config.OAUTH_REDIRECT_URI,
+      stateSecret: config.OAUTH_STATE_HMAC_SECRET,
+      scopes: ["openid", "email", "profile"],
+    },
+  },
+};
+
+function getOAuthProviderEntry(slug: string) {
+  const entry = oauthProviders[slug];
+  if (!entry) throw AuthErrors.error("oauth-unsupported-provider").withDetails(slug);
+  return entry;
+}
+
+const sanitizeFullName = (rawName?: string): string => {
+  const cleaned = (rawName ?? "")
+    .replace(/[^\p{L} '\u2019\u02BC.-]/gu, "")
+    .replace(/^[^\p{L}]+|[^\p{L}.]+$/gu, "")
+    .trim()
+    .slice(0, 100);
+
+  return cleaned.length >= 2 ? cleaned : "User";
+};
+
+export function createOAuthAuthorization(providerSlug: string) {
+  const entry = getOAuthProviderEntry(providerSlug);
+  return entry.provider.getAuthorizationUrl(entry.config);
+}
+
+export async function authenticateOAuthCallback(
+  client: Pool,
+  state: string,
+  nonce: string,
+  code: string
+): Promise<{ userId: string }> {
+  const stateVerification = OAuthProvider.verifyState(state, nonce, {
+    stateSecret: config.OAUTH_STATE_HMAC_SECRET,
+  });
+  if (!stateVerification.valid || !stateVerification.provider) {
+    throw AuthErrors.error("oauth-invalid-state");
+  }
+
+  const entry = getOAuthProviderEntry(stateVerification.provider);
+
+  let profile: GoogleOAuthUserInfo;
+  try {
+    const providerToken = await entry.provider.exchangeCodeForToken(code, entry.config);
+    profile = await entry.provider.getUserInfo<GoogleOAuthUserInfo>(providerToken);
+  } catch (e) {
+    throw AuthErrors.error("oauth-missing-code").withDetails(e);
+  }
+
+  if (!profile.sub || !profile.email || !profile.email_verified) {
+    throw AuthErrors.error("oauth-invalid-state").withDetails("unverified or incomplete provider profile");
+  }
+
+  let user;
+
+  user = await userServices.getUserByGoogleId(client, profile.sub).catch((e: any) => {
+    if (e?.slug === "user-not-found") return null;
+    throw e;
+  });
+
+  if (!user) {
+    for (let attempt = 0; attempt < NICKNAME_GENERATION_RETRIES; attempt++) {
+      try {
+        user = await userServices.createUser(client, {
+          googleId: profile.sub,
+          email: profile.email,
+          nickname: generateNickname(),
+          fullName: sanitizeFullName(profile.name),
+        });
+        break;
+      } catch (e: any) {
+        if (e?.slug !== "user-nickname-already-taken" || attempt === NICKNAME_GENERATION_RETRIES - 1) {
+          throw e;
+        }
+      }
+    }
+  }
+
+  if (!user || user.userStatus !== "active") {
+    throw AuthErrors.error("auth-no-session-access");
+  }
+
+  return { userId: user.userId };
+}
+
+export function parseClientMetadata(headers: IncomingHttpHeaders, ipAddress?: string): SignMetadata {
+  const parser = new UAParser(headers["user-agent"]);
+  const { browser, os, device } = parser.getResult();
+
+  const chModelHeader = headers["sec-ch-ua-model"];
+  const chModel = typeof chModelHeader === "string"
+    ? chModelHeader.replace(/^"|"$/g, "").trim()
+    : undefined;
+
+  const deviceModel = chModel || device.model;
+  const deviceName = [device.vendor, deviceModel].filter(Boolean).join(" ") || undefined;
+  const deviceType = device.type ?? (os.name || browser.name ? "desktop" : undefined);
+  const osName = [os.name, os.version].filter(Boolean).join(" ") || undefined;
+  const majorVersion = browser.version?.split(".")[0];
+  const browserName = [browser.name, majorVersion].filter(Boolean).join(" ") || undefined;
+
+  return {
+    deviceType,
+    deviceName,
+    os: osName,
+    browser: browserName,
+    ipAddress: ipAddress || undefined,
+  };
 }
 
 // Crypto
@@ -76,8 +204,8 @@ export interface AccessTokenPayload {
   sub: string;
 }
 
-let signingKeyPromise: Promise<SecretKey>|undefined;
-let verificationKeyPromise: Promise<PublicKey>|undefined;
+let signingKeyPromise: Promise<SecretKey> | undefined;
+let verificationKeyPromise: Promise<PublicKey> | undefined;
 
 const signingKey = () => signingKeyPromise ??= (async () => {
   const key = config.AUTH_SECRET_SIGN_KEY;
@@ -101,7 +229,7 @@ const verificationKey = () => verificationKeyPromise ??= (async () => {
 })();
 
 /** Generates a 5-minute v4.public PASETO with session and user identifiers. */
-export async function generateAccessToken(sessionId: string|bigint, userId: string): Promise<string> {
+export async function generateAccessToken(sessionId: string | bigint, userId: string): Promise<string> {
   return paseto.Sign(await signingKey(), {
     sessionId: sessionId.toString(),
     sub: userId,
@@ -117,7 +245,7 @@ export async function validateAccessToken(token: string): Promise<AccessTokenPay
 
   try {
     ({ claims } = await paseto.Verify(await verificationKey(), token, { now: new Date() }));
-  } catch(e) {
+  } catch (e) {
     throw AuthErrors.error("auth-invalid-access-token").withDetails(e);
   }
 
@@ -154,7 +282,7 @@ export function extractSessionToken(clientSession: string): ClientSessionPayload
 
   try {
     bytes = Uint8Array.fromBase64(clientSession, { alphabet: "base64url" });
-  } catch(e) {
+  } catch (e) {
     throw AuthErrors.error("auth-invalid-session-token").withDetails(e);
   }
 
@@ -199,7 +327,7 @@ export function generateDBRefreshToken<T extends ClientSessionPayload & { userId
  */
 export function generateTokens<T extends {
   userId: string,
-  sessionId: string|bigint
+  sessionId: string | bigint
 }>(signKey: Uint8Array, payload: T): {
   rawRefreshToken: Uint8Array,
   dbRefreshToken: Uint8Array,
@@ -226,7 +354,7 @@ export async function newUserSessionClient(
   userId: string,
   signMetadata: SignMetadata = {}
 ) {
-  const metadata: { [Key in keyof SignMetadata]-?: SignMetadata[Key]|null } = {
+  const metadata: { [Key in keyof SignMetadata]-?: SignMetadata[Key] | null } = {
     deviceType: signMetadata.deviceType ?? null,
     deviceName: signMetadata.deviceName ?? null,
     os: signMetadata.os ?? null,
@@ -289,8 +417,8 @@ export async function newUserSession(
     await wrapDBError(con.query("COMMIT;"));
 
     return resp;
-  } catch(e) {
-    await con.query("ROLLBACK;").catch(_ => {});
+  } catch (e) {
+    await con.query("ROLLBACK;").catch(_ => { });
     throw e;
   } finally {
     con.release();
@@ -307,7 +435,7 @@ export async function newUserSession(
  * @returns new tokens (if rotated), session ID and user ID.
  */
 export async function useRefreshToken(
-  client: Pool|Client,
+  client: Pool | Client,
   sessionToken: string,
   opts: {
     previousTokenWindowMillis?: number,
@@ -335,7 +463,7 @@ export async function useRefreshToken(
   if (
     !(session.refreshToken?.length === dbRefreshToken.length && crypto.timingSafeEqual(session.refreshToken, dbRefreshToken)) &&
     !(
-      session.rotatedAt.getTime() + previousTokenWindowMillis > utcTimestamp && 
+      session.rotatedAt.getTime() + previousTokenWindowMillis > utcTimestamp &&
       session.previousRefreshToken?.length === dbRefreshToken.length && crypto.timingSafeEqual(session.previousRefreshToken, dbRefreshToken)
     )
   ) {
