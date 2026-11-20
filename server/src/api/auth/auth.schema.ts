@@ -76,5 +76,12 @@ export const AccessTokenSchema = {
     tags: [TAG_AUTH],
     summary: "Get access token",
     description: "Returns an application access token; the provider is taken from the state. No request payload.",
-    response: { 200: AccessTokenResponse, 400: ErrorResponse, 501: ErrorResponse },
+    response: {
+        200: AccessTokenResponse,
+        400: ErrorResponse,
+        403: ErrorResponse,
+        404: ErrorResponse,
+        500: ErrorResponse,
+        501: ErrorResponse,
+    },
 } as const;

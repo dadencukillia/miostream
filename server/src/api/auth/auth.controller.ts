@@ -204,12 +204,39 @@ export const oauthCallback = async (
 };
 
 export const accessToken = async (
-    _request: FastifyRequest<{
+    request: FastifyRequest<{
         Reply: dto.AccessTokenReturnType;
     }>,
-    _reply: FastifyReply<{
+    reply: FastifyReply<{
         Reply: dto.AccessTokenReturnType;
     }>
 ) => {
-    throw AuthErrors.error("not-implemented").withDetails("access token");
+    const sessionToken = cookieValue(request, SESSION_COOKIE_NAME);
+    if (!sessionToken) throw AuthErrors.error("auth-no-session-access");
+
+    const session = await authServices.useRefreshToken(
+        request.server.pg,
+        sessionToken
+    );
+
+    const accessToken = await authServices.generateAccessToken(
+        session.sessionId.toString(),
+        session.userId
+    );
+
+    if (session.rotated && session.newSessionToken) {
+        setCookie(reply, SESSION_COOKIE_NAME, session.newSessionToken, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "Strict",
+            maxAge: SESSION_MAX_AGE_SECONDS,
+            path: "/api/auth/accessToken",
+        });
+    }
+
+    return reply.send({
+        ok: true,
+        accessToken,
+        tokenType: "Bearer"
+    });
 };
