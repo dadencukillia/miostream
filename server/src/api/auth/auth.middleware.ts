@@ -4,6 +4,7 @@ import type {
   preHandlerAsyncHookHandler, RawReplyDefaultExpression,
   RawRequestDefaultExpression, RawServerDefault
 } from "fastify";
+import * as config from "@config";
 import "@context";
 import fp from "fastify-plugin";
 import { deleteSessionById, getSessionById, GetSessionByIdRow } from "@sqlc/sessions_sql";
@@ -66,11 +67,11 @@ export class AuthContext {
   public async logout(request: FastifyRequest, reply: FastifyReply) {
     try {
       await deleteSessionById(request.server.pg, { sessionId: this._sessionId.toString() });
-    } catch {
-      throw AuthErrors.error("auth-db-failed");
+    } catch(e) {
+      throw AuthErrors.error("auth-db-failed").withDetails(e);
     }
 
-    setCookie(reply, "session_token", "", { maxAge: 0 });
+    setCookie(reply, config.AuthAdjustments.SESSION_COOKIE_NAME, "", { maxAge: 0 });
   }
 }
 

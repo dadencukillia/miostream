@@ -176,7 +176,7 @@ export async function useRefreshToken(
 
 	// Check rotation and fulfil
 
-  if (session.rotatedAt.getTime() + tokenRotationMillis <= utcTimestamp) {
+  if (tokenRotationMillis >= 0 && session.rotatedAt.getTime() + tokenRotationMillis <= utcTimestamp) {
     const tokens = generateTokens(config.SESSION_HMAC_SECRET, fullInfo);
     const updatedSession = await wrapDBError(rotateRefreshToken(client, {
       sessionId: fullInfo.sessionId.toString(),

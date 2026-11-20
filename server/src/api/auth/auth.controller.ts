@@ -6,6 +6,7 @@ import * as oauthProviderServices from "./services/oauthProvider.service";
 import * as tokenServices from "./services/token.service";
 import * as sessionServices from "./services/session.service";
 import { cookieValue, setCookie } from "@utils/cookies";
+import { deleteSessionById } from "@sqlc/sessions_sql";
 
 // Helpers
 
@@ -15,7 +16,7 @@ const setNonceCookie = (reply: FastifyReply, nonce: string, maxAge: number) =>
         secure: true,
         sameSite: "Lax",
         maxAge: maxAge,
-        path: config.AuthAdjustments.OAUTH_NONCE_COOKIE_PATH,
+        path: "/api/auth/callback",
     });
 
 const setSessionCookie = (reply: FastifyReply, sessionToken: string) =>
@@ -24,7 +25,7 @@ const setSessionCookie = (reply: FastifyReply, sessionToken: string) =>
         secure: true,
         sameSite: "Strict",
         maxAge: config.AuthAdjustments.SESSION_MAX_AGE_SECONDS,
-        path: config.AuthAdjustments.SESSION_COOKIE_PATH,
+        path: "/api/auth/session",
     });
 
 // Controllers
@@ -126,7 +127,22 @@ export const logout = async (
         Reply: null
     }>
 ) => {
-    if (!request.auth) return;
-    await request.auth.logout(request, reply);
-    return reply.status(302).header("Location", request.query.redirect ?? "/");
+  const redirect = () => reply.redirect(request.query.redirect ?? "/", 302);
+
+  const sessionToken = cookieValue(request, config.AuthAdjustments.SESSION_COOKIE_NAME);
+  if (!sessionToken) return redirect();
+
+  const { sessionId } = await sessionServices.useRefreshToken(request.server.pg, sessionToken, {
+    tokenRotationMillis: -1
+  });
+
+  try {
+    await deleteSessionById(request.server.pg, { sessionId: sessionId.toString() });
+  } catch(e) {
+    throw AuthErrors.error("auth-db-failed").withDetails(e);
+  }
+
+  setCookie(reply, config.AuthAdjustments.SESSION_COOKIE_NAME, "", { maxAge: 0 });
+
+  return redirect();
 }

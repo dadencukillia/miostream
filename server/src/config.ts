@@ -48,12 +48,10 @@ export const AuthAdjustments = {
   SUCCESS_REDIRECT_URL: "/",
 
 	OAUTH_NONCE_COOKIE_NAME: "oauth_nonce",
-	OAUTH_NONCE_COOKIE_PATH: "/",
 	OAUTH_NONCE_MAX_AGE_SECONDS: 10 * 60,
 
   ACCESS_TOKEN_AGE_SECONDS: 5 * 60,
 
 	SESSION_COOKIE_NAME: "session_token",
-	SESSION_COOKIE_PATH: "/api/auth/accessToken",
 	SESSION_MAX_AGE_SECONDS: 180 * 24 * 60 * 60,
 }
