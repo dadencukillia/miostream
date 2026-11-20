@@ -140,7 +140,7 @@ export const logout = async (
   try {
     await deleteSessionById(request.server.pg, { sessionId: sessionId.toString() });
   } catch(e) {
-    if (!(e instanceof PG.DatabaseError)) throw AuthErrors
+    throw AuthErrors
       .error("auth-db-failed")
       .withDetails(e);
   }
