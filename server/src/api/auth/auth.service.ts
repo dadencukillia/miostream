@@ -64,9 +64,7 @@ const paseto = new PublicProtocol(SignFactory, VerifyFactory);
 
 export interface AccessTokenPayload {
   sessionId: string;
-  userId: string;
-  exp: string;
-  iat?: string;
+  sub: string;
 }
 
 let signingKeyPromise: Promise<SecretKey>|undefined;
@@ -95,12 +93,12 @@ const verificationKey = () => verificationKeyPromise ??= (async () => {
 
 /** Generates a 5-minute v4.public PASETO with session and user identifiers. */
 export async function generateAccessToken(sessionId: string|bigint, userId: string): Promise<string> {
-  const exp = new Date(Date.now() + ACCESS_TOKEN_TTL_SECONDS * 1000).toISOString();
-
   return paseto.Sign(await signingKey(), {
     sessionId: sessionId.toString(),
-    userId,
-    exp
+    sub: userId,
+  }, {
+    expiresIn: ACCESS_TOKEN_TTL_SECONDS,
+    now: new Date(Date.now()),
   });
 }
 
@@ -112,10 +110,6 @@ export async function validateAccessToken(token: string): Promise<AccessTokenPay
     ({ claims } = await paseto.Verify(await verificationKey(), token, { now: new Date() }));
   } catch(e) {
     throw AuthErrors.error("auth-invalid-access-token").withDetails(e);
-  }
-
-  if (typeof claims.exp !== "string" || Date.parse(claims.exp) <= Date.now()) {
-    throw AuthErrors.error("auth-invalid-access-token");
   }
 
   return claims as unknown as AccessTokenPayload;
