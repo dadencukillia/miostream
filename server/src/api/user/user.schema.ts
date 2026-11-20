@@ -349,6 +349,19 @@ export const GetUserSchema = {
     },
 } as const;
 
+export const GetMeUserSchema = {
+    tags: [TAG_USER],
+    summary: "Get current authenticated user",
+    description: "Retrieves full profile details for the currently authenticated user.",
+    response: {
+        200: UserResponse,
+        401: ErrorResponse,
+        403: ErrorResponse,
+        404: ErrorResponse,
+        500: ErrorResponse,
+    },
+} as const;
+
 export const UpdateUserProfileSchema = {
     tags: [TAG_USER],
     summary: "Update user profile",

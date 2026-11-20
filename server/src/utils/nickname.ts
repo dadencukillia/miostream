@@ -8,7 +8,8 @@ export const RESERVED_NICKNAMES = new Set([
     "administrator",
     "miostream",
     "official",
-    "moderator"
+    "moderator",
+    "me"
 ]);
 
 /**
