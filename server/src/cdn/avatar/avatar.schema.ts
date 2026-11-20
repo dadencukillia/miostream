@@ -2,20 +2,22 @@ import { Type } from "typebox";
 import type { FastifySchema } from "fastify";
 import { ErrorResponse } from "@utils/errorsCollection";
 
+const CDN_TAG = "CDN";
+
 // Get Avatar
 
 export const AvatarIdRequestParams = Type.Object({
   avatarId: Type.String({
     format: "uuid",
-    description: "avatar ID"
+    description: "Avatar ID"
   }),
 });
 
-export const AvatarResponse = Type.Any({ description: "binary format of image/webp" });
+export const AvatarResponse = Type.Any({ description: "Binary format of image/webp" });
 
 export const GetAvatarSchema: FastifySchema = {
-  tags: ["cdn", "avatar"],
-  summary: "loads avatar image",
+  tags: [CDN_TAG],
+  summary: "Returns avatar image in webp format",
   params: AvatarIdRequestParams,
   response: {
     200: AvatarResponse,
