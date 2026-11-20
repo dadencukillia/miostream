@@ -33,7 +33,7 @@ export const OAuthCallbackRequestQueries = Type.Object({
         description: "Error code reported by the provider",
     })),
 }, {
-    additionalProperties: false,
+    additionalProperties: true,
     description: "Single callback for every provider",
 });
 
