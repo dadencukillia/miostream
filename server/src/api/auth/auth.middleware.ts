@@ -1,7 +1,7 @@
 import type { FastifyInstance, FastifyPluginOptions, FastifyReply, FastifyRequest, preHandlerAsyncHookHandler, RawReplyDefaultExpression, RawRequestDefaultExpression, RawServerDefault } from "fastify";
 import "@context";
 import fp from "fastify-plugin";
-import { deleteSessionById } from "@sqlc/sessions_sql";
+import { deleteSessionById, getSessionById, GetSessionByIdRow } from "@sqlc/sessions_sql";
 import { AuthErrors } from "./auth.errors";
 import { setCookie } from "@utils/cookies";
 import { getUserById, GetUserByIdRow } from "@sqlc/users_sql";
@@ -16,6 +16,7 @@ export class AuthContext {
   private _sessionId: bigint;
   private _userId: string;
   private _user: Promise<GetUserByIdRow|null>|null = null;
+  private _session: Promise<GetSessionByIdRow|null>|null = null;
 
   public constructor(sessionId: bigint, userId: string) {
     this._sessionId = sessionId;
@@ -23,7 +24,7 @@ export class AuthContext {
   }
 
   /**
-   * Synchronizes internal class fields (model) with the current database state.
+   * Receives user information from database.
    */
   public async getUser(pg: Client|Pool): Promise<GetUserByIdRow|null> {
     if (!this._user) {
@@ -31,6 +32,25 @@ export class AuthContext {
     }
 
     return this._user;
+  }
+
+  /**
+   * Receives session information from database.
+   */
+  public async getSession(pg: Client|Pool): Promise<GetSessionByIdRow|null> {
+    if (!this._session) {
+      this._session = getSessionById(pg, { sessionId: this._sessionId.toString() });
+    }
+
+    return this._session;
+  }
+
+  public get sessionId(): bigint {
+    return this._sessionId;
+  }
+
+  public get userId(): string {
+    return this._userId;
   }
 
   /**
