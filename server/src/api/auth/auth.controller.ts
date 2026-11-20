@@ -96,7 +96,7 @@ export const accessToken = async (
         sessionToken
     );
 
-    const token = await authServices.generateAccessToken(
+    const accessToken = await authServices.generateAccessToken(
         session.sessionId,
         session.userId
     );
@@ -107,7 +107,7 @@ export const accessToken = async (
 
     return reply.send({
         ok: true,
-        accessToken: token,
+        accessToken,
         tokenType: "Bearer",
     });
 };

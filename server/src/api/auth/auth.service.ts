@@ -44,20 +44,20 @@ interface ClientSessionPayload {
 }
 
 interface SessionEntry {
-	rawRefreshToken: Uint8Array,
-	dbRefreshToken: Uint8Array,
-	sessionToken: string,
-	sessionId: bigint,
-	userId: string,
+  rawRefreshToken: Uint8Array,
+  dbRefreshToken: Uint8Array,
+  sessionToken: string,
+  sessionId: bigint,
+  userId: string,
 }
 
 interface SessionRotationResult {
-	rotated: boolean,
-	newRawRefreshToken?: Uint8Array,
-	dbRefreshToken: Uint8Array,
-	newSessionToken?: string,
-	sessionId: bigint,
-	userId: string,
+  rotated: boolean,
+  newRawRefreshToken?: Uint8Array,
+  dbRefreshToken: Uint8Array,
+  newSessionToken?: string,
+  sessionId: bigint,
+  userId: string,
 }
 
 export interface SignMetadata {
@@ -180,8 +180,8 @@ const signingKey = () => signingKeyPromise ??= (async () => {
 	const seed = key.byteLength === 64 ? key.subarray(0, 32) : key;
 	if (seed.byteLength !== 32) throw new Error("Invalid Ed25519 secret key length");
 
-	const pkcs8 = Uint8Array.fromHex(ED25519_PKCS8_PREFIX + Buffer.from(seed).toString("hex"));
-	const cryptoKey = await crypto.subtle.importKey("pkcs8", pkcs8, "Ed25519", false, ["sign"]);
+  const pkcs8 = Uint8Array.fromHex(ED25519_PKCS8_PREFIX + Buffer.from(seed).toString("hex"));
+  const cryptoKey = await crypto.subtle.importKey("pkcs8", pkcs8, "Ed25519", true, ["sign"]);
 
 	return SecretKeyFromCryptoKey(cryptoKey);
 })();
@@ -197,14 +197,14 @@ const verificationKey = () => verificationKeyPromise ??= (async () => {
 })();
 
 /** Generates a 5-minute v4.public PASETO with session and user identifiers. */
-export async function generateAccessToken(sessionId: string | bigint, userId: string): Promise<string> {
-	return paseto.Sign(await signingKey(), {
-		sessionId: sessionId.toString(),
-		sub: userId,
-	}, {
-		expiresIn: ACCESS_TOKEN_TTL_SECONDS,
-		now: new Date(Date.now()),
-	});
+export async function generateAccessToken(sessionId: string|bigint, userId: string): Promise<string> {
+  return paseto.Sign(await signingKey(), {
+    sessionId: sessionId.toString(),
+    sub: userId,
+  }, {
+    expiresIn: ACCESS_TOKEN_TTL_SECONDS,
+    now: new Date(Date.now()),
+  });
 }
 
 /** Verifies the signature and expiration only, then returns the full payload. */
@@ -346,11 +346,11 @@ export async function newUserSessionClient(
 
 	// Update refresh token in session entry
 
-	const actualSession = await unwrapDB(rotateRefreshToken(client, {
-		refreshToken: Buffer.from(tokens.dbRefreshToken),
-		rotationTime: "-1",
-		sessionId: createdSession.sessionId
-	}));
+  const actualSession = await unwrapDB(rotateRefreshToken(client, {
+    refreshToken: Buffer.from(tokens.dbRefreshToken),
+    rotationTime: -1,
+    sessionId: createdSession.sessionId
+  }));
 
 	if (!actualSession.refreshToken) throw AuthErrors.error("auth-db-failed");
 
@@ -440,13 +440,13 @@ export async function useRefreshToken(
 
 	// Check rotation and fulfil
 
-	if (session.rotatedAt.getTime() + tokenRotationMillis <= utcTimestamp) {
-		const tokens = generateTokens(config.SESSION_HMAC_SECRET, fullInfo);
-		const updatedSession = await wrapDBError(rotateRefreshToken(client, {
-			sessionId: fullInfo.sessionId.toString(),
-			refreshToken: Buffer.from(tokens.dbRefreshToken),
-			rotationTime: tokenRotationMillis.toString(),
-		}));
+  if (session.rotatedAt.getTime() + tokenRotationMillis <= utcTimestamp) {
+    const tokens = generateTokens(config.SESSION_HMAC_SECRET, fullInfo);
+    const updatedSession = await wrapDBError(rotateRefreshToken(client, {
+      sessionId: fullInfo.sessionId.toString(),
+      refreshToken: Buffer.from(tokens.dbRefreshToken),
+      rotationTime: tokenRotationMillis,
+    }));
 
 		if (updatedSession && updatedSession.refreshToken) {
 			return {

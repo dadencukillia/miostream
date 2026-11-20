@@ -84,7 +84,7 @@ export const deleteComment = async (
         Reply: dto.DeleteCommentReturnType;
     }>
 ) => {
-    const role = request.auth?.role;
+    const role = (await request.auth?.getUser(request.server.pg))?.userRole;
     const isPrivileged = role === "admin" || role === "moderator";
 
     await services.deleteComment(
