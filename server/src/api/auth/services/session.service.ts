@@ -85,7 +85,8 @@ export async function newUserSessionClient(
   const actualSession = await unwrapDB(rotateRefreshToken(client, {
     refreshToken: Buffer.from(tokens.dbRefreshToken),
     rotationTime: -1,
-    sessionId: createdSession.sessionId
+    sessionId: createdSession.sessionId,
+    oldRefreshToken: null
   }));
 
 	if (!actualSession.refreshToken) throw AuthErrors.error("auth-db-failed");
@@ -182,6 +183,7 @@ export async function useRefreshToken(
       sessionId: fullInfo.sessionId.toString(),
       refreshToken: Buffer.from(tokens.dbRefreshToken),
       rotationTime: tokenRotationMillis,
+      oldRefreshToken: session.refreshToken
     }));
 
 		if (updatedSession && updatedSession.refreshToken) {

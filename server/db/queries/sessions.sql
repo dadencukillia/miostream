@@ -24,6 +24,7 @@ SET
   rotated_at = now()
 WHERE
   session_id = @session_id::bigint
+  AND refresh_token = sqlc.narg(old_refresh_token)::bytea
   AND (
     @rotation_time::integer <= 0
     OR rotated_at + (@rotation_time::integer || ' milliseconds')::interval < now()
