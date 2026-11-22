@@ -16,10 +16,12 @@ import type {
 } from "./anime.schema";
 
 export type AnimeResponseType = Type.Static<typeof AnimeResponse>;
+export type AnimeType = Omit<AnimeResponseType, "ok">;
 export type CreateAnimeRequestPayloadType = Type.Static<typeof CreateAnimeRequestPayload>;
 export type UpdateAnimeRequestPayloadType = Type.Static<typeof UpdateAnimeRequestPayload>;
 export type ListAnimesRequestQueriesType = Type.Static<typeof ListAnimesRequestQueries>;
 export type AnimeListResponseType = Type.Static<typeof AnimeListResponse>;
+export type AnimeListType = Omit<AnimeListResponseType, "ok" | "items"> & { items: AnimeType[] };
 export type PaginationResponseType = Type.Static<typeof PaginationResponse>;
 export type AnimeIdRequestParamsType = Type.Static<typeof AnimeIdRequestParams>;
 export type AnimeIdOrSlugRequestParamsType = Type.Static<typeof AnimeIdOrSlugRequestParams>;

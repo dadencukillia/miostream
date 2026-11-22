@@ -1,15 +1,17 @@
 import type { Pool, PoolClient } from "pg";
 import type {
 	AnimeResponseType,
+	AnimeType,
 	AnimeListFilterType,
 	ListAnimesRequestQueriesType,
 	AnimeListResponseType,
+	AnimeListType,
 	CreateAnimeRequestPayloadType,
 	GenreType,
 	UpdateAnimeRequestPayloadType,
 } from "./anime.dto";
 import { AnimeErrors } from "./anime.errors";
-import { toAnimeModel } from "./anime.model";
+import { toAnimeModel, toCoverUrl } from "./anime.model";
 import {
 	countAnimes,
 	createAnime as createAnimeQuery,
@@ -104,7 +106,7 @@ const NULLABLE_ANIME_FIELDS = {
 export async function listAnimes(
 	db: Pool,
 	query: ListAnimesRequestQueriesType,
-): Promise<AnimeListResponseType> {
+): Promise<AnimeListType> {
 	const page = query.page ?? 1;
 	const limit = query.limit ?? 20;
 	const filter: AnimeListFilterType = {
@@ -132,14 +134,14 @@ export async function listAnimes(
 	};
 }
 
-export async function getAnime(db: Pool, animeId: string): Promise<AnimeResponseType> {
+export async function getAnime(db: Pool, animeId: string): Promise<AnimeType> {
 	const anime = await repoGetAnimeById(db, animeId).catch(handleDbError);
 	if (!anime) throw AnimeErrors.error("anime-not-found");
 
 	return toAnimeModel(anime);
 }
 
-export async function getAnimeBySlug(db: Pool, slug: string): Promise<AnimeResponseType> {
+export async function getAnimeBySlug(db: Pool, slug: string): Promise<AnimeType> {
 	const anime = await repoGetAnimeBySlug(db, slug).catch(handleDbError);
 	if (!anime) throw AnimeErrors.error("anime-not-found");
 
@@ -149,7 +151,7 @@ export async function getAnimeBySlug(db: Pool, slug: string): Promise<AnimeRespo
 export async function createAnime(
 	db: Pool,
 	data: CreateAnimeRequestPayloadType,
-): Promise<AnimeResponseType> {
+): Promise<AnimeType> {
 	const anime = await repoCreateAnime(db, {
 		slug: data.slug,
 		titleUa: data.titleUa ?? "",
@@ -182,7 +184,7 @@ export async function updateAnime(
 	db: Pool,
 	animeId: string,
 	data: UpdateAnimeRequestPayloadType,
-): Promise<AnimeResponseType> {
+): Promise<AnimeType> {
 	const existing = await repoGetAnimeById(db, animeId)
 		.catch(handleDbError);
 	if (!existing) throw AnimeErrors.error("anime-not-found");
@@ -258,7 +260,16 @@ export async function getAnimesAboveAverageEpisodes(db: Pool) {
 }
 
 export async function getAnimesWithMaxEpisodes(db: Pool) {
-	return getAvailableAnimesByCurrentYear(db).catch(handleDbError);
+	return getAvailableAnimesByCurrentYear(db)
+		.then((rows) => rows.map((row) => ({
+			animeId: row.animeId,
+			slug: row.slug,
+			titleUa: row.titleUa,
+			yearReleased: row.yearReleased,
+			episodesCount: row.episodesCount,
+			coverUrl: toCoverUrl(row.coverId),
+		})))
+		.catch(handleDbError);
 }
 
 

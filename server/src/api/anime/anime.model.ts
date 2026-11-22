@@ -15,7 +15,7 @@ import {
 const includes = (values: readonly string[], value: string) =>
 	values.includes(value);
 
-const toCoverUrl = (_coverId: string | null): string => {
+export const toCoverUrl = (_coverId: string | null): string => {
 	return "";
 };
 
@@ -32,11 +32,16 @@ const toAnimeStatus = (value: string | null): AnimeStatusType | null =>
 const toAnimeFormat = (value: string): AnimeFormatType =>
 	includes(ANIME_FORMATS, value) ? (value as AnimeFormatType) : "other";
 
+const toExternalId = (value: string | null): string | null =>
+	value === null ? null : value.trim() || null;
+
 const toGenres = (values: string[] | null): GenreType[] =>
 	(values ?? []).filter((value): value is GenreType => includes(GENRES, value));
 
 export type AnimeTransformInput = {
 	coverId: string | null;
+	hikkaId: string | null;
+	imdbId: string | null;
 	malId: string | null;
 	anilistId: string | null;
 	ageRestriction: string | null;
@@ -46,9 +51,11 @@ export type AnimeTransformInput = {
 };
 
 export const toAnimeModel = generateTransformer({
-	delete: [],
+	delete: ["coverId"],
 	map: (row: AnimeTransformInput) => ({
 		coverUrl: toCoverUrl(row.coverId),
+		hikkaId: toExternalId(row.hikkaId),
+		imdbId: toExternalId(row.imdbId),
 		malId: row.malId === null ? null : Number(row.malId),
 		anilistId: row.anilistId === null ? null : Number(row.anilistId),
 		ageRestriction: toAgeRestriction(row.ageRestriction),
