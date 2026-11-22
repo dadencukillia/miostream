@@ -1,6 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import type * as dto from "./list.dto";
 import * as listService from "./list.service";
+import { ListErrors } from "./list.errors";
 
 export const createListUnit = async (
 	request: FastifyRequest<{
@@ -8,7 +9,7 @@ export const createListUnit = async (
 	}>,
 	reply: FastifyReply<{
 		Body: dto.CreateListUnitRequestPayloadType;
-		Reply: dto.ListUnitResponseType;
+		Reply: dto.ListUnitResponseType & { ok: true };
 	}>
 ) => {
 	const userId = request.auth!.userId;
@@ -18,7 +19,7 @@ export const createListUnit = async (
 		request.body
 	);
 
-	return reply.status(201).send(result);
+	return reply.status(201).send({ ok: true, ...result });
 };
 
 export const updateListUnit = async (
@@ -29,10 +30,22 @@ export const updateListUnit = async (
 	reply: FastifyReply<{
 		Params: { animeId: string };
 		Body: dto.UpdateListUnitRequestPayloadType;
-		Reply: dto.ListUnitResponseType;
+		Reply: dto.ListUnitResponseType & { ok: true };
 	}>
 ) => {
 	const userId = request.auth!.userId;
+	const body = request.body ?? {};
+	const hasUpdatableField = [
+		"watchedEpisodes",
+		"repeatTimes",
+		"startedWatching",
+		"listUnitStatus",
+		"grade",
+	].some((key) => body[key as keyof typeof body] !== undefined);
+	if (!hasUpdatableField) {
+		throw ListErrors.error("list-invalid");
+	}
+
 	const result = await listService.updateListUnit(
 		request.server.pg,
 		userId,
@@ -40,7 +53,7 @@ export const updateListUnit = async (
 		request.body
 	);
 
-	return reply.status(200).send(result);
+	return reply.status(200).send({ ok: true, ...result });
 };
 
 export const deleteListUnit = async (
@@ -60,7 +73,7 @@ export const deleteListUnit = async (
 		request.params.animeId
 	);
 
-	return reply.status(204).send(null);
+	return reply.status(200).send({ ok: true });
 };
 
 export const getListUnits = async (
@@ -71,14 +84,19 @@ export const getListUnits = async (
 	reply: FastifyReply<{
 		Params: { userId: string };
 		Querystring: dto.GetListUnitsRequestQueriesType;
-		Reply: dto.ListUnitsPageResponseType;
+		Reply: dto.ListUnitsPageResponseType & { ok: true };
 	}>
 ) => {
+	const sort = request.query.sort;
+	if (sort !== undefined && !["startedWatching", "grade", "title"].includes(sort)) {
+		throw ListErrors.error("list-invalid");
+	}
+
 	const result = await listService.getListUnits(
 		request.server.pg,
 		request.params.userId,
 		request.query
 	);
 
-	return reply.status(200).send(result);
+	return reply.status(200).send({ ok: true, ...result });
 };

@@ -20,6 +20,15 @@ export const StringEnum = <T extends readonly string[]>(
 export const StringEnumResponseType = <T extends readonly string[]>(values: T, description?: string) =>
     Type.Unsafe<string>(StringEnum(values, { description }));
 
+// UUIDs
+
+export const UuidType = (options: TSchemaOptions = {}) =>
+    Type.String({
+        format: "uuid",
+        examples: ["018f23ab-1234-7123-8123-123456789abc"],
+        ...options,
+    });
+
 // Nullables
 
 export const Nullable = <T extends TSchema>(schema: T) =>

@@ -1,6 +1,11 @@
 import Type from "typebox";
+import { ErrorResponse } from "@utils/errorsCollection";
 
 export const TAG_LIST = "list";
+
+export const OkResponse = Type.Object({
+	ok: Type.Literal(true),
+});
 
 export const LIST_UNIT_STATUSES = ["finished", "watching", "delayed", "dropped"] as const;
 
@@ -31,14 +36,10 @@ export const ListUnitResponse = Type.Object(
 	},
 	{ additionalProperties: false },
 );
-
-export const ErrorResponse = Type.Object(
-	{
-		ok: Type.Literal(false),
-		message: Type.String(),
-	},
-	{ additionalProperties: false },
-);
+export const ListUnitResponseWithOk = Type.Object({
+	ok: Type.Literal(true),
+	...ListUnitResponse.properties,
+}, { additionalProperties: false });
 
 export const CreateListUnitSchema = {
 	tags: [TAG_LIST],
@@ -46,7 +47,7 @@ export const CreateListUnitSchema = {
 	description: "Creates a list unit for the authenticated user. Defaults are applied for missing fields.",
 	body: CreateListUnitRequestPayload,
 	response: {
-		201: ListUnitResponse,
+		201: ListUnitResponseWithOk,
 		400: ErrorResponse,
 		409: ErrorResponse,
 		500: ErrorResponse,
@@ -70,7 +71,7 @@ export const UpdateListUnitSchema = {
 	params: Type.Object({ animeId: Type.String({ format: "uuid" }) }, { additionalProperties: false }),
 	body: UpdateListUnitRequestPayload,
 	response: {
-		200: ListUnitResponse,
+		200: ListUnitResponseWithOk,
 		400: ErrorResponse,
 		404: ErrorResponse,
 		500: ErrorResponse,
@@ -80,10 +81,10 @@ export const UpdateListUnitSchema = {
 export const DeleteListUnitSchema = {
 	tags: [TAG_LIST],
 	summary: "Delete a list unit",
-	description: "Permanently removes a list unit for the authenticated user.",
+	description: "Removes a list unit for the authenticated user.",
 	params: Type.Object({ animeId: Type.String({ format: "uuid" }) }, { additionalProperties: false }),
 	response: {
-		204: Type.Null(),
+		200: OkResponse,
 		404: ErrorResponse,
 		500: ErrorResponse,
 	},
@@ -119,6 +120,10 @@ export const ListUnitsPageResponse = Type.Object({
 		totalPages: Type.Integer({ minimum: 0 }),
 	}, { additionalProperties: false }),
 }, { additionalProperties: false });
+export const ListUnitsPageResponseWithOk = Type.Object({
+	ok: Type.Literal(true),
+	...ListUnitsPageResponse.properties,
+}, { additionalProperties: false });
 
 export const getListUnitsSchema = {
 	tags: ["list"],
@@ -127,7 +132,7 @@ export const getListUnitsSchema = {
 	params: Type.Object({ userId: Type.String({ format: "uuid" }) }, { additionalProperties: false }),
 	querystring: GetListUnitsRequestQueries,
 	response: {
-		200: ListUnitsPageResponse,
+		200: ListUnitsPageResponseWithOk,
 		400: ErrorResponse,
 		500: ErrorResponse,
 	},

@@ -13,12 +13,12 @@ const modulePlugin: FastifyPluginAsync = async (fastify: FastifyInstance, _opts:
   fastify.patch("/:id", { schema: schemas.UpdateAnimeSchema, preHandler: grantAuthMiddleware({ userHasRole: ["admin"] }) }, controllers.updateAnime);
   fastify.delete("/:id", { schema: schemas.DeleteAnimeSchema, preHandler: grantAuthMiddleware({ userHasRole: ["admin"] }) }, controllers.deleteAnime);
 
-  fastify.get("/stats/by-status", controllers.countByStatus);
-  fastify.get("/stats/by-studio", controllers.studioStats);
-  fastify.get("/stats/by-format", controllers.formatStats);
-  fastify.get("/stats/studios-above-average", controllers.studiosAboveAverage);
-  fastify.get("/stats/above-average-episodes", controllers.aboveAverageEpisodes);
-  fastify.get("/stats/max-episodes", controllers.maxEpisodes);
+  fastify.get("/stats/by-status", { schema: schemas.CountByStatusSchema }, controllers.countByStatus);
+  fastify.get("/stats/by-studio", { schema: schemas.StudioStatsSchema }, controllers.studioStats);
+  fastify.get("/stats/by-format", { schema: schemas.FormatStatsSchema }, controllers.formatStats);
+  fastify.get("/stats/studios-above-average", { schema: schemas.StudiosAboveAverageSchema }, controllers.studiosAboveAverage);
+  fastify.get("/stats/above-average-episodes", { schema: schemas.AboveAverageEpisodesSchema }, controllers.aboveAverageEpisodes);
+  fastify.get("/stats/max-episodes", { schema: schemas.MaxEpisodesSchema }, controllers.maxEpisodes);
 };
 
 export default modulePlugin;
