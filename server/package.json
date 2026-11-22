@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1134.0",
+    "@faker-js/faker": "^10.6.0",
     "@fastify/swagger": "^9.9.2",
     "@img/sharp-wasm32": "^0.35.5",
     "@scalar/fastify-api-reference": "^1.78.1",
@@ -24,8 +25,10 @@
     "fastify": "^5.12.4",
     "fastify-plugin": "^6.0.0",
     "jsonwebtoken": "^9.0.3",
+    "paseto": "^4.0.1",
     "pg": "^8.23.0",
     "sharp": "^0.35.5",
-    "typebox": "^1.1.14"
+    "typebox": "^1.1.14",
+    "ua-parser-js": "^2.0.10"
   }
 }

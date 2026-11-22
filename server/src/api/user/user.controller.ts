@@ -37,6 +37,14 @@ export const getUser = async (
     return reply.status(200).send(transformOk(user));
 };
 
+export const getMe = async (
+    request: FastifyRequest<{}>,
+    reply: FastifyReply<{ Reply: dto.GetMeUserReturnType }>
+) => {
+    const user = await services.getUserById(request.server.pg, request.auth!.userId);
+    return reply.status(200).send(transformOk(user));
+};
+
 export const deleteUser = async (
     request: FastifyRequest<{}>,
     reply: FastifyReply<{ Reply: dto.DeleteUserReturnType }>

@@ -4,10 +4,22 @@ import * as userLinksSqlc from "@sqlc/user_links_sql";
 import { UserErrors } from "../user.errors";
 import type * as dto from "../user.dto";
 import { hashPassword, verifyPassword } from "@utils/password";
+import { generateNickname } from "@utils/nickname";
 import { userTransformPublic, userTransformStreak } from "../user.model";
 
 const DB_INVALID_INPUT_CODES: readonly string[] = ["23514", "22P02", "22003", "22001"];
 const DB_INVALID_ENUM_CODES: readonly string[] = ["23514", "22P02"];
+const NICKNAME_GENERATION_RETRIES = 3;
+
+const sanitizeFullName = (rawName?: string): string => {
+    const cleaned = (rawName ?? "")
+        .replace(/[^\p{L} '\u2019\u02BC.-]/gu, "")
+        .replace(/^[^\p{L}]+|[^\p{L}.]+$/gu, "")
+        .trim()
+        .slice(0, 100);
+
+    return cleaned.length >= 2 ? cleaned : "User";
+};
 
 export const createUser = async (client: Pool, data: dto.CreateUserRequestPayloadType): Promise<dto.UserType> => {
     const passwordHash = data.password ? await hashPassword(data.password) : null;
@@ -45,6 +57,50 @@ export const createUser = async (client: Pool, data: dto.CreateUserRequestPayloa
     if (!user) throw UserErrors.error("user-db-error");
 
     return userTransformStreak(user);
+};
+
+export const getOrCreateUserByGoogleId = async (
+    client: Pool,
+    data: dto.GetOrCreateGoogleUserType
+): Promise<dto.UserType> => {
+    const fullName = sanitizeFullName(data.fullName);
+
+    for (let attempt = 0; attempt < NICKNAME_GENERATION_RETRIES; attempt++) {
+        try {
+            const user = await usersSqlc.getOrCreateUserByGoogleId(client, {
+                nickname: generateNickname(),
+                fullName,
+                email: data.email,
+                googleId: data.googleId,
+                timezone: data.timezone ?? null,
+            });
+
+            if (!user) throw UserErrors.error("user-db-error");
+            return userTransformStreak(user);
+        } catch (e: any) {
+            if (e?.code === "23505") {
+                const constraint = e?.constraint ?? "";
+                if (constraint.includes("nickname")) {
+                    if (attempt < NICKNAME_GENERATION_RETRIES - 1) continue;
+                    throw UserErrors.error("user-nickname-already-taken").withDetails(e);
+                }
+                if (constraint.includes("email")) {
+                    throw UserErrors.error("user-email-already-taken").withDetails(e);
+                }
+                if (constraint.includes("google_id")) {
+                    throw UserErrors.error("user-google-id-already-taken").withDetails(e);
+                }
+                throw UserErrors.error("user-already-exists").withDetails(e);
+            }
+            if (DB_INVALID_INPUT_CODES.includes(e?.code)) {
+                throw UserErrors.error("user-db-invalid-error").withDetails(e);
+            }
+            if (e?.slug) throw e;
+            throw UserErrors.error("user-db-error").withDetails(e);
+        }
+    }
+
+    throw UserErrors.error("user-db-error");
 };
 
 export const getUserById = async (client: Pool, userId: string): Promise<dto.UserType> => {
