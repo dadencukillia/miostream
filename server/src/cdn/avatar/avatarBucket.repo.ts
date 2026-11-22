@@ -7,7 +7,7 @@ export async function setAvatarById(
   avatarId: string,
   content: Buffer,
 ) {
-  const avatarFile = avatarId.replaceAll("-", "").trim() + ".webp";
+  const avatarFile = `${avatarId.replaceAll("-", "").trim()}.webp`;
 
   await s3.send(new PutObjectCommand({
     Bucket: BUCKET_NAME,
@@ -22,7 +22,7 @@ export async function getAvatarById(
   s3: S3Client,
   avatarId: string,
 ): Promise<Uint8Array|null> {
-  const avatarFile = avatarId.replaceAll("-", "").trim() + ".webp";
+  const avatarFile = `${avatarId.replaceAll("-", "").trim()}.webp`;
 
   try {
     const object = await s3.send(new GetObjectCommand({
@@ -31,7 +31,9 @@ export async function getAvatarById(
       ResponseContentEncoding: "gzip",
     }));
 
-    return object.Body!.transformToByteArray();
+    if (!object.Body) throw Error("No body in S3 response");
+
+    return object.Body.transformToByteArray();
   } catch(e) {
     if (e instanceof NoSuchKey) {
       return null;
@@ -45,7 +47,7 @@ export async function removeAvatarById(
   s3: S3Client,
   avatarId: string,
 ) {
-  const avatarFile = avatarId.replaceAll("-", "").trim() + ".webp";
+  const avatarFile = `${avatarId.replaceAll("-", "").trim()}.webp`;
 
   await s3.send(new DeleteObjectCommand({
     Bucket: BUCKET_NAME,

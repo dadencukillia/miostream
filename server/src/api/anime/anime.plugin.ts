@@ -9,9 +9,9 @@ const modulePlugin: FastifyPluginAsync = async (fastify: FastifyInstance, _opts:
 
   fastify.get("/", { schema: schemas.ListAnimesSchema }, controllers.listAnimes);
   fastify.get("/:identifier", { schema: schemas.GetAnimeRouteSchema }, controllers.getAnime);
-  fastify.post("/", { schema: schemas.CreateAnimeSchema, preHandler: grantAuthMiddleware({ userHasRole: ["admin"] }) as any }, controllers.createAnime);
-  fastify.patch("/:id", { schema: schemas.UpdateAnimeSchema, preHandler: grantAuthMiddleware({ userHasRole: ["admin"] }) as any }, controllers.updateAnime);
-  fastify.delete("/:id", { schema: schemas.DeleteAnimeSchema, preHandler: grantAuthMiddleware({ userHasRole: ["admin"] }) as any }, controllers.deleteAnime);
+  fastify.post("/", { schema: schemas.CreateAnimeSchema, preHandler: grantAuthMiddleware({ userHasRole: ["admin"] }) }, controllers.createAnime);
+  fastify.patch("/:id", { schema: schemas.UpdateAnimeSchema, preHandler: grantAuthMiddleware({ userHasRole: ["admin"] }) }, controllers.updateAnime);
+  fastify.delete("/:id", { schema: schemas.DeleteAnimeSchema, preHandler: grantAuthMiddleware({ userHasRole: ["admin"] }) }, controllers.deleteAnime);
 
   fastify.get("/stats/by-status", { schema: schemas.CountByStatusSchema }, controllers.countByStatus);
   fastify.get("/stats/by-studio", { schema: schemas.StudioStatsSchema }, controllers.studioStats);

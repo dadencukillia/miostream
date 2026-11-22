@@ -8,10 +8,14 @@ import {
     setAvatarById
 } from "@/cdn/avatar/avatar.shared";
 import {
-    updateUserAvatarReturningOld
+    updateUserAvatarReturningOld,
+    type UpdateUserAvatarReturningOldRow
 } from "@sqlc/users_sql";
-import * as dto from "../user.dto";
-import { toUserModel, toUserWithoutOldAvatarModel } from "../user.model";
+import type * as dto from "../user.dto";
+import {
+    userTransformOldAvatar,
+    userTransformStreak,
+} from "../user.model";
 
 const AVATAR_WIDTH = 256;
 const AVATAR_HEIGHT = 256;
@@ -23,7 +27,7 @@ export async function updateUserAvatarImage(
     logger: FastifyBaseLogger,
     userId: string,
     imageContent: Buffer
-): Promise<dto.UserResponseType> {
+): Promise<dto.UserType> {
     const newAvatarId = crypto.randomUUID();
 
     // Process image
@@ -51,23 +55,22 @@ export async function updateUserAvatarImage(
 
     // Update avatar in the database
 
-    let dbResponse;
-    {
-        try {
-            dbResponse = await updateUserAvatarReturningOld(db, {
-                userId: userId,
-                newAvatarId: newAvatarId
-            });
-        } catch (e) {
-            logger.error(e);
-            await removeAvatarById(s3, newAvatarId);
-            throw AvatarErrors.error("update-avatar-db").withDetails(e);
-        }
+    let dbResponse: UpdateUserAvatarReturningOldRow | null;
 
-        if (dbResponse == null) {
-            await removeAvatarById(s3, newAvatarId);
-            throw UserErrors.error("user-not-found");
-        }
+    try {
+        dbResponse = await updateUserAvatarReturningOld(db, {
+            userId: userId,
+            newAvatarId: newAvatarId
+        });
+    } catch (e) {
+        logger.error(e);
+        await removeAvatarById(s3, newAvatarId);
+        throw AvatarErrors.error("update-avatar-db").withDetails(e);
+    }
+
+    if (dbResponse == null) {
+        await removeAvatarById(s3, newAvatarId);
+        throw UserErrors.error("user-not-found");
     }
 
     // Remove old avatar file
@@ -81,7 +84,7 @@ export async function updateUserAvatarImage(
         }
     }
 
-    return toUserModel(toUserWithoutOldAvatarModel(dbResponse));
+    return userTransformStreak(userTransformOldAvatar(dbResponse));
 }
 
 export async function resetUserAvatar(
@@ -89,10 +92,10 @@ export async function resetUserAvatar(
     db: Pool,
     logger: FastifyBaseLogger,
     userId: string
-): Promise<dto.UserResponseType> {
+): Promise<dto.UserType> {
     // Update avatar id in database, return old
 
-    let dbResponse;
+    let dbResponse: UpdateUserAvatarReturningOldRow | null;
 
     try {
         dbResponse = await updateUserAvatarReturningOld(db, {
@@ -121,5 +124,5 @@ export async function resetUserAvatar(
         throw AvatarErrors.error("avatar-s3-remove").withDetails(e);
     }
 
-    return toUserModel(toUserWithoutOldAvatarModel(dbResponse));
+    return userTransformStreak(userTransformOldAvatar(dbResponse));
 }

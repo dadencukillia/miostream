@@ -18,11 +18,16 @@ services:
     command: serve
     restart: always
     environment:
+      SITE_ADDRESS: ${SITE_ADDRESS}
       DB_PASS_FILE: /run/secrets/db_pass
-      GOOGLE_CLIENT_SECRET_FILE: /run/secrets/google_client_secret
-      AUTH_JWT_SECRET_FILE: /run/secrets/auth_jwt_secret
       RUSTFS_ACCESS_KEY_FILE: /run/secrets/rustfs_access_key
       RUSTFS_SECRET_KEY_FILE: /run/secrets/rustfs_secret_key
+      AUTH_PUBLIC_SIGN_KEY: ${AUTH_PUBLIC_SIGN_KEY}
+      AUTH_SECRET_SIGN_KEY_FILE: /run/secrets/auth_secret_sign_key
+      SESSION_HMAC_SECRET_FILE: /run/secrets/session_hmac_secret
+      OAUTH_STATE_HMAC_SECRET_FILE: /run/secrets/oauth_state_hmac_secret
+      OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
+      OAUTH_CLIENT_SECRET_FILE: /run/secrets/oauth_client_secret
       POSTGRES_HOST: postgresql:5432
       REDIS_HOST: redis:6379
       RUSTFS_HOST: rustfs:9000
@@ -35,10 +40,12 @@ services:
       - internal
     secrets:
       - db_pass
-      - google_client_secret
-      - auth_jwt_secret
       - rustfs_access_key
       - rustfs_secret_key
+      - auth_secret_sign_key
+      - session_hmac_secret
+      - oauth_state_hmac_secret
+      - oauth_client_secret
     healthcheck:
       test: ["CMD-SHELL", "wget -qO - http://127.0.0.1:8080/healthcheck"]
       interval: 10s
@@ -135,7 +142,11 @@ secrets:
     environment: RUSTFS_ACCESS_KEY
   rustfs_secret_key:
     environment: RUSTFS_SECRET_KEY
-  google_client_secret:
-    environment: GOOGLE_CLIENT_SECRET
-  auth_jwt_secret:
-    environment: AUTH_JWT_SECRET
+  auth_secret_sign_key:
+    environment: AUTH_SECRET_SIGN_KEY
+  session_hmac_secret:
+    environment: SESSION_HMAC_SECRET
+  oauth_state_hmac_secret:
+    environment: OAUTH_STATE_HMAC_SECRET
+  oauth_client_secret:
+    environment: OAUTH_CLIENT_SECRET

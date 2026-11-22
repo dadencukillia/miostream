@@ -96,6 +96,138 @@ export async function createUser(client: Client, args: CreateUserArgs): Promise<
     };
 }
 
+export const getOrCreateUserByGoogleIdQuery = `-- name: GetOrCreateUserByGoogleId :one
+WITH inserted AS (
+    INSERT INTO public.users(
+        "nickname",
+        "full_name",
+        "email",
+        "google_id",
+        "timezone"
+    ) VALUES (
+        $1,
+        $2,
+        $3,
+        $4::text,
+        coalesce($5, 'Europe/Kyiv')
+    )
+    ON CONFLICT ("google_id") DO NOTHING
+    RETURNING 
+        "user_id",
+        "nickname",
+        "full_name",
+        "email",
+        "bio",
+        "avatar_id",
+        "max_streak",
+        "timezone",
+        "streak_start_date",
+        "last_watch_date",
+        "profile_frame_url",
+        "profile_background_url",
+        "user_role",
+        "user_status",
+        "created_at",
+        "updated_at"
+)
+SELECT 
+    "user_id",
+    "nickname",
+    "full_name",
+    "email",
+    "bio",
+    "avatar_id",
+    "max_streak",
+    "timezone",
+    "streak_start_date",
+    "last_watch_date",
+    "profile_frame_url",
+    "profile_background_url",
+    "user_role",
+    "user_status",
+    "created_at",
+    "updated_at"
+FROM inserted
+UNION ALL
+SELECT 
+    "user_id",
+    "nickname",
+    "full_name",
+    "email",
+    "bio",
+    "avatar_id",
+    "max_streak",
+    "timezone",
+    "streak_start_date",
+    "last_watch_date",
+    "profile_frame_url",
+    "profile_background_url",
+    "user_role",
+    "user_status",
+    "created_at",
+    "updated_at"
+FROM public.users
+WHERE "google_id" = $4::text
+    AND NOT EXISTS (SELECT 1 FROM inserted)
+LIMIT 1`;
+
+export interface GetOrCreateUserByGoogleIdArgs {
+    nickname: string;
+    fullName: string;
+    email: string;
+    googleId: string;
+    timezone: string | null;
+}
+
+export interface GetOrCreateUserByGoogleIdRow {
+    userId: string;
+    nickname: string;
+    fullName: string;
+    email: string;
+    bio: string;
+    avatarId: string | null;
+    maxStreak: number;
+    timezone: string;
+    streakStartDate: Date | null;
+    lastWatchDate: Date | null;
+    profileFrameUrl: string | null;
+    profileBackgroundUrl: string | null;
+    userRole: string;
+    userStatus: string;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export async function getOrCreateUserByGoogleId(client: Client, args: GetOrCreateUserByGoogleIdArgs): Promise<GetOrCreateUserByGoogleIdRow | null> {
+    const result = await client.query({
+        text: getOrCreateUserByGoogleIdQuery,
+        values: [args.nickname, args.fullName, args.email, args.googleId, args.timezone],
+        rowMode: "array"
+    });
+    if (result.rows.length !== 1) {
+        return null;
+    }
+    const row = result.rows[0];
+    return {
+        userId: row[0],
+        nickname: row[1],
+        fullName: row[2],
+        email: row[3],
+        bio: row[4],
+        avatarId: row[5],
+        maxStreak: row[6],
+        timezone: row[7],
+        streakStartDate: row[8],
+        lastWatchDate: row[9],
+        profileFrameUrl: row[10],
+        profileBackgroundUrl: row[11],
+        userRole: row[12],
+        userStatus: row[13],
+        createdAt: row[14],
+        updatedAt: row[15]
+    };
+}
+
 export const getUserByIdQuery = `-- name: GetUserById :one
 SELECT 
     "user_id",
@@ -426,12 +558,12 @@ export async function getPasswordHashById(client: Client, args: GetPasswordHashB
 }
 
 export const updateUserProfileQuery = `-- name: UpdateUserProfile :one
-UPDATE public.users
+UPDATE public.users 
 SET 
-    "nickname"   = $1,
-    "full_name"  = $2,
-    "bio"        = $3,
-    "timezone"   = $4,
+    "nickname"   = COALESCE($1::text, nickname),
+    "full_name"  = COALESCE($2::text, full_name),
+    "bio"        = COALESCE($3::text, bio),
+    "timezone"   = COALESCE($4::text, timezone),
     "updated_at" = now()
 WHERE "user_id" = $5::uuid
 RETURNING 
@@ -453,10 +585,10 @@ RETURNING
     "updated_at"`;
 
 export interface UpdateUserProfileArgs {
-    nickname: string;
-    fullName: string;
-    bio: string;
-    timezone: string;
+    nickname: string | null;
+    fullName: string | null;
+    bio: string | null;
+    timezone: string | null;
     userId: string;
 }
 
@@ -513,15 +645,15 @@ export const updateUserCustomizationQuery = `-- name: UpdateUserCustomization :o
 UPDATE public.users 
 SET 
     "profile_frame_url" = CASE 
-        WHEN $1::boolean
-        THEN $2::text
-        ELSE profile_frame_url END,
+        WHEN 'profile_frame_url' = ANY($1::text[]) THEN NULL
+        ELSE COALESCE($2::text, profile_frame_url)
+    END,
     "profile_background_url" = CASE 
-        WHEN $3::boolean
-        THEN $4::text
-        ELSE profile_background_url END,
+        WHEN 'profile_background_url' = ANY($1::text[]) THEN NULL
+        ELSE COALESCE($3::text, profile_background_url)
+    END,
     "updated_at" = now()
-WHERE "user_id" = $5::uuid
+WHERE "user_id" = $4::uuid
 RETURNING 
     "user_id",
     "nickname",
@@ -541,9 +673,8 @@ RETURNING
     "updated_at"`;
 
 export interface UpdateUserCustomizationArgs {
-    setFrame: boolean;
+    nullFields: string[];
     profileFrameUrl: string | null;
-    setBackground: boolean;
     profileBackgroundUrl: string | null;
     userId: string;
 }
@@ -570,7 +701,7 @@ export interface UpdateUserCustomizationRow {
 export async function updateUserCustomization(client: Client, args: UpdateUserCustomizationArgs): Promise<UpdateUserCustomizationRow | null> {
     const result = await client.query({
         text: updateUserCustomizationQuery,
-        values: [args.setFrame, args.profileFrameUrl, args.setBackground, args.profileBackgroundUrl, args.userId],
+        values: [args.nullFields, args.profileFrameUrl, args.profileBackgroundUrl, args.userId],
         rowMode: "array"
     });
     if (result.rows.length !== 1) {

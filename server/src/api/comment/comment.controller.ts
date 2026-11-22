@@ -1,7 +1,8 @@
 import type { FastifyRequest, FastifyReply } from "fastify";
 import { CommentErrors } from "./comment.errors";
-import * as dto from "./comment.dto";
+import type * as dto from "./comment.dto";
 import * as services from "./comment.service";
+import { transformOk } from "@utils/transformers";
 
 export const getComments = async (
     request: FastifyRequest<{
@@ -14,13 +15,13 @@ export const getComments = async (
         Reply: dto.GetCommentsReturnType;
     }>
 ) => {
-    const result = await services.getComments(
+    const comments = await services.getComments(
         request.server.pg,
         request.params.animeId,
         request.query
     );
 
-    return reply.status(200).send(result);
+    return reply.status(200).send(transformOk(comments));
 };
 
 export const postComment = async (
@@ -45,7 +46,7 @@ export const postComment = async (
         request.body
     );
 
-    return reply.status(201).send(comment);
+    return reply.status(201).send(transformOk(comment));
 };
 
 export const updateComment = async (
@@ -71,7 +72,7 @@ export const updateComment = async (
         request.body
     );
 
-    return reply.status(200).send(comment);
+    return reply.status(200).send(transformOk(comment));
 };
 
 export const deleteComment = async (
@@ -83,7 +84,7 @@ export const deleteComment = async (
         Reply: dto.DeleteCommentReturnType;
     }>
 ) => {
-    const role = request.auth?.role;
+    const role = (await request.auth?.getUser(request.server.pg))?.userRole;
     const isPrivileged = role === "admin" || role === "moderator";
 
     await services.deleteComment(

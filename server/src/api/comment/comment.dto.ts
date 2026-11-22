@@ -1,11 +1,14 @@
 import type { Static } from "typebox";
-import * as commentSchema from "./comment.schema";
+import type * as commentSchema from "./comment.schema";
+import { ErrorResponse } from "@utils/errorsCollection";
 
 // Responses
-export type ErrorResponseType = Static<typeof commentSchema.ErrorResponse>;
+export type ErrorResponseType = Static<typeof ErrorResponse>;
 export type CommentAuthorResponseType = Static<typeof commentSchema.CommentAuthorResponse>;
+export type CommentType = Static<typeof commentSchema.Comment>;
 export type CommentResponseType = Static<typeof commentSchema.CommentResponse>;
 export type CommentsResponseType = Static<typeof commentSchema.CommentsResponse>;
+export type CommentsType = Omit<CommentsResponseType, "ok">;
 
 // Request Params
 export type AnimeIdCommentRequestParamsType = Static<typeof commentSchema.AnimeIdCommentRequestParams>;

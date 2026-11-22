@@ -1,5 +1,5 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
-import * as dto from "./list.dto";
+import type * as dto from "./list.dto";
 import * as listService from "./list.service";
 import { ListErrors } from "./list.errors";
 

@@ -47,6 +47,7 @@ const serializeDetail = (d: unknown): unknown =>
  */
 class CustomError extends Error {
   private _collection: ErrorsCollection;
+  private _slug: string;
   private _statusCode: number;
   private _details: readonly unknown[] = [];
   
@@ -57,11 +58,12 @@ class CustomError extends Error {
    * @param statusCode - The HTTP status code to return to the client.
    * @param message - The static, stable error message.
    */
-  public constructor(collection: ErrorsCollection, statusCode: number, message: string) {
+  public constructor(collection: ErrorsCollection, slug: string, statusCode: number, message: string) {
     super(message);
 
     Object.setPrototypeOf(this, CustomError.prototype);
 
+    this._slug = slug;
     this._collection = collection;
     this._statusCode = statusCode;
   }
@@ -71,6 +73,13 @@ class CustomError extends Error {
    */
   public get collection(): ErrorsCollection {
     return this._collection;
+  }
+
+  /**
+   * Gets the error slug.
+   */
+  public get slug(): string {
+    return this._slug;
   }
 
   /**
@@ -88,12 +97,25 @@ class CustomError extends Error {
   }
 
   /**
+   * Returns a new error instance with an updated error slug while preserving existing details.
+   * 
+   * @param statusCode - The new HTTP status code.
+   */
+  public withSlug(slug: string) {
+    const error = new CustomError(this._collection, slug, this._statusCode, this.message);
+    const details = Object.freeze([...this._details]);
+    error.stack = this.stack;
+    error._details = details;
+    return error;
+  }
+
+  /**
    * Returns a new error instance with an updated status code while preserving existing details.
    * 
    * @param statusCode - The new HTTP status code.
    */
   public withStatusCode(statusCode: number) {
-    const error = new CustomError(this._collection, statusCode, this.message);
+    const error = new CustomError(this._collection, this._slug, statusCode, this.message);
     const details = Object.freeze([...this._details]);
     error.stack = this.stack;
     error._details = details;
@@ -106,7 +128,7 @@ class CustomError extends Error {
    * @param message - The new error message.
    */
   public withMessage(message: string) {
-    const error = new CustomError(this._collection, this._statusCode, message);
+    const error = new CustomError(this._collection, this._slug, this._statusCode, message);
     const details = Object.freeze([...this._details]);
     error.stack = this.stack;
     error._details = details;
@@ -119,7 +141,7 @@ class CustomError extends Error {
    * @param details - Additional details or metadata payload.
    */
   public withDetails(...details: unknown[]) {
-    const error = new CustomError(this._collection, this._statusCode, this.message);
+    const error = new CustomError(this._collection, this._slug, this._statusCode, this.message);
     const detailValues = Object.freeze([...this._details, ...details]);
     error.stack = this.stack;
     error._details = detailValues;
@@ -131,6 +153,7 @@ class CustomError extends Error {
       type: "CustomError",
       message: this.message,
       statusCode: this._statusCode,
+      slug: this._slug,
       collection: this._collection.name,
       details: this._details.map(serializeDetail),
       stack: this.stack ?? "",
@@ -145,6 +168,7 @@ class CustomError extends Error {
       name: this.name,
       message: this.message,
       statusCode: this._statusCode,
+      slug: this._slug,
       collection: this._collection.name,
       details: this._details,
       stack: this.stack
@@ -157,11 +181,13 @@ class CustomError extends Error {
  */
 export const ErrorResponse = Type.Object({
   ok: Type.Literal(false),
-  message: Type.String({ description: "error message" })
+  message: Type.String({ description: "error message" }),
+  error: Type.String({ description: "slug helpful to differ errors" })
 }, {
   examples: [{
     ok: false,
-    message: "unexpected error",
+    message: "something went wrong",
+    error: "unexpected-error"
   }],
 });
 
@@ -205,11 +231,12 @@ export class ErrorsCollection {
   /**
    * Creates a new CustomError bound to this collection.
    * 
+   * @param slug - Error slug useful to differ different errors.
    * @param statusCode - HTTP status code.
    * @param message - Static error message.
    */
-  public createError(statusCode: number, message: string) {
-    return new CustomError(this, statusCode, message);
+  public createError(slug: string, statusCode: number, message: string) {
+    return new CustomError(this, slug, statusCode, message);
   }
 
   /**
@@ -245,7 +272,8 @@ export class ErrorsCollection {
             .status(error.statusCode)
             .send({
               ok: false,
-              message: error.message
+              message: error.message,
+              error: error.slug
             } as ErrorResponseReturnType);
         }
       } else {
@@ -258,7 +286,8 @@ export class ErrorsCollection {
             .status(400)
             .send({
               ok: false,
-              message: error.message
+              message: error.message,
+              error: "validation"
             } as ErrorResponseReturnType);
         }
       }
@@ -277,7 +306,8 @@ export class ErrorsCollection {
         ) {
           return reply.status(frameworkError.statusCode!).send({
             ok: false,
-            message: frameworkError.message
+            message: frameworkError.message,
+            error: "fastify"
           } as ErrorResponseReturnType);
         }
       }
@@ -286,7 +316,8 @@ export class ErrorsCollection {
         .status(500)
         .send({
           ok: false,
-          message: "unknown error"
+          message: "something went wrong",
+          error: "unexpected-error"
         } as ErrorResponseReturnType);
     });
   }
@@ -305,8 +336,8 @@ export class ErrorsCollection {
  * throw UserErrors.error("user_not_found"); 
  * ```
  */
-export class ErrorsSet<T extends {[Key: string]: [number, string]}> extends ErrorsCollection {
-  private _errors: Map<keyof T, CustomError> = new Map();
+export class ErrorsSet<T extends { [K in keyof T]-?: [number, string] }> extends ErrorsCollection {
+  private _errors: T;
 
   /**
    * Creates an instance of ErrorsSet.
@@ -317,11 +348,7 @@ export class ErrorsSet<T extends {[Key: string]: [number, string]}> extends Erro
   public constructor(name: string, errors: T) {
     super(name);
 
-    for (const msg in errors) {
-      const slug = msg;
-      const [ statusCode, message ] = errors[slug]!;
-      this._errors.set(slug, super.createError(statusCode, message));
-    }
+    this._errors = errors;
   }
 
   /**
@@ -329,10 +356,10 @@ export class ErrorsSet<T extends {[Key: string]: [number, string]}> extends Erro
    * 
    * @param slug - Key of the error definition.
    */
-  public error(slug: keyof T): CustomError {
-    const error = this._errors.get(slug)!;
+  public error<S extends keyof T & string>(slug: S): CustomError {
+    const error = this._errors[slug];
 
-    return super.createError(error.statusCode, error.message);
+    return super.createError(slug, error[0], error[1]);
   }
 }
 

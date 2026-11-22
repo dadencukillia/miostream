@@ -19,5 +19,5 @@ export const isSafeHttpUrl = (urlString: string): boolean => {
  * @returns The concatenated and normalized URL string.
  */
 export const joinUrls = (a: string, b: string): string => {
-  return a.replace(/\/$/, "") + "/" + b.replace(/^\//, "");
+  return `${a.replace(/\/$/, "")}/${b.replace(/^\//, "")}`;
 }

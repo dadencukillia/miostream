@@ -32,6 +32,81 @@ RETURNING
     "created_at",
     "updated_at";
 
+-- name: GetOrCreateUserByGoogleId :one
+WITH inserted AS (
+    INSERT INTO public.users(
+        "nickname",
+        "full_name",
+        "email",
+        "google_id",
+        "timezone"
+    ) VALUES (
+        @nickname,
+        @full_name,
+        @email,
+        @google_id::text,
+        coalesce(sqlc.narg('timezone'), 'Europe/Kyiv')
+    )
+    ON CONFLICT ("google_id") DO NOTHING
+    RETURNING 
+        "user_id",
+        "nickname",
+        "full_name",
+        "email",
+        "bio",
+        "avatar_id",
+        "max_streak",
+        "timezone",
+        "streak_start_date",
+        "last_watch_date",
+        "profile_frame_url",
+        "profile_background_url",
+        "user_role",
+        "user_status",
+        "created_at",
+        "updated_at"
+)
+SELECT 
+    "user_id",
+    "nickname",
+    "full_name",
+    "email",
+    "bio",
+    "avatar_id",
+    "max_streak",
+    "timezone",
+    "streak_start_date",
+    "last_watch_date",
+    "profile_frame_url",
+    "profile_background_url",
+    "user_role",
+    "user_status",
+    "created_at",
+    "updated_at"
+FROM inserted
+UNION ALL
+SELECT 
+    "user_id",
+    "nickname",
+    "full_name",
+    "email",
+    "bio",
+    "avatar_id",
+    "max_streak",
+    "timezone",
+    "streak_start_date",
+    "last_watch_date",
+    "profile_frame_url",
+    "profile_background_url",
+    "user_role",
+    "user_status",
+    "created_at",
+    "updated_at"
+FROM public.users
+WHERE "google_id" = @google_id::text
+    AND NOT EXISTS (SELECT 1 FROM inserted)
+LIMIT 1;
+
 -- name: GetUserById :one
 SELECT 
     "user_id",
@@ -127,12 +202,12 @@ WHERE "user_id" = @user_id::uuid
 LIMIT 1;
 
 -- name: UpdateUserProfile :one
-UPDATE public.users
+UPDATE public.users 
 SET 
-    "nickname"   = @nickname,
-    "full_name"  = @full_name,
-    "bio"        = @bio,
-    "timezone"   = @timezone,
+    "nickname"   = COALESCE(sqlc.narg('nickname')::text, nickname),
+    "full_name"  = COALESCE(sqlc.narg('full_name')::text, full_name),
+    "bio"        = COALESCE(sqlc.narg('bio')::text, bio),
+    "timezone"   = COALESCE(sqlc.narg('timezone')::text, timezone),
     "updated_at" = now()
 WHERE "user_id" = @user_id::uuid
 RETURNING 
@@ -157,13 +232,13 @@ RETURNING
 UPDATE public.users 
 SET 
     "profile_frame_url" = CASE 
-        WHEN @set_frame::boolean
-        THEN sqlc.narg('profile_frame_url')::text
-        ELSE profile_frame_url END,
+        WHEN 'profile_frame_url' = ANY(sqlc.arg('null_fields')::text[]) THEN NULL
+        ELSE COALESCE(sqlc.narg('profile_frame_url')::text, profile_frame_url)
+    END,
     "profile_background_url" = CASE 
-        WHEN @set_background::boolean
-        THEN sqlc.narg('profile_background_url')::text
-        ELSE profile_background_url END,
+        WHEN 'profile_background_url' = ANY(sqlc.arg('null_fields')::text[]) THEN NULL
+        ELSE COALESCE(sqlc.narg('profile_background_url')::text, profile_background_url)
+    END,
     "updated_at" = now()
 WHERE "user_id" = @user_id::uuid
 RETURNING 

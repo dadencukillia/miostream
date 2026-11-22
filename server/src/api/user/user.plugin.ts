@@ -1,23 +1,23 @@
-import type { FastifyPluginAsync, FastifyInstance, FastifyPluginOptions, FastifyRequest, FastifyReply } from "fastify";
+import type { FastifyPluginAsync, FastifyInstance, FastifyPluginOptions } from "fastify";
 import * as schemas from "./user.schema";
 import * as controllers from "./user.controller";
 import { UserErrors, AvatarErrors } from "./user.errors";
 import { grantAuthMiddleware } from "@/api/auth/auth.middleware";
+import { AuthErrors } from "@/api/auth/auth.errors";
 
-type AuthHook = (req: FastifyRequest<any>, reply: FastifyReply<any>) => Promise<void | unknown>;
-
-const requireAdmin = grantAuthMiddleware({ userHasRole: ["admin"] }) as AuthHook;
-const requireAuth = grantAuthMiddleware() as AuthHook;
+const requireAdmin = grantAuthMiddleware({ userHasRole: ["admin"] });
+const requireAuth = grantAuthMiddleware();
 
 const modulePlugin: FastifyPluginAsync = async (fastify: FastifyInstance, _opts: FastifyPluginOptions) => {
-    UserErrors.setupErrorHandler(fastify, [UserErrors, AvatarErrors], true, true);
+    UserErrors.setupErrorHandler(fastify, [UserErrors, AvatarErrors, AuthErrors], true, true);
 
     // Public routes
     fastify.post("/", { schema: schemas.CreateUserSchema }, controllers.createUser);
     fastify.get("/:identifier", { schema: schemas.GetUserSchema }, controllers.getUser);
     fastify.get("/:userId/links", { schema: schemas.ListUserLinksByUserIdSchema }, controllers.listUserLinksByUserId);
-    
+
     // Authenticated user routes
+    fastify.get("/me", { schema: schemas.GetMeUserSchema, preHandler: requireAuth }, controllers.getMe);
     fastify.patch("/profile", { schema: schemas.UpdateUserProfileSchema, preHandler: requireAuth }, controllers.updateUserProfile);
     fastify.put("/avatar", { schema: schemas.UpdateUserAvatarSchema, preHandler: requireAuth }, controllers.updateUserAvatar);
     fastify.delete("/avatar", { schema: schemas.DeleteUserAvatarSchema, preHandler: requireAuth }, controllers.deleteUserAvatar);

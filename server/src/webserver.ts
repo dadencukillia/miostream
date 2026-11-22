@@ -1,5 +1,5 @@
-import Fastify, { FastifyInstance, FastifyPluginAsync } from "fastify";
-import connector, { Connection } from "./utils/connector";
+import Fastify, { type FastifyInstance, type FastifyPluginAsync } from "fastify";
+import connector, { type Connection } from "./utils/connector";
 import { PostgresConnection } from "./connections/pg";
 import { S3Connection } from "./connections/s3";
 import api from "./api/api.plugin";
@@ -104,8 +104,7 @@ export class FastifyWebServer {
   private connectionsList(): Connection<any>[] {
     return Array.from(new Set(
       this._modules
-        .map(e => e.connections)
-        .flat(1)
+        .flatMap(e => e.connections)
     ));
   }
 

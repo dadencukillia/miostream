@@ -1,60 +1,62 @@
-import type { FastifyInstance, FastifyPluginOptions, FastifyReply, FastifyRequest } from "fastify";
+import type {
+  FastifyInstance, FastifyPluginOptions,
+  FastifyReply, FastifyRequest,
+  preHandlerAsyncHookHandler, RawReplyDefaultExpression,
+  RawRequestDefaultExpression, RawServerDefault
+} from "fastify";
+import * as config from "@config";
 import "@context";
 import fp from "fastify-plugin";
+import { deleteSessionById, getSessionById, GetSessionByIdRow } from "@sqlc/sessions_sql";
+import { AuthErrors } from "./auth.errors";
+import { setCookie } from "@utils/cookies";
+import { getUserById, GetUserByIdRow } from "@sqlc/users_sql";
+import { Client, Pool } from "pg";
+import { verifyAccessToken } from "./services/token.service";
 
 /**
  * Represents the authenticated user's context and session details.
  * Attached to the Fastify request object (`req.auth`) during successful authentication.
  */
 export class AuthContext {
-  private _sessionId: number;
+  private _sessionId: bigint;
   private _userId: string;
-  private _nickname: string;
-  private _fullName: string;
-  private _avatarId: string;
-  private _role: string;
-  private _status: string;
+  private _user: Promise<GetUserByIdRow|null>|null = null;
+  private _session: Promise<GetSessionByIdRow|null>|null = null;
 
-  public constructor(sessionId: number, userId: string, nickname: string, fullName: string, avatarId: string, role: string, status: string) {
+  public constructor(sessionId: bigint, userId: string) {
     this._sessionId = sessionId;
     this._userId = userId.trim().toLowerCase();
-    this._nickname = nickname.trim();
-    this._fullName = fullName.trim();
-    this._avatarId = avatarId.trim();
-    this._role = role.trim().toLowerCase();
-    this._status = status.trim().toLowerCase();
+  }
+
+  /**
+   * Receives user information from database.
+   */
+  public async getUser(pg: Client|Pool): Promise<GetUserByIdRow|null> {
+    if (!this._user) {
+      this._user = getUserById(pg, { userId: this._userId });
+    }
+
+    return this._user;
+  }
+
+  /**
+   * Receives session information from database.
+   */
+  public async getSession(pg: Client|Pool): Promise<GetSessionByIdRow|null> {
+    if (!this._session) {
+      this._session = getSessionById(pg, { sessionId: this._sessionId.toString() });
+    }
+
+    return this._session;
+  }
+
+  public get sessionId(): bigint {
+    return this._sessionId;
   }
 
   public get userId(): string {
     return this._userId;
-  }
-
-  public get nickname(): string {
-    return this._nickname;
-  }
-
-  public get fullName(): string {
-    return this._fullName;
-  }
-
-  public get avatarId(): string {
-    return this._avatarId;
-  }
-
-  public get role(): string {
-    return this._role;
-  }
-
-  public get status(): string {
-    return this._status;
-  }
-
-  /**
-   * Synchronizes internal class fields (model) with the current database state.
-   */
-  public syncUser() {
-    // TODO: update class fields according
-    // to the database's state
   }
 
   /**
@@ -62,10 +64,23 @@ export class AuthContext {
    * @param req - The Fastify request object.
    * @param resp - The Fastify reply object.
    */
-  public logout(request: FastifyRequest, reply: FastifyReply) {
-    // TODO: real session deletion, cookies cleaning
+  public async logout(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      await deleteSessionById(request.server.pg, { sessionId: this._sessionId.toString() });
+    } catch(e) {
+      throw AuthErrors.error("auth-db-failed").withDetails(e);
+    }
+
+    setCookie(reply, config.AuthAdjustments.SESSION_COOKIE_NAME, "", { maxAge: 0 });
   }
 }
+
+type AnyRoutePreHandler = preHandlerAsyncHookHandler<
+  RawServerDefault,
+  RawRequestDefaultExpression<RawServerDefault>,
+  RawReplyDefaultExpression<RawServerDefault>,
+  any
+>;
 
 /**
  * Fastify preHandler middleware that populates `req.auth` with a `AuthContext`.
@@ -82,7 +97,7 @@ export class AuthContext {
  * });
  * ```
  */
-export async function authMiddleware(request: FastifyRequest, _reply: FastifyReply) {
+export const authMiddleware: AnyRoutePreHandler = async (request: FastifyRequest, _reply: FastifyReply) => {
   // TODO: replace onto the real auth operations
 
   const authHeader = request.headers.authorization?.trim();
@@ -94,15 +109,10 @@ export async function authMiddleware(request: FastifyRequest, _reply: FastifyRep
   const split = authHeader.split(" ");
   const token = split[split.length - 1];
 
-  const role = token?.toLowerCase().includes("admin") ? "admin" : "user";
+  if (!token) return;
 
-  request.auth = new AuthContext(
-    Math.round(Date.now()),
-    "00000000-0000-0000-0000-000000000000",
-    "exampleUser", "Jack Jackson",
-    "https://i.pravatar.cc/256",
-    role, "active"
-  );
+  const accessTokenPayload = await verifyAccessToken(token);
+  request.auth = new AuthContext(BigInt(accessTokenPayload.sessionId), accessTokenPayload.sub);
 }
 
 /**
@@ -130,7 +140,7 @@ const grantAuthDefaultFilters: Required<GrantAuthFilters> = {
   userHasRole: [],
   userHasStatus: ["active"],
   fallback: (_req, resp) => {
-    resp.status(403).send({ ok: false, message: "no access" });
+    resp.status(403).send({ ok: false, message: "no access", error: "no-access" });
   }
 };
 
@@ -148,7 +158,7 @@ const grantAuthDefaultFilters: Required<GrantAuthFilters> = {
  *   return { message: `Welcome ${req.auth!.fullName}` };
  * });
  */
-export const grantAuthMiddleware = (opts: GrantAuthFilters = grantAuthDefaultFilters) => async (request: FastifyRequest, reply: FastifyReply) => {
+export const grantAuthMiddleware = (opts: GrantAuthFilters = grantAuthDefaultFilters): AnyRoutePreHandler => async function (this: FastifyInstance, request: FastifyRequest, reply: FastifyReply) {
   const {
     receiveAuthData, unsignedOnly, userHasRole, userHasStatus, fallback
   } = {
@@ -169,21 +179,25 @@ export const grantAuthMiddleware = (opts: GrantAuthFilters = grantAuthDefaultFil
     }
   };
 
-  if (receiveAuthData) await authMiddleware(request, reply);
+  if (receiveAuthData) await authMiddleware.call(this, request, reply);
 
   if (unsignedOnly) {
-    if (request.auth != null) return await handleFallback();
+    if (request.auth != null) await handleFallback();
     return;
   }
 
-  if (!request.auth) return await handleFallback();
-
-  if (userHasRole.length > 0 && !userHasRole.includes(request.auth.role)) {
+  if (!request.auth) {
     return await handleFallback();
   }
 
-  if (userHasStatus.length > 0 && !userHasStatus.includes(request.auth.status)) {
-    return await handleFallback();
+  if (userHasRole.length > 0) {
+    const user = await request.auth.getUser(request.server.pg);
+    if (!user || !userHasRole.includes(user.userRole)) return await handleFallback();
+  }
+
+  if (userHasStatus.length > 0) {
+    const user = await request.auth.getUser(request.server.pg);
+    if (!user || !userHasStatus.includes(user.userStatus)) return await handleFallback();
   }
 };
 
