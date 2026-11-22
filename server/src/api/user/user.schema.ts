@@ -41,10 +41,9 @@ export const UserResponse = Type.Object({
         description: "Short profile biography",
         examples: ["Variety streamer and tech enthusiast"]
     }),
-    avatarId: Nullable(Type.String({
-        format: "uuid",
-        description: "UUID of user avatar image stored in S3 (null if not set)",
-        examples: ["01a1bba1-8f21-73cc-b596-6fa8d2dde341"]
+    avatarUrl: Nullable(Type.String({
+        description: "URL to user avatar image (null if not set)",
+        examples: ["/cdn/avatar/01a1bba1-8f21-73cc-b596-6fa8d2dde341.webp"]
     })),
     maxStreak: Type.Integer({
         minimum: 0,

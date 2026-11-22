@@ -13,6 +13,7 @@ import {
 } from "@sqlc/users_sql";
 import type * as dto from "../user.dto";
 import {
+    userTransformAvatarUrl,
     userTransformOldAvatar,
     userTransformStreak,
 } from "../user.model";
@@ -84,7 +85,7 @@ export async function updateUserAvatarImage(
         }
     }
 
-    return userTransformStreak(userTransformOldAvatar(dbResponse));
+    return userTransformAvatarUrl(userTransformStreak(userTransformOldAvatar(dbResponse)));
 }
 
 export async function resetUserAvatar(
@@ -124,5 +125,5 @@ export async function resetUserAvatar(
         throw AvatarErrors.error("avatar-s3-remove").withDetails(e);
     }
 
-    return userTransformStreak(userTransformOldAvatar(dbResponse));
+    return userTransformAvatarUrl(userTransformStreak(userTransformOldAvatar(dbResponse)));
 }
