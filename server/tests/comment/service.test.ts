@@ -1,12 +1,11 @@
-import connector from "@utils/connector";
-import { PostgresConnection } from "@/connections/pg";
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import Fastify, { type FastifyInstance } from "fastify";
 import * as service from "@/api/comment/comment.service";
 import * as userService from "@/api/user/services/user.service";
+import { getDatabasePool, wipeDatabaseTables } from "../dbHelper";
+import { wipeOAuthUsers } from "../oauthHelper";
 
 describe("comment service", () => {
-    let fastify: FastifyInstance;
+    const db = getDatabasePool();
     let authorId: string = "";
     let otherUserId: string = "";
     let animeId: string = "";
@@ -15,19 +14,10 @@ describe("comment service", () => {
     let secondCommentId: string = "";
 
     beforeAll(async () => {
-        fastify = Fastify({ logger: false, pluginTimeout: 0 });
+        await wipeDatabaseTables("public.comments", "public.animes");
+        await wipeOAuthUsers();
 
-        await fastify.register(connector, {
-            retries: 3,
-            interval: 15 * 1000,
-            connections: [PostgresConnection],
-        });
-
-        await fastify.pg.query("DELETE FROM public.comments;");
-        await fastify.pg.query("DELETE FROM public.animes;");
-        await fastify.pg.query("DELETE FROM public.users;");
-
-        const author = await userService.createUser(fastify.pg, {
+        const author = await userService.createUser(db, {
             nickname: "comment_author",
             fullName: "Comment Author",
             email: "comment_author@miostream.dev",
@@ -36,7 +26,7 @@ describe("comment service", () => {
         });
         authorId = author.userId;
 
-        const otherUser = await userService.createUser(fastify.pg, {
+        const otherUser = await userService.createUser(db, {
             nickname: "comment_other",
             fullName: "Comment Other",
             email: "comment_other@miostream.dev",
@@ -45,13 +35,13 @@ describe("comment service", () => {
         });
         otherUserId = otherUser.userId;
 
-        const animeRes = await fastify.pg.query<{ anime_id: string }>(
+        const animeRes = await db.query<{ anime_id: string }>(
             "INSERT INTO public.animes (slug) VALUES ($1) RETURNING anime_id;",
             ["test-comment-anime"]
         );
         animeId = animeRes.rows[0]!.anime_id;
 
-        const otherAnimeRes = await fastify.pg.query<{ anime_id: string }>(
+        const otherAnimeRes = await db.query<{ anime_id: string }>(
             "INSERT INTO public.animes (slug) VALUES ($1) RETURNING anime_id;",
             ["test-comment-other-anime"]
         );
@@ -59,14 +49,12 @@ describe("comment service", () => {
     });
 
     afterAll(async () => {
-        await fastify.pg.query("DELETE FROM public.comments;");
-        await fastify.pg.query("DELETE FROM public.animes;");
-        await fastify.pg.query("DELETE FROM public.users;");
-        await fastify.close();
+        await wipeDatabaseTables("public.comments", "public.animes");
+        await wipeOAuthUsers();
     });
 
     test("post comment", async () => {
-        const created = await service.postComment(fastify.pg, animeId, authorId, {
+        const created = await service.postComment(db, animeId, authorId, {
             content: "  First comment!  ",
         });
 
@@ -85,43 +73,43 @@ describe("comment service", () => {
         expect(created.createdAt).toBeDefined();
 
         expect(
-            service.postComment(fastify.pg, crypto.randomUUID(), authorId, {
+            service.postComment(db, crypto.randomUUID(), authorId, {
                 content: "Missing anime",
             })
         ).rejects.toMatchObject({ statusCode: 404 });
 
         expect(
-            service.postComment(fastify.pg, animeId, crypto.randomUUID(), {
+            service.postComment(db, animeId, crypto.randomUUID(), {
                 content: "Missing author",
             })
         ).rejects.toMatchObject({ statusCode: 404 });
 
         expect(
-            service.postComment(fastify.pg, "invalid-uuid", authorId, {
+            service.postComment(db, "invalid-uuid", authorId, {
                 content: "Bad UUID",
             })
         ).rejects.toMatchObject({ statusCode: 400 });
     });
 
     test("get comments with cursor pagination", async () => {
-        const second = await service.postComment(fastify.pg, animeId, otherUserId, {
+        const second = await service.postComment(db, animeId, otherUserId, {
             content: "Second comment",
         });
         secondCommentId = second.commentId;
 
-        const third = await service.postComment(fastify.pg, animeId, authorId, {
+        const third = await service.postComment(db, animeId, authorId, {
             content: "Third comment",
         });
 
         // First page (limit 2, newest first)
-        const page1 = await service.getComments(fastify.pg, animeId, { limit: 2 });
+        const page1 = await service.getComments(db, animeId, { limit: 2 });
         expect(page1.comments.length).toBe(2);
         expect(page1.comments[0]?.commentId).toBe(third.commentId);
         expect(page1.comments[1]?.commentId).toBe(secondCommentId);
         expect(page1.nextCursor).toBe(secondCommentId);
 
         // Second page using cursor
-        const page2 = await service.getComments(fastify.pg, animeId, {
+        const page2 = await service.getComments(db, animeId, {
             cursor: page1.nextCursor!,
             limit: 2,
         });
@@ -130,7 +118,7 @@ describe("comment service", () => {
         expect(page2.nextCursor).toBeNull();
 
         // Cursor "0" returns first page
-        const all = await service.getComments(fastify.pg, animeId, {
+        const all = await service.getComments(db, animeId, {
             cursor: "0",
             limit: 20,
         });
@@ -138,17 +126,17 @@ describe("comment service", () => {
         expect(all.nextCursor).toBeNull();
 
         // Empty list for anime without comments
-        const empty = await service.getComments(fastify.pg, otherAnimeId, {});
+        const empty = await service.getComments(db, otherAnimeId, {});
         expect(empty).toEqual({ comments: [], nextCursor: null });
 
         expect(
-            service.getComments(fastify.pg, "invalid-uuid", {})
+            service.getComments(db, "invalid-uuid", {})
         ).rejects.toMatchObject({ statusCode: 400 });
     });
 
     test("update comment", async () => {
         const updated = await service.updateComment(
-            fastify.pg,
+            db,
             animeId,
             firstCommentId,
             authorId,
@@ -168,21 +156,21 @@ describe("comment service", () => {
 
         // Forbid updating someone else's comment
         expect(
-            service.updateComment(fastify.pg, animeId, firstCommentId, otherUserId, {
+            service.updateComment(db, animeId, firstCommentId, otherUserId, {
                 content: "Hacked content",
             })
         ).rejects.toMatchObject({ statusCode: 404 });
 
         // Wrong animeId
         expect(
-            service.updateComment(fastify.pg, otherAnimeId, firstCommentId, authorId, {
+            service.updateComment(db, otherAnimeId, firstCommentId, authorId, {
                 content: "Wrong anime",
             })
         ).rejects.toMatchObject({ statusCode: 404 });
 
         // Non-existent commentId
         expect(
-            service.updateComment(fastify.pg, animeId, "999999999", authorId, {
+            service.updateComment(db, animeId, "999999999", authorId, {
                 content: "Ghost comment",
             })
         ).rejects.toMatchObject({ statusCode: 404 });
@@ -191,25 +179,25 @@ describe("comment service", () => {
     test("delete comment by owner and privileged user", async () => {
         // Non-owner regular user cannot delete
         expect(
-            service.deleteComment(fastify.pg, animeId, firstCommentId, otherUserId, false)
+            service.deleteComment(db, animeId, firstCommentId, otherUserId, false)
         ).rejects.toMatchObject({ statusCode: 404 });
 
         // Wrong animeId cannot delete
         expect(
-            service.deleteComment(fastify.pg, otherAnimeId, firstCommentId, authorId, false)
+            service.deleteComment(db, otherAnimeId, firstCommentId, authorId, false)
         ).rejects.toMatchObject({ statusCode: 404 });
 
         // Owner deletes own comment
-        await service.deleteComment(fastify.pg, animeId, firstCommentId, authorId, false);
+        await service.deleteComment(db, animeId, firstCommentId, authorId, false);
 
         expect(
-            service.deleteComment(fastify.pg, animeId, firstCommentId, authorId, false)
+            service.deleteComment(db, animeId, firstCommentId, authorId, false)
         ).rejects.toMatchObject({ statusCode: 404 });
 
         // Privileged user (admin/moderator) deletes another user's comment
-        await service.deleteComment(fastify.pg, animeId, secondCommentId, authorId, true);
+        await service.deleteComment(db, animeId, secondCommentId, authorId, true);
 
-        const remaining = await service.getComments(fastify.pg, animeId, {});
+        const remaining = await service.getComments(db, animeId, {});
         expect(remaining.comments.length).toBe(1);
     });
 });

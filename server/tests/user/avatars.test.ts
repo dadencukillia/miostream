@@ -1,31 +1,28 @@
-import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { type FastifyInstance } from "fastify";
+import { afterAll, describe, expect, test } from "bun:test";
 import path from "node:path";
 import { fastifyInstance } from "../fastifyHelper";
 import { newTestAuth, wipeOAuthUsers } from "../oauthHelper";
+import { beforeAllReturning } from "../testHelper";
 
 const avatarPicture = await Bun.file(path.join(import.meta.dir, "avatar.png")).bytes();
 
-describe("user avatars", async () => {
-	let fastify: FastifyInstance;
-	let userId: string = "";
-	let authorization: string = "Bearer";
-
-	beforeAll(async () => {
-		fastify = await fastifyInstance();
+describe("user avatars", () => {
+	const beforeValues = beforeAllReturning(async () => {
+		const fastify = await fastifyInstance();
 		await wipeOAuthUsers();
-
-		let user;
-		({ authorization, user } = await newTestAuth("user", "active"));
-		userId = user.userId;
+		const { authorization, user } = await newTestAuth("user", "active");
+		return { fastify, authorization, userId: user.userId };
 	});
 
 	afterAll(async () => {
+		const { fastify } = await beforeValues;
 		await wipeOAuthUsers();
 		await fastify.close();
 	});
 
 	test("attach avatar to user", async () => {
+		const { fastify, authorization, userId } = await beforeValues;
+
 		const response = await fastify.inject({
 			path: "/api/user/avatar",
 			method: "PUT",
@@ -60,6 +57,8 @@ describe("user avatars", async () => {
 	});
 
 	test("reset user avatar", async () => {
+		const { fastify, authorization, userId } = await beforeValues;
+
 		// Reset first, must be success
 		{
 			const response = await fastify.inject({
