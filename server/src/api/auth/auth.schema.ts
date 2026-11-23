@@ -59,6 +59,24 @@ export const LoginRequestPayload = Type.Object({
 	description: "Payload for authenticating with email or nickname and password",
 });
 
+export const UpdatePasswordRequestPayload = Type.Object({
+	oldPassword: Type.String({
+		minLength: 8,
+		maxLength: 72,
+		description: "Current account password",
+		examples: ["OldP@ssw0rd123"],
+	}),
+	newPassword: Type.String({
+		minLength: 8,
+		maxLength: 72,
+		description: "New account password (8 to 72 characters; must differ from oldPassword)",
+		examples: ["NewStrongerP@ssw0rd!"],
+	}),
+}, {
+	additionalProperties: false,
+	description: "Payload for changing the authenticated user's password",
+});
+
 export const OAuthRedirectRequestQueries = Type.Object({
 	provider: Type.String({
 		pattern: OAUTH_PROVIDER_PATTERN,
@@ -113,6 +131,21 @@ export const RegisterSchema = {
 		201: UserResponse,
 		400: ErrorResponse,
 		409: ErrorResponse,
+		500: ErrorResponse,
+	},
+} as const;
+
+export const UpdatePasswordSchema = {
+	tags: [TAG_AUTH],
+	summary: "Change account password",
+	description: "Updates the password for the currently authenticated user.",
+	body: UpdatePasswordRequestPayload,
+	response: {
+		204: Type.Null({ description: "Password changed successfully" }),
+		400: ErrorResponse,
+		401: ErrorResponse,
+		403: ErrorResponse,
+		404: ErrorResponse,
 		500: ErrorResponse,
 	},
 } as const;

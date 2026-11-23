@@ -70,3 +70,20 @@ export async function loginUser(
 
     return authRecord.user;
 }
+
+export async function updateUserPassword(
+    client: Pool,
+    userId: string,
+    data: dto.UpdatePasswordRequestPayloadType
+): Promise<void> {
+    if (data.oldPassword === data.newPassword) {
+        throw UserErrors.error("user-invalid").withMessage("new password must differ from old password");
+    }
+
+    await userServices.updateUserPassword(client, userId, {
+        oldPassword: data.oldPassword,
+        newPassword: data.newPassword,
+    });
+
+    // TODO: send password changed notification email
+}

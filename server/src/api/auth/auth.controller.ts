@@ -72,6 +72,25 @@ export const login = async (
     return reply.status(200).send(transformOk(user));
 };
 
+export const updatePassword = async (
+    request: FastifyRequest<{
+        Body: dto.UpdatePasswordRequestPayloadType;
+        Reply: dto.UpdatePasswordReturnType;
+    }>,
+    reply: FastifyReply<{
+        Body: dto.UpdatePasswordRequestPayloadType;
+        Reply: dto.UpdatePasswordReturnType;
+    }>
+) => {
+    await credentialsServices.updateUserPassword(
+        request.server.pg,
+        request.auth!.userId,
+        request.body
+    );
+
+    return reply.status(204).send(null);
+};
+
 export const redirectToProvider = async (
     request: FastifyRequest<{
         Querystring: dto.OAuthRedirectRequestQueriesType;
