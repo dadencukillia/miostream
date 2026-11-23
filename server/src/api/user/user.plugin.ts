@@ -22,7 +22,6 @@ const modulePlugin: FastifyPluginAsync = async (fastify: FastifyInstance, _opts:
     fastify.put("/avatar", { schema: schemas.UpdateUserAvatarSchema, preHandler: requireAuth }, controllers.updateUserAvatar);
     fastify.delete("/avatar", { schema: schemas.DeleteUserAvatarSchema, preHandler: requireAuth }, controllers.deleteUserAvatar);
     fastify.patch("/customization", { schema: schemas.UpdateUserCustomizationSchema, preHandler: requireAuth }, controllers.updateUserCustomization);
-    fastify.patch("/password", { schema: schemas.UpdateUserPasswordSchema, preHandler: requireAuth }, controllers.updateUserPassword);
     fastify.delete("/", { schema: schemas.DeleteUserSchema, preHandler: requireAuth }, controllers.deleteUser);
 
     // Authenticated user links routes

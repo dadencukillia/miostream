@@ -126,21 +126,6 @@ export const updateUserCustomization = async (
     return reply.status(200).send(transformOk(user));
 };
 
-export const updateUserPassword = async (
-    request: FastifyRequest<{ Body: dto.UpdateUserPasswordRequestPayloadType }>,
-    reply: FastifyReply<{ Body: dto.UpdateUserPasswordRequestPayloadType; Reply: dto.UpdateUserPasswordReturnType }>
-) => {
-    const { oldPassword, newPassword } = request.body;
-    if (oldPassword === newPassword) throw UserErrors.error("user-invalid");
-
-    await services.updateUserPassword(
-        request.server.pg,
-        request.auth!.userId,
-        request.body
-    );
-    return reply.status(204).send(null);
-};
-
 export const updateUserStatus = async (
     request: FastifyRequest<{ Params: dto.UserIdRequestParamsType; Body: dto.UpdateUserStatusRequestPayloadType }>,
     reply: FastifyReply<{ Params: dto.UserIdRequestParamsType; Body: dto.UpdateUserStatusRequestPayloadType; Reply: dto.UpdateUserStatusReturnType }>
