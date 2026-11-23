@@ -129,6 +129,30 @@ FROM public.users
 WHERE "user_id" = @user_id::uuid
 LIMIT 1;
 
+-- name: GetUserByEmailOrNickname :one
+SELECT 
+    "user_id",
+    "nickname",
+    "full_name",
+    "email",
+    "password_hash",
+    "bio",
+    "avatar_id",
+    "max_streak",
+    "timezone",
+    "streak_start_date",
+    "last_watch_date",
+    "profile_frame_url",
+    "profile_background_url",
+    "user_role",
+    "user_status",
+    "created_at",
+    "updated_at"
+FROM public.users
+WHERE lower("email") = lower(@identifier::text)
+    OR lower("nickname") = lower(@identifier::text)
+LIMIT 1;
+
 -- name: GetUserByNickname :one
 SELECT 
     "user_id",

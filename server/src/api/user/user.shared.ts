@@ -1,1 +1,1 @@
-export { createUser, getOrCreateUserByGoogleId } from "./services/user.service";
+export { createUser, getOrCreateUserByGoogleId, getUserForLogin } from "./services/user.service";

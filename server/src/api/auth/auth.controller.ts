@@ -52,6 +52,26 @@ export const register = async (
     return reply.status(201).send(transformOk(user));
 };
 
+export const login = async (
+    request: FastifyRequest<{
+        Body: dto.LoginRequestPayloadType;
+        Reply: dto.LoginReturnType;
+    }>,
+    reply: FastifyReply<{
+        Body: dto.LoginRequestPayloadType;
+        Reply: dto.LoginReturnType;
+    }>
+) => {
+    const user = await credentialsServices.loginUser(request.server.pg, request.body);
+
+    const metadata = oauthProviderServices.parseClientMetadata(request.headers, request.ip);
+    const session = await sessionServices.newUserSession(request.server.pg, user.userId, metadata);
+
+    setSessionCookie(reply, session.sessionToken, config.AuthAdjustments.SESSION_MAX_AGE_SECONDS);
+
+    return reply.status(200).send(transformOk(user));
+};
+
 export const redirectToProvider = async (
     request: FastifyRequest<{
         Querystring: dto.OAuthRedirectRequestQueriesType;

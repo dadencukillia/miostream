@@ -130,6 +130,28 @@ export const getUserByNickname = async (client: Pool, nickname: string): Promise
     return userTransformStreak(user);
 };
 
+export const getUserForLogin = async (
+    client: Pool,
+    identifier: string
+): Promise<{ user: dto.UserType; passwordHash: string | null }> => {
+    let user;
+    try {
+        user = await usersSqlc.getUserByEmailOrNickname(client, { identifier });
+    } catch (e) {
+        throw UserErrors.error("user-db-error").withDetails(e);
+    }
+
+    if (!user) {
+        throw UserErrors.error("user-not-found");
+    }
+
+    const { passwordHash, ...userFields } = user;
+    return {
+        user: userTransformStreak(userFields),
+        passwordHash,
+    };
+};
+
 export const getPublicUserById = async (client: Pool, userId: string): Promise<dto.PublicUserType> => {
     const user = await getUserById(client, userId);
     return userTransformPublic(user);

@@ -3,6 +3,7 @@ import { ErrorResponse } from "@lib/errorsCollection";
 import type { UserResponseType } from "@/api/user/user.dto";
 import {
     AccessTokenResponse,
+    LoginRequestPayload,
     LogoutRequestQueries,
     OAuthCallbackRequestQueries,
     OAuthRedirectRequestQueries,
@@ -16,12 +17,14 @@ export type AccessTokenResponseType = Static<typeof AccessTokenResponse>;
 
 // Requests
 export type RegisterRequestPayloadType = Static<typeof RegisterRequestPayload>;
+export type LoginRequestPayloadType = Static<typeof LoginRequestPayload>;
 export type OAuthRedirectRequestQueriesType = Static<typeof OAuthRedirectRequestQueries>;
 export type OAuthCallbackRequestQueriesType = Static<typeof OAuthCallbackRequestQueries>;
 export type LogoutRequestQueriesType = Static<typeof LogoutRequestQueries>;
 
 // Controller Return Types
 export type RegisterReturnType = UserResponseType | ErrorResponseType;
+export type LoginReturnType = UserResponseType | ErrorResponseType;
 export type RedirectToProviderReturnType = ErrorResponseType | undefined;
 export type OAuthCallbackReturnType = ErrorResponseType | undefined;
 export type AccessTokenReturnType = AccessTokenResponseType | ErrorResponseType;

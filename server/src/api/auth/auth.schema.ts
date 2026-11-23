@@ -41,6 +41,24 @@ export const RegisterRequestPayload = Type.Object({
 	description: "Payload for registering a new user with email and password",
 });
 
+export const LoginRequestPayload = Type.Object({
+	identifier: Type.String({
+		minLength: 3,
+		maxLength: 255,
+		description: "User email address or unique nickname (case-insensitive)",
+		examples: ["john.doe@example.com", "streamer_pro"],
+	}),
+	password: Type.String({
+		minLength: 8,
+		maxLength: 72,
+		description: "Account password (8 to 72 characters)",
+		examples: ["Str0ngP@ssw0rd!"],
+	}),
+}, {
+	additionalProperties: false,
+	description: "Payload for authenticating with email or nickname and password",
+});
+
 export const OAuthRedirectRequestQueries = Type.Object({
 	provider: Type.String({
 		pattern: OAUTH_PROVIDER_PATTERN,
@@ -133,6 +151,20 @@ export const AccessTokenSchema = {
 		404: ErrorResponse,
 		500: ErrorResponse,
 		501: ErrorResponse,
+	},
+} as const;
+
+export const LoginSchema = {
+	tags: [TAG_AUTH],
+	summary: "Login with password",
+	description: "Authenticates a user by email or nickname and password, and starts an authenticated session.",
+	body: LoginRequestPayload,
+	response: {
+		200: UserResponse,
+		400: ErrorResponse,
+		401: ErrorResponse,
+		403: ErrorResponse,
+		500: ErrorResponse,
 	},
 } as const;
 
