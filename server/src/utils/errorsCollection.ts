@@ -66,6 +66,10 @@ class CustomError extends Error {
     this._slug = slug;
     this._collection = collection;
     this._statusCode = statusCode;
+
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, CustomError);
+    }
   }
 
   /**
@@ -236,7 +240,14 @@ export class ErrorsCollection {
    * @param message - Static error message.
    */
   public createError(slug: string, statusCode: number, message: string) {
-    return new CustomError(this, slug, statusCode, message);
+    const error = new CustomError(this, slug, statusCode, message);
+
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(error, this.createError);
+    }
+
+
+    return error;
   }
 
   /**
@@ -358,8 +369,13 @@ export class ErrorsSet<T extends { [K in keyof T]-?: [number, string] }> extends
    */
   public error<S extends keyof T & string>(slug: S): CustomError {
     const error = this._errors[slug];
+    const errorInstance = super.createError(slug, error[0], error[1]);
 
-    return super.createError(slug, error[0], error[1]);
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(errorInstance, this.error);
+    }
+
+    return errorInstance;
   }
 }
 
