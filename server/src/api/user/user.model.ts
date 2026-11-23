@@ -1,5 +1,5 @@
 import { getTodayUtcMsInTimezone } from "@utils/timezones";
-import { generateTransformer } from "@utils/modelTransformer";
+import { generateTransformer } from "@lib/modelTransformer";
 import { MS_PER_DAY, parseCalendarDateToUtcMs } from "@utils/time";
 import { Plain } from "@utils/types";
 

@@ -1,5 +1,5 @@
-import { MIGRATIONS_TABLE, Migrator } from "@utils/migrations";
-import { FastifyWebServer } from "./webserver";
+import { MIGRATIONS_TABLE, Migrator } from "@lib/migrations";
+import { FastifyWebServer } from "@/webserver";
 import { Command } from 'commander';
 import * as config from "@config";
 import { Client, Pool } from "pg";

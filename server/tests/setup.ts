@@ -1,5 +1,5 @@
 import { beforeAll } from "bun:test";
-import { Migrator } from "@utils/migrations";
+import { Migrator } from "@lib/migrations";
 import * as config from "@config";
 import { FastifyWebServer } from "@/webserver";
 import { PostgresConnection } from "@/connections/pg";

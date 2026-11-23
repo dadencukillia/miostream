@@ -3,7 +3,7 @@ import {
     Nullable,
     DateTimeType
 } from "@utils/types";
-import { ErrorResponse } from "@utils/errorsCollection";
+import { ErrorResponse } from "@lib/errorsCollection";
 
 // Tags
 export const TAG_COMMENT = "Comment";

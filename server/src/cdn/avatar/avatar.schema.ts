@@ -1,6 +1,6 @@
 import { Type } from "typebox";
 import type { FastifySchema } from "fastify";
-import { ErrorResponse } from "@utils/errorsCollection";
+import { ErrorResponse } from "@lib/errorsCollection";
 
 const CDN_TAG = "CDN";
 

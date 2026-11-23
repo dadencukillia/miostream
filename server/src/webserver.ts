@@ -1,11 +1,11 @@
 import Fastify, { type FastifyInstance, type FastifyPluginAsync } from "fastify";
-import connector, { type Connection } from "./utils/connector";
-import { PostgresConnection } from "./connections/pg";
-import { S3Connection } from "./connections/s3";
-import api from "./api/api.plugin";
-import cdn from "./cdn/cdn.plugin";
-import healthcheck from "./healthcheck";
-import { openapiJSONPlugin, openapiUIPlugin } from "./openapi";
+import connector, { type Connection } from "@lib/connector";
+import { PostgresConnection } from "@/connections/pg";
+import { S3Connection } from "@/connections/s3";
+import api from "@/api/api.plugin";
+import cdn from "@/cdn/cdn.plugin";
+import healthcheck from "@/healthcheck";
+import { openapiJSONPlugin, openapiUIPlugin } from "@/openapi";
 
 // Modules
 

@@ -1,4 +1,4 @@
-import { ErrorsSet } from "@utils/errorsCollection";
+import { ErrorsSet } from "@lib/errorsCollection";
 
 export const AnimeErrors = new ErrorsSet("anime", {
 	"anime-not-found": [404, "anime not found"],

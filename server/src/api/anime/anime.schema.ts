@@ -1,5 +1,5 @@
 import Type from "typebox";
-import { ErrorResponse } from "@utils/errorsCollection";
+import { ErrorResponse } from "@lib/errorsCollection";
 import { Nullable, StringEnum, UuidType } from "@utils/types";
 
 export const ANIME_FORMATS = [

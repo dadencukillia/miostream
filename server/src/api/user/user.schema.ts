@@ -6,7 +6,7 @@ import {
     DateTimeType,
     BigIntIdResponseType
 } from "@utils/types";
-import { ErrorResponse } from "@utils/errorsCollection";
+import { ErrorResponse } from "@lib/errorsCollection";
 
 // Tags
 export const TAG_USER = "User";

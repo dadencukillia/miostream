@@ -1,6 +1,6 @@
 import type { IncomingHttpHeaders } from "node:http";
 import * as config from "@config";
-import { OAuthConfig, OAuthProvider, providers } from "@utils/oauthProvider";
+import { OAuthConfig, OAuthProvider, providers } from "@lib/oauthProvider";
 import { AuthErrors } from "../auth.errors";
 import { Pool } from "pg";
 import { GoogleOAuthUserInfo } from "../auth.dto";

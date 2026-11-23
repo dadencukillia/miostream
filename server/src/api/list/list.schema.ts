@@ -1,5 +1,5 @@
 import Type from "typebox";
-import { ErrorResponse } from "@utils/errorsCollection";
+import { ErrorResponse } from "@lib/errorsCollection";
 
 export const TAG_LIST = "list";
 

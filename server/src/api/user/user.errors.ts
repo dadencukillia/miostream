@@ -1,4 +1,4 @@
-import { ErrorsSet } from "@utils/errorsCollection";
+import { ErrorsSet } from "@lib/errorsCollection";
 
 export const UserErrors = new ErrorsSet('user', {
     // DB

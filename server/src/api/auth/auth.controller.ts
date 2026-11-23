@@ -7,7 +7,6 @@ import * as tokenServices from "./services/token.service";
 import * as sessionServices from "./services/session.service";
 import { cookieValue, setCookie } from "@utils/cookies";
 import { deleteSessionById } from "@sqlc/sessions_sql";
-import PG from "pg";
 
 // Helpers
 

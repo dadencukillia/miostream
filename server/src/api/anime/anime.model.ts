@@ -1,4 +1,4 @@
-import { generateTransformer } from "@utils/modelTransformer";
+import { generateTransformer } from "@lib/modelTransformer";
 import type {
 	AgeRestrictionType,
 	AnimeFormatType,

@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { Pool } from "pg";
 import * as config from "@config";
-import { MIGRATIONS_TABLE, Migrator } from "@utils/migrations";
+import { MIGRATIONS_TABLE, Migrator } from "@lib/migrations";
 
 const SCHEMA = "test";
 const pool = new Pool({ connectionString: config.DB_URL });

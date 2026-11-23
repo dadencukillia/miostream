@@ -1,4 +1,4 @@
-import connector from "@utils/connector";
+import connector from "@lib/connector";
 import { PostgresConnection } from "@/connections/pg";
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import Fastify, { type FastifyInstance } from "fastify";

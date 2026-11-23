@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import type { Connection } from "@utils/connector";
+import type { Connection } from "@lib/connector";
 import * as config from "@config";
 import assert from "node:assert";
 

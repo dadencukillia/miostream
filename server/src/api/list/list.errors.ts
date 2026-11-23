@@ -1,4 +1,4 @@
-import { ErrorsSet } from "@utils/errorsCollection";
+import { ErrorsSet } from "@lib/errorsCollection";
 
 export const ListErrors = new ErrorsSet("list", {
 	"list-not-found": [404, "list unit not found"],
