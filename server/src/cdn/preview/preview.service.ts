@@ -1,23 +1,33 @@
-import type { FastifyBaseLogger } from "fastify";
 import type { S3Client } from "@aws-sdk/client-s3";
 import { getPreviewById } from "./preview.repo";
 import { PreviewErrors } from "./preview.errors";
 
-// Services
+export type GetPreviewResult =
+	| { notModified: true; etag?: string }
+	| { notModified: false; buffer: Buffer; etag?: string };
 
-export async function getPreview(s3: S3Client, logger: FastifyBaseLogger, previewId: string): Promise<Buffer> {
-	let preview: Uint8Array | null;
+export const getPreview = async (
+	s3: S3Client,
+	previewId: string,
+	ifNoneMatch?: string
+): Promise<GetPreviewResult> => {
+	let preview;
 
 	try {
-		preview = await getPreviewById(s3, previewId);
+		preview = await getPreviewById(s3, previewId, ifNoneMatch);
 	} catch (e) {
-		logger.error(e);
-
-		throw PreviewErrors
-			.error("unreachable-s3-storage")
-			.withDetails(e);
+		throw PreviewErrors.error("unreachable-s3-storage").withDetails(e);
 	}
 
 	if (!preview) throw PreviewErrors.error("preview-not-found");
-	return Buffer.from(preview);
-}
+
+	if (preview.notModified) {
+		return { notModified: true, etag: preview.etag };
+	}
+
+	return {
+		notModified: false,
+		buffer: Buffer.from(preview.content),
+		etag: preview.etag,
+	};
+};

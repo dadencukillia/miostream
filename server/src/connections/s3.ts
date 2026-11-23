@@ -30,7 +30,7 @@ async function initBucket(client: S3Client, name: string): Promise<void> {
   * @param client - The S3 client instance
   */
 async function configureS3(client: S3Client) {
-  const requiredBuckets = ["avatars"];
+  const requiredBuckets = ["avatars", "previews"];
 
   await Promise.all(requiredBuckets.map(b => initBucket(client, b)));
 }

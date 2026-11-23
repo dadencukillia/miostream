@@ -1,17 +1,29 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import "@context";
-import { getPreview } from "./preview.service";
-import type * as dtos from "./preview.dto";
+import type * as dto from "./preview.dto";
+import * as services from "./preview.service";
 
-export const getPreviewController = async (
-	request: FastifyRequest<{ Params: dtos.PreviewIdRequestParamsType }>,
-	reply: FastifyReply<{ Params: dtos.PreviewIdRequestParamsType, Reply: dtos.GetPreviewReturnType }>
+const PREVIEW_CACHE_CONTROL = "public, max-age=3600";
+
+export const getPreview = async (
+	request: FastifyRequest<{ Params: dto.PreviewIdRequestParamsType }>,
+	reply: FastifyReply<{ Params: dto.PreviewIdRequestParamsType; Reply: dto.GetPreviewReturnType }>
 ) => {
 	const { previewId } = request.params;
+	const ifNoneMatch = request.headers["if-none-match"];
 
-	const buffer = await getPreview(request.server.s3, request.log, previewId);
+	const result = await services.getPreview(request.server.s3, previewId, ifNoneMatch);
+
+	reply.header("cache-control", PREVIEW_CACHE_CONTROL);
+	if (result.etag) {
+		reply.header("etag", result.etag);
+	}
+
+	if (result.notModified) {
+		return reply.status(304).send(null);
+	}
+
 	return reply
 		.header("content-type", "image/webp")
-		.header("cache-control", "public, max-age=31536000, immutable")
-		.send(buffer);
+		.send(result.buffer);
 };
