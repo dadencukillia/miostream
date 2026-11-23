@@ -41,6 +41,9 @@ services:
       OAUTH_STATE_HMAC_SECRET_FILE: /run/secrets/oauth_state_hmac_secret
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
       OAUTH_CLIENT_SECRET_FILE: /run/secrets/oauth_client_secret
+      EMBEDDER_URL: ${EMBEDDER_URL}
+      EMBEDDER_API_KEY_FILE: /run/secrets/embedder_api_key
+      EMBEDDER_MODEL: ${EMBEDDER_MODEL}
       POSTGRES_HOST: postgresql:5432
       REDIS_HOST: redis:6379
       RUSTFS_HOST: rustfs:9000
@@ -62,6 +65,7 @@ services:
       - session_hmac_secret
       - oauth_state_hmac_secret
       - oauth_client_secret
+      - embedder_api_key
     deploy:
       restart_policy:
         condition: any
@@ -264,4 +268,6 @@ secrets:
   oauth_state_hmac_secret:
     external: true
   oauth_client_secret:
+    external: true
+  embedder_api_key:
     external: true

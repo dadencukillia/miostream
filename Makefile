@@ -23,6 +23,7 @@ dev_env:
 	echo Redis: 6379
 	echo RustFS API: 9000
 	echo RustFS Dashboard: 9001
+	echo MeiliSearch: 7700
 	. ./apply_env.sh test dev && \
 	docker compose -f compose.dev.yml up
 
