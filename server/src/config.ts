@@ -27,6 +27,7 @@ export const SITE_ADDRESS = process.env.SITE_ADDRESS ?? "localhost";
 export const POSTGRES_HOST = process.env.POSTGRES_HOST ?? "localhost:5432";
 export const REDIS_HOST = process.env.REDIS_HOST ?? "localhost:6379";
 export const RUSTFS_HOST = process.env.RUSTFS_HOST ?? "localhost:9000";
+export const MEILI_HOST = process.env.MEILI_HOST ?? "localhost:7700";
 
 // Secrets
 
@@ -34,6 +35,7 @@ export const DB_PASS = readSecret("DB_PASS", "DB_PASS_FILE", "");
 export const DB_URL = `postgresql://postgres:${DB_PASS}@${POSTGRES_HOST}/${DB_NAME}`;
 export const RUSTFS_ACCESS_KEY = readSecret("RUSTFS_ACCESS_KEY", "RUSTFS_ACCESS_KEY_FILE", "");
 export const RUSTFS_SECRET_KEY = readSecret("RUSTFS_SECRET_KEY", "RUSTFS_SECRET_KEY_FILE", "");
+export const MEILI_MASTER_KEY = process.env.MEILI_MASTER_KEY ?? "";
 
 // Authentication
 
@@ -43,6 +45,12 @@ export const SESSION_HMAC_SECRET = Uint8Array.fromHex(require(readSecret("SESSIO
 export const OAUTH_STATE_HMAC_SECRET = Uint8Array.fromHex(require(readSecret("OAUTH_STATE_HMAC_SECRET", "OAUTH_STATE_HMAC_SECRET_FILE", "")));
 export const OAUTH_CLIENT_ID = process.env.OAUTH_CLIENT_ID ?? "myclientid";
 export const OAUTH_CLIENT_SECRET = readSecret("OAUTH_CLIENT_SECRET", "OAUTH_CLIENT_SECRET_FILE", "myclientsecret");
+
+// Embeddings
+
+export const EMBEDDER_URL = process.env.EMBEDDER_URL ?? "";
+export const EMBEDDER_API_KEY = readSecret("EMBEDDER_API_KEY", "EMBEDDER_API_KEY_FILE", "");
+export const EMBEDDER_MODEL = process.env.EMBEDDER_MODEL ?? "";
 
 export const AuthAdjustments = {
   SUCCESS_REDIRECT_URL: "/",
