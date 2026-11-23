@@ -1,5 +1,5 @@
 export const hashPassword = async (password: string): Promise<string> => {
-    const hashedPassword = Bun.password.hash(password, { algorithm: "bcrypt" });
+    const hashedPassword = Bun.password.hash(password, { algorithm: "argon2id" });
     return hashedPassword;
 };
 
