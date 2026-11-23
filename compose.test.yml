@@ -15,11 +15,12 @@ services:
       POSTGRES_HOST: postgresql:5432
       REDIS_HOST: redis:6379
       RUSTFS_HOST: rustfs:9000
+      MEILI_HOST: meilisearch:7700
     depends_on:
       - postgresql
       - redis
       - rustfs
-      - oauthmock
+      - meilisearch
     profiles: ["backend"]
     env_file: ./.env.test
 
@@ -62,13 +63,16 @@ services:
       RUSTFS_SECRET_KEY: ${RUSTFS_SECRET_KEY}
     profiles: ["backend"]
 
-  oauthmock:
-    image: "ghcr.io/geigerzaehler/oidc-provider-mock:0.4.8"
+  meilisearch:
+    image: "getmeili/meilisearch:v1.58.0"
     restart: no
     healthcheck:
-      test: ["CMD-SHELL", "curl --fail http://127.0.0.1:9400/.well-known/openid-configuration"]
+      test: ["CMD-SHELL", "curl --fail http://127.0.0.1:7700/health"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 10s
+    environment:
+      MEILI_ENV: development
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
     profiles: ["backend"]

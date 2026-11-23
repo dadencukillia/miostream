@@ -44,6 +44,7 @@ services:
       POSTGRES_HOST: postgresql:5432
       REDIS_HOST: redis:6379
       RUSTFS_HOST: rustfs:9000
+      MEILI_HOST: meilisearch:7700
     networks:
       - shared
       - internal
@@ -88,7 +89,7 @@ services:
       - "443:443"
       - "443:443/udp"
     volumes:
-      - ./caddy/:/etc/caddy:ro
+      - ./configs/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data
       - caddy-config:/config
     environment:
@@ -200,6 +201,36 @@ services:
         reservations:
           cpus: '0.05'
           memory: 64M
+
+  meilisearch:
+    image: "getmeili/meilisearch:v1.58.0"
+    volumes:
+      - meilisearch-data:/meili_data
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail http://127.0.0.1:7700/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - internal
+    environment:
+      MEILI_ENV: production
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
+    deploy:
+      restart_policy:
+        condition: any
+      placement:
+        constraints:
+          - node.role == worker
+          - node.labels.meilisearch == true
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 192M
+        reservations:
+          cpus: '0.05'
+          memory: 64M
     
 networks:
   shared:
@@ -213,6 +244,7 @@ volumes:
   postgres-data: {}
   redis-data: {}
   rustfs-data: {}
+  meilisearch-data: {}
 
 secrets:
   db_pass:

@@ -38,7 +38,7 @@ dev_backend:
 	echo Port: 8080
 	. ./apply_env.sh test dev && \
 	cd server && \
-	POSTGRES_HOST=localhost:5432 REDIS_HOST=localhost:6379 RUSTFS_HOST=localhost:9000 \
+	POSTGRES_HOST=localhost:5432 REDIS_HOST=localhost:6379 RUSTFS_HOST=localhost:9000 MEILI_HOST=localhost:7700 \
 	bun backend serve
 
 dev_shell:
@@ -67,5 +67,5 @@ local_test:
 	echo --- BACKEND ---
 	. ./apply_env.sh test && \
 	cd server && \
-	POSTGRES_HOST=localhost:5432 REDIS_HOST=localhost:6379 RUSTFS_HOST=localhost:9000 \
+	POSTGRES_HOST=localhost:5432 REDIS_HOST=localhost:6379 RUSTFS_HOST=localhost:9000 MEILI_HOST=localhost:7700 \
 	bun test
