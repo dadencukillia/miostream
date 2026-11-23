@@ -1,4 +1,4 @@
-import { generateTransformer } from "@utils/modelTransformer";
+import { generateTransformer } from "@lib/modelTransformer";
 import type { LIST_UNIT_STATUSES } from "./list.schema";
 
 export type ListUnitStatus = (typeof LIST_UNIT_STATUSES)[number];

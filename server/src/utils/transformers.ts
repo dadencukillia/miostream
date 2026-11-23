@@ -1,4 +1,4 @@
-import { generateTransformer } from "./modelTransformer";
+import { generateTransformer } from "@lib/modelTransformer";
 import { Plain } from "./types";
 
 // Ok Status Transformation

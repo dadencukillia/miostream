@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { afterAll, describe, expect, test } from "bun:test";
 import { type FastifyInstance } from "fastify";
 import { wipeDatabaseTables } from "../dbHelper";
 import { fastifyInstance } from "../fastifyHelper";

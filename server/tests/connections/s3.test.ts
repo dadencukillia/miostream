@@ -1,7 +1,7 @@
 import { test, expect, beforeAll, afterAll, describe } from "bun:test";
 
 import Fastify, { type FastifyInstance } from "fastify";
-import connector from "@utils/connector";
+import connector from "@lib/connector";
 import { S3Connection } from "@/connections/s3";
 import "@context";
 import { DeleteObjectCommand, GetObjectCommand, ListBucketsCommand, NoSuchKey, PutObjectCommand } from "@aws-sdk/client-s3";

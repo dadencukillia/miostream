@@ -1,5 +1,5 @@
 import type { Static } from "typebox";
-import { ErrorResponse } from "@utils/errorsCollection";
+import { ErrorResponse } from "@lib/errorsCollection";
 import {
     AccessTokenResponse,
     OAuthCallbackRequestQueries,

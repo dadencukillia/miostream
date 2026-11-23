@@ -1,4 +1,4 @@
-import { ErrorsSet } from "@utils/errorsCollection";
+import { ErrorsSet } from "@lib/errorsCollection";
 
 export const AvatarErrors = new ErrorsSet("avatar", {
   "unreachable-s3-storage": [500, "couldn't reach the file storage"],

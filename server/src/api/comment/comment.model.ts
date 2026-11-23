@@ -1,5 +1,5 @@
 import { Plain } from "@utils/types";
-import { generateTransformer } from "@utils/modelTransformer";
+import { generateTransformer } from "@lib/modelTransformer";
 
 // Author Transformation
 
