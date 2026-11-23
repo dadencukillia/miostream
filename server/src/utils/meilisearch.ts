@@ -50,7 +50,7 @@ export class HybridIndex<T extends RecordAny> extends Index<T> {
 
   }
 
-  public async setLocales(locales: string[]) {
+  public setLocales(locales: string[]) {
     this._locales = locales;
   }
 
@@ -69,3 +69,8 @@ export class HybridIndex<T extends RecordAny> extends Index<T> {
     });
   }
 }
+
+export const envIndexGenerator = hybridIndexGenerator({
+  host: config.MEILI_HOST,
+  apiKey: config.MEILI_MASTER_KEY
+}, embedderFromEnv());
