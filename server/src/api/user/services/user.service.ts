@@ -5,7 +5,11 @@ import { UserErrors } from "../user.errors";
 import type * as dto from "../user.dto";
 import { hashPassword, verifyPassword } from "@utils/password";
 import { generateNickname } from "@utils/nickname";
-import { userTransformPublic, userTransformStreak } from "../user.model";
+import {
+    userTransformAvatarUrl,
+    userTransformPublic,
+    userTransformStreak
+} from "../user.model";
 
 const DB_INVALID_INPUT_CODES: readonly string[] = ["23514", "22P02", "22003", "22001"];
 const DB_INVALID_ENUM_CODES: readonly string[] = ["23514", "22P02"];
@@ -56,7 +60,7 @@ export const createUser = async (client: Pool, data: dto.CreateUserRequestPayloa
 
     if (!user) throw UserErrors.error("user-db-error");
 
-    return userTransformStreak(user);
+    return userTransformAvatarUrl(userTransformStreak(user));
 };
 
 export const getOrCreateUserByGoogleId = async (
@@ -76,7 +80,7 @@ export const getOrCreateUserByGoogleId = async (
             });
 
             if (!user) throw UserErrors.error("user-db-error");
-            return userTransformStreak(user);
+            return userTransformAvatarUrl(userTransformStreak(user));
         } catch (e: any) {
             if (e?.code === "23505") {
                 const constraint = e?.constraint ?? "";
@@ -115,7 +119,7 @@ export const getUserById = async (client: Pool, userId: string): Promise<dto.Use
     }
 
     if (!user) throw UserErrors.error("user-not-found");
-    return userTransformStreak(user);
+    return userTransformAvatarUrl(userTransformStreak(user));
 };
 
 export const getUserByNickname = async (client: Pool, nickname: string): Promise<dto.UserType> => {
@@ -127,7 +131,7 @@ export const getUserByNickname = async (client: Pool, nickname: string): Promise
     }
 
     if (!user) throw UserErrors.error("user-not-found");
-    return userTransformStreak(user);
+    return userTransformAvatarUrl(userTransformStreak(user));
 };
 
 export const getPublicUserById = async (client: Pool, userId: string): Promise<dto.PublicUserType> => {
@@ -212,7 +216,7 @@ export const updateUserProfile = async (
     }
 
     if (!user) throw UserErrors.error("user-not-found");
-    return userTransformStreak(user);
+    return userTransformAvatarUrl(userTransformStreak(user));
 };
 
 export const updateUserCustomization = async (
@@ -240,7 +244,7 @@ export const updateUserCustomization = async (
     }
 
     if (!user) throw UserErrors.error("user-not-found");
-    return userTransformStreak(user);
+    return userTransformAvatarUrl(userTransformStreak(user));
 };
 
 export const updateUserPassword = async (client: Pool, userId: string, data: dto.UpdateUserPasswordRequestPayloadType) => {
@@ -297,7 +301,7 @@ export const updateUserStatus = async (
     }
 
     if (!user) throw UserErrors.error("user-not-found");
-    return userTransformStreak(user);
+    return userTransformAvatarUrl(userTransformStreak(user));
 };
 
 // TODO(admin): add check of last-admin rule.
@@ -320,7 +324,7 @@ export const updateUserRole = async (
     }
 
     if (!user) throw UserErrors.error("user-not-found");
-    return userTransformStreak(user);
+    return userTransformAvatarUrl(userTransformStreak(user));
 };
 
 export const createUserLink = async (client: Pool, userId: string, url: string) => {

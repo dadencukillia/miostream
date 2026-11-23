@@ -71,3 +71,20 @@ export const userTransformOldAvatar = generateTransformer({
     delete: ["oldAvatarId"],
     map: (_row: Plain<UserTransformOldAvatarInput>): Plain<UserTransformOldAvatarOutput> => ({}),
 });
+
+// Avatar URL Transformation
+
+export interface UserTransformAvatarUrlInput {
+    avatarId: string | null;
+}
+
+export interface UserTransformAvatarUrlOutput {
+    avatarUrl: string | null;
+}
+
+export const userTransformAvatarUrl = generateTransformer({
+    delete: ["avatarId"],
+    map: (user: Plain<UserTransformAvatarUrlInput>): Plain<UserTransformAvatarUrlOutput> => ({
+        avatarUrl: user.avatarId ? `/cdn/avatar/${user.avatarId}.webp` : null,
+    }),
+});

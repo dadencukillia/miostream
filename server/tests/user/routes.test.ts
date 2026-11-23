@@ -45,7 +45,7 @@ describe("user routes", () => {
             email: userData.email,
             userRole: "user",
             userStatus: "active",
-            avatarId: null,
+            avatarUrl: null,
         });
         expect(body).not.toHaveProperty("passwordHash");
         expect(body).not.toHaveProperty("googleId");

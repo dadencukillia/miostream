@@ -43,7 +43,7 @@ describe("user service", () => {
 			email: "service_test@miostream.dev",
 			userRole: "user",
 			userStatus: "active",
-			avatarId: null,
+			avatarUrl: null,
 			timezone: "Europe/Kyiv",
 		});
 	});
