@@ -9,7 +9,7 @@ import type {
 	UpdateAnimeRequestPayloadType,
 } from "./anime.dto";
 import { AnimeErrors } from "./anime.errors";
-import { toAnimeModel } from "./anime.model";
+import { toAnimeModel, toCoverUrl } from "./anime.model";
 import {
 	countAnimes,
 	createAnime as createAnimeQuery,
@@ -258,7 +258,16 @@ export async function getAnimesAboveAverageEpisodes(db: Pool) {
 }
 
 export async function getAnimesWithMaxEpisodes(db: Pool) {
-	return getAvailableAnimesByCurrentYear(db).catch(handleDbError);
+	return getAvailableAnimesByCurrentYear(db)
+		.then((rows) => rows.map((row) => ({
+			animeId: row.animeId,
+			slug: row.slug,
+			titleUa: row.titleUa,
+			yearReleased: row.yearReleased,
+			episodesCount: row.episodesCount,
+			coverUrl: toCoverUrl(row.animeId),
+		})))
+		.catch(handleDbError);
 }
 
 

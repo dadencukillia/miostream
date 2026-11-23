@@ -139,7 +139,6 @@ export const AnimeResponse = Type.Object(
 		titleEn: Type.String({ description: "Anime title in English" }),
 		titleOriginal: Type.String({ description: "Original anime title" }),
 		animeDescription: Type.String({ description: "Anime synopsis/description" }),
-		coverId: Type.Union([Type.String({ description: "ID of anime cover image" }), Type.Null()]),
 		coverUrl: Type.String({ description: "URL to anime cover image" }),
 		productionStudio: Type.String({ description: "Production studio name" }),
 		malId: Nullable(Type.Integer({ description: "MyAnimeList ID" })),
@@ -232,7 +231,7 @@ export const AvailableAnimesResponse = Type.Array(Type.Object({
 	slug: Type.String(),
 	titleUa: Type.String(),
 	yearReleased: Nullable(Type.Integer()),
-	coverId: Nullable(Type.String()),
+	coverUrl: Type.String(),
 	episodesCount: Type.Integer({ minimum: 0 }),
 }, { additionalProperties: false }));
 
