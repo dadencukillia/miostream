@@ -1,11 +1,3 @@
-  episode_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  anime_id UUID NOT NULL REFERENCES public.animes(anime_id) ON DELETE CASCADE,
-  source_url TEXT NOT NULL UNIQUE,
-  episode_name TEXT NOT NULL CHECK(length(trim(episode_name)) > 0),
-  localization_studio TEXT NOT NULL DEFAULT '',
-  localization_type episode_localization_type_enum
-  order_index INTEGER NOT NULL
-
 -- name: EpisodesListByAnimeId :many
 SELECT episode_id, episode_name, localization_studio, localization_type, order_index
 FROM public.episodes
@@ -34,8 +26,7 @@ SET
   source_url = @new_source_url,
   episode_name = @new_episode_name,
   localization_studio = @new_localization_studio,
-  localization_type = @new_localization_type,
-  order_index = @new_order_index
+  localization_type = @new_localization_type
 WHERE
   episode_id = @episode_id::bigint
   AND anime_id = @anime_id::uuid

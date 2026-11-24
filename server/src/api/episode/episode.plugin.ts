@@ -13,6 +13,7 @@ const modulePlugin: FastifyPluginAsync = async (fastify: FastifyInstance, _opts:
   // Staff only restricted endpoints
 
   fastify.post("/", { preHandler: requireAdmin }, () => {});
+  fastify.patch("/:episodeId/after/:prevEpisodeId", { preHandler: requireAdmin }, () => {});
   fastify.put("/:episodeId", { preHandler: requireAdmin }, () => {});
   fastify.delete("/:episodeId", { preHandler: requireAdmin }, () => {});
 };
