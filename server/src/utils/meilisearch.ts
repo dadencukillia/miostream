@@ -6,7 +6,7 @@ export function embedderFromEnv(): Embedder|undefined {
   const embedderApiKey = config.EMBEDDER_API_KEY.trim();
   const embedderModel = config.EMBEDDER_MODEL.trim();
 
-  if (embedderUrl === "" || embedderApiKey === "" || embedderModel === "") return null;
+  if (embedderUrl === "" || embedderApiKey === "" || embedderModel === "") return undefined;
 
   return {
     "source": "rest",
@@ -33,9 +33,9 @@ export function embedderFromEnv(): Embedder|undefined {
 
 export function hybridIndexGenerator(config: Config, embedder?: Embedder) {
   return async <T extends RecordAny>(uid: string, primaryKey: string): Promise<HybridIndex<T>> => {
-    const embedderIndex = new HybridIndex(config, uid, primaryKey);
+    const embedderIndex = new HybridIndex<T>(config, uid, primaryKey);
     if (embedder) {
-      embedderIndex.setEmbedder(embedder);
+      await embedderIndex.setEmbedder(embedder);
     }
     return embedderIndex;
   };
@@ -45,23 +45,19 @@ export class HybridIndex<T extends RecordAny> extends Index<T> {
   private _embedderSet: boolean = false;
   private _locales: string[] = [];
 
-  constructor(config: Config, uid: string, primaryKey: string) {
-    super(config, uid, primaryKey);
-
-  }
-
   public setLocales(locales: string[]) {
     this._locales = locales;
   }
 
   public async setEmbedder(embedder: Embedder) {
+    this._embedderSet = true;
     await this.updateEmbedders({
       default: embedder
     });
   }
 
   public async hybridSearch(query: string) {
-    super.search(query, {
+    return super.search(query, {
       hybrid: this._embedderSet ? {
         embedder: "default"
       } : undefined,
