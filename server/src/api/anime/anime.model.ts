@@ -17,6 +17,7 @@ const includes = (values: readonly string[], value: string) =>
 
 export const toCoverUrl = (animeId: string): string => {
 	return `/cdn/anime/${animeId}.webp`;
+
 };
 
 const toAgeRestriction = (value: string | null): AgeRestrictionType | null =>
@@ -52,9 +53,11 @@ export type AnimeTransformInput = {
 };
 
 export const toAnimeModel = generateTransformer({
-	delete: [],
+	delete: ["coverId"],
 	map: (row: AnimeTransformInput) => ({
 		coverUrl: toCoverUrl(row.animeId),
+		hikkaId: toExternalId(row.hikkaId),
+		imdbId: toExternalId(row.imdbId),
 		malId: row.malId === null ? null : Number(row.malId),
 		anilistId: row.anilistId === null ? null : Number(row.anilistId),
 		ageRestriction: toAgeRestriction(row.ageRestriction),

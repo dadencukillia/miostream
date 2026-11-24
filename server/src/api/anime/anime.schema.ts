@@ -133,6 +133,7 @@ const genresSchema = Type.Array(StringEnum(GENRES), {
 
 export const AnimeResponse = Type.Object(
 	{
+	ok: Type.Literal(true, { description: "Indicates a successful operation" }),
 		animeId: Type.String({ format: "uuid", description: "Unique anime identifier (UUID)" }),
 		slug: Type.String({ description: "URL-friendly unique anime slug" }),
 		titleUa: Type.String({ description: "Anime title in Ukrainian" }),
@@ -188,52 +189,47 @@ export const OkResponse = Type.Object({
 	ok: Type.Literal(true),
 });
 
-export const AnimeResponseWithOk = Type.Object({
-	ok: Type.Literal(true),
-	...AnimeResponse.properties,
-}, { additionalProperties: false });
-
-export const StatusStatResponse = Type.Array(Type.Object({
+export const StatusStatResponse = Type.Object({ ok: Type.Literal(true, { description: "Indicates a successful operation" }), items: Type.Array(Type.Object({
 	animeStatus: Nullable(StringEnum(ANIME_STATUSES)),
 	total: Type.Integer({ minimum: 0 }),
-}, { additionalProperties: false }));
+}, { additionalProperties: false })) }, { additionalProperties: false });
 
-export const StudioStatResponse = Type.Array(Type.Object({
+export const StudioStatResponse = Type.Object({ ok: Type.Literal(true, { description: "Indicates a successful operation" }), items: Type.Array(Type.Object({
 	studio: Type.String(),
 	titlesCount: Type.Integer({ minimum: 0 }),
 	totalEpisodes: Type.Integer({ minimum: 0 }),
 	avgEpisodeDuration: Type.Number(),
-}, { additionalProperties: false }));
+}, { additionalProperties: false })) }, { additionalProperties: false });
 
-export const FormatStatResponse = Type.Array(Type.Object({
+export const FormatStatResponse = Type.Object({ ok: Type.Literal(true, { description: "Indicates a successful operation" }), items: Type.Array(Type.Object({
 	animeFormat: StringEnum(ANIME_FORMATS),
 	titlesCount: Type.Integer({ minimum: 0 }),
 	avgEpisodes: Type.Number(),
 	maxEpisodes: Type.Integer({ minimum: 0 }),
 	minEpisodes: Type.Integer({ minimum: 0 }),
-}, { additionalProperties: false }));
+}, { additionalProperties: false })) }, { additionalProperties: false });
 
-export const StudiosAboveAverageResponse = Type.Array(Type.Object({
+export const StudiosAboveAverageResponse = Type.Object({ ok: Type.Literal(true, { description: "Indicates a successful operation" }), items: Type.Array(Type.Object({
 	studio: Type.String(),
 	avgEpisodes: Type.Number(),
-}, { additionalProperties: false }));
+}, { additionalProperties: false })) }, { additionalProperties: false });
 
-export const OngoingAnimesResponse = Type.Array(Type.Object({
+export const OngoingAnimesResponse = Type.Object({ ok: Type.Literal(true, { description: "Indicates a successful operation" }), items: Type.Array(Type.Object({
 	animeId: Type.String({ format: "uuid" }),
 	slug: Type.String(),
 	titleUa: Type.String(),
 	titleEn: Type.String(),
 	episodesCount: Type.Integer({ minimum: 0 }),
-}, { additionalProperties: false }));
+}, { additionalProperties: false })) }, { additionalProperties: false });
 
-export const AvailableAnimesResponse = Type.Array(Type.Object({
+export const AvailableAnimesResponse = Type.Object({ ok: Type.Literal(true, { description: "Indicates a successful operation" }), items: Type.Array(Type.Object({
 	animeId: Type.String({ format: "uuid" }),
 	slug: Type.String(),
 	titleUa: Type.String(),
 	yearReleased: Nullable(Type.Integer()),
 	coverUrl: Type.String(),
 	episodesCount: Type.Integer({ minimum: 0 }),
-}, { additionalProperties: false }));
+}, { additionalProperties: false })) }, { additionalProperties: false });
 
 export const AnimeIdOrSlugRequestParams = Type.Object({
   identifier: Type.Union([
@@ -332,6 +328,7 @@ export const PaginationResponse = Type.Object(
 
 export const AnimeListResponse = Type.Object(
 	{
+	ok: Type.Literal(true, { description: "Indicates a successful operation" }),
 		items: Type.Array(AnimeResponse, { description: "List of anime entries" }),
 		pagination: PaginationResponse,
 	},
@@ -347,11 +344,6 @@ export const AnimeListResponse = Type.Object(
 	},
 );
 
-export const AnimeListResponseWithOk = Type.Object({
-	ok: Type.Literal(true),
-	...AnimeListResponse.properties,
-}, { additionalProperties: false });
-
 
 // Route schemas passed directly to Fastify.
 
@@ -361,7 +353,7 @@ export const ListAnimesSchema = {
 	description: "Returns a paginated list of animes with optional filtering and sorting.",
 	querystring: ListAnimesRequestQueries,
 	response: {
-		200: AnimeListResponseWithOk,
+		200: AnimeListResponse,
 		400: ErrorResponse,
 		500: ErrorResponse,
 	},
@@ -376,7 +368,7 @@ export const GetAnimeRouteSchema = {
     Type.String({ description: "Anime slug", examples: [ "jujutsu-kaisen-season-1-24242" ] })
   ]),
 	response: {
-		200: AnimeResponseWithOk,
+		200: AnimeResponse,
 		400: ErrorResponse,
 		404: ErrorResponse,
 		500: ErrorResponse,
@@ -389,7 +381,7 @@ export const CreateAnimeSchema = {
 	description: "Creates a new anime entry with the provided data.",
 	body: CreateAnimeRequestPayload,
 	response: {
-		201: AnimeResponseWithOk,
+		201: AnimeResponse,
 		400: ErrorResponse,
 		409: ErrorResponse,
 		500: ErrorResponse,
@@ -403,7 +395,7 @@ export const UpdateAnimeSchema = {
 	params: AnimeIdRequestParams,
 	body: UpdateAnimeRequestPayload,
 	response: {
-		200: AnimeResponseWithOk,
+		200: AnimeResponse,
 		400: ErrorResponse,
 		404: ErrorResponse,
 		409: ErrorResponse,
@@ -483,3 +475,5 @@ export const MaxEpisodesSchema = {
 		500: ErrorResponse,
 	},
 } as const;
+// probe
+// probe2
