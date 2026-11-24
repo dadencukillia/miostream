@@ -1,6 +1,6 @@
 import type { FastifyBaseLogger } from "fastify";
 import type { S3Client } from "@aws-sdk/client-s3";
-import { getAnimeCoverById } from "./animeBucket.repo";
+import { getAnimeCoverById } from "./anime.repo";
 import { AnimeCoverErrors } from "./anime.errors";
 
 export async function getAnimeCover(
