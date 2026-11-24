@@ -12,7 +12,7 @@ const plugin: FastifyPluginAsync = async (fastify, _opts) => {
   fastify.register(list, { prefix: "/list" });
   fastify.register(comment, { prefix: "/anime/:animeId/comment" });
   fastify.register(auth, { prefix: "/auth" });
-  fastify.register(episode, { prefix: "/episode" });
+  fastify.register(episode, { prefix: "/anime/:animeId/episode" });
 };
 
 export default plugin;
