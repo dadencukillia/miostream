@@ -1,6 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import type {
 	AnimeIdRequestParamsType,
+	AnimeIdRequestQueriesType,
 	ListAnimesRequestQueriesType,
 	AnimeIdOrSlugRequestParamsType,
 	CreateAnimeRequestPayloadType,
@@ -9,6 +10,7 @@ import type {
 import * as animeService from "./anime.service";
 import { AnimeErrors } from "./anime.errors";
 import { normalizeUuid } from "@utils/uuid";
+import { removeAnimeCoverById } from "@/cdn/anime/anime.repo";
 
 const UUID_RE =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -93,6 +95,25 @@ export const updateAnime = async (
 		request.body,
 	);
 	return reply.status(200).send({ ok: true, ...anime });
+};
+
+export const deleteAnimeCover = async (
+	request: FastifyRequest<{ Querystring: AnimeIdRequestQueriesType }>,
+	reply: FastifyReply,
+) => {
+	const { animeId } = request.query;
+
+	await animeService.getAnime(request.server.pg, animeId);
+
+	try {
+		await removeAnimeCoverById(request.server.s3, animeId);
+	} catch (e) {
+		request.log.error(e);
+		throw AnimeErrors.error("anime-cover-storage-unreachable").withDetails(e);
+	}
+
+	await animeService.deleteAnimeCover(request.server.pg, animeId);
+	return reply.status(200).send({ ok: true });
 };
 
 export const deleteAnime = async (

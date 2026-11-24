@@ -242,6 +242,12 @@ export const AnimeIdRequestParams = Type.Object({
   id: animeIdSchema,
 });
 
+export const AnimeIdRequestQueries = Type.Object({
+	animeId: animeIdSchema,
+}, {
+	additionalProperties: false,
+});
+
 export const CreateAnimeRequestPayload = Type.Object(
 	{
 		slug: slugSchema,
@@ -249,7 +255,6 @@ export const CreateAnimeRequestPayload = Type.Object(
 		titleEn: Type.Optional(Type.String({ minLength: 1, description: "Anime title in English" })),
 		titleOriginal: Type.Optional(Type.String({ minLength: 1, description: "Original anime title" })),
 		animeDescription: Type.Optional(Type.String({ description: "Anime synopsis/description" })),
-		coverUrl: Type.Optional(Type.String({ description: "URL to anime cover image" })),
 		productionStudio: Type.Optional(Type.String({ description: "Production studio name" })),
 		malId: Type.Optional(Nullable(Type.Integer({ minimum: 1 }))),
 		anilistId: Type.Optional(Nullable(Type.Integer({ minimum: 1 }))),
@@ -411,6 +416,18 @@ export const DeleteAnimeSchema = {
 	response: {
 		200: OkResponse,
 		400: ErrorResponse,
+		404: ErrorResponse,
+		500: ErrorResponse,
+	},
+} as const;
+
+export const DeleteAnimeCoverSchema = {
+	tags: ["Anime"],
+	summary: "Delete anime cover",
+	description: "Removes the anime cover image from S3 and clears cover_id in the database.",
+	querystring: AnimeIdRequestQueries,
+	response: {
+		200: OkResponse,
 		404: ErrorResponse,
 		500: ErrorResponse,
 	},

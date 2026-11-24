@@ -201,7 +201,6 @@ export async function updateAnime(
 		patch.animeDescription = data.animeDescription;
 	}
 
-	if (data.coverUrl !== undefined) patch.coverId = undefined;
 	if (data.productionStudio !== undefined) {
 		patch.productionStudio = data.productionStudio;
 	}
@@ -231,6 +230,12 @@ export async function updateAnime(
 	if (!anime) throw AnimeErrors.error("anime-not-found");
 
 	return toAnimeModel(anime);
+}
+
+export async function deleteAnimeCover(db: Pool, animeId: string): Promise<void> {
+	const updated = await repoUpdateAnime(db, animeId, { coverId: null })
+		.catch(handleDbError);
+	if (!updated) throw AnimeErrors.error("anime-not-found");
 }
 
 export async function deleteAnime(db: Pool, animeId: string): Promise<void> {
