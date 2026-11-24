@@ -6,6 +6,7 @@ import type {
 	AnimeIdRequestParams,
 	AnimeIdRequestQueries,
 	AnimeIdOrSlugRequestParams,
+	AnimeCoverImagePayload,
 	AnimeListResponse,
 	AnimeResponse,
 	CreateAnimeRequestPayload,
@@ -26,6 +27,7 @@ export type AnimeListType = Omit<AnimeListResponseType, "ok" | "items"> & { item
 export type PaginationResponseType = Type.Static<typeof PaginationResponse>;
 export type AnimeIdRequestParamsType = Type.Static<typeof AnimeIdRequestParams>;
 export type AnimeIdRequestQueriesType = Type.Static<typeof AnimeIdRequestQueries>;
+export type AnimeCoverImagePayloadType = Type.Static<typeof AnimeCoverImagePayload>;
 export type AnimeIdOrSlugRequestParamsType = Type.Static<typeof AnimeIdOrSlugRequestParams>;
 
 export type AnimeFormatType = (typeof ANIME_FORMATS)[number];

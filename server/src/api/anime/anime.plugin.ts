@@ -11,6 +11,7 @@ const modulePlugin: FastifyPluginAsync = async (fastify: FastifyInstance, _opts:
   fastify.get("/:identifier", { schema: schemas.GetAnimeRouteSchema }, controllers.getAnime);
   fastify.post("/", { schema: schemas.CreateAnimeSchema, preHandler: grantAuthMiddleware({ userHasRole: ["admin"] }) }, controllers.createAnime);
   fastify.patch("/:id", { schema: schemas.UpdateAnimeSchema, preHandler: grantAuthMiddleware({ userHasRole: ["admin"] }) }, controllers.updateAnime);
+  fastify.put("/cover", { schema: schemas.PutAnimeCoverSchema, preHandler: grantAuthMiddleware({ userHasRole: ["admin"] }) }, controllers.putAnimeCover);
   fastify.delete("/:id", { schema: schemas.DeleteAnimeSchema, preHandler: grantAuthMiddleware({ userHasRole: ["admin"] }) }, controllers.deleteAnime);
   fastify.delete("/cover", { schema: schemas.DeleteAnimeCoverSchema, preHandler: grantAuthMiddleware({ userHasRole: ["admin"] }) }, controllers.deleteAnimeCover);
 

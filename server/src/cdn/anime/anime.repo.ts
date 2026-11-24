@@ -7,7 +7,7 @@ export async function setAnimeCoverById(
   animeId: string,
   content: Buffer,
 ) {
-  const coverFile = `${animeId.replaceAll("-", "").trim()}.webp`;
+  const coverFile = `${animeId.trim()}.webp`;
 
   await s3.send(new PutObjectCommand({
     Bucket: BUCKET_NAME,
@@ -22,7 +22,7 @@ export async function getAnimeCoverById(
   s3: S3Client,
   animeId: string,
 ): Promise<{ body: Uint8Array; etag: string | null } | null> {
-  const coverFile = `${animeId.replaceAll("-", "").trim()}.webp`;
+  const coverFile = `${animeId.trim()}.webp`;
 
   try {
     const object = await s3.send(new GetObjectCommand({
@@ -49,7 +49,7 @@ export async function removeAnimeCoverById(
   s3: S3Client,
   animeId: string,
 ) {
-  const coverFile = `${animeId.replaceAll("-", "").trim()}.webp`;
+  const coverFile = `${animeId.trim()}.webp`;
 
   await s3.send(new DeleteObjectCommand({
     Bucket: BUCKET_NAME,

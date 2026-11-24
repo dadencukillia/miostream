@@ -232,6 +232,12 @@ export async function updateAnime(
 	return toAnimeModel(anime);
 }
 
+export async function setAnimeCover(db: Pool, animeId: string): Promise<void> {
+	const updated = await repoUpdateAnime(db, animeId, { coverId: animeId })
+		.catch(handleDbError);
+	if (!updated) throw AnimeErrors.error("anime-not-found");
+}
+
 export async function deleteAnimeCover(db: Pool, animeId: string): Promise<void> {
 	const updated = await repoUpdateAnime(db, animeId, { coverId: null })
 		.catch(handleDbError);
@@ -442,7 +448,7 @@ async function repoUpdateAnime(
 			titleOriginal: merged.titleOriginal ?? existing.titleOriginal,
 			animeDescription: merged.animeDescription ?? existing.animeDescription,
 			nullFields,
-			coverId: patch.coverId ?? null,
+			coverId: merged.coverId ?? null,
 			productionStudio: merged.productionStudio ?? existing.productionStudio,
 			malId: patch.malId === undefined || patch.malId === null ? null : String(patch.malId),
 			anilistId: patch.anilistId === undefined || patch.anilistId === null ? null : String(patch.anilistId),

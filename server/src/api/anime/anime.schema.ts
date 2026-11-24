@@ -248,6 +248,11 @@ export const AnimeIdRequestQueries = Type.Object({
 	additionalProperties: false,
 });
 
+export const AnimeCoverImagePayload = Type.String({
+	contentEncoding: "base64",
+	description: "Raw image bytes encoded as a base64 string. Converted to WebP without resizing.",
+});
+
 export const CreateAnimeRequestPayload = Type.Object(
 	{
 		slug: slugSchema,
@@ -421,6 +426,20 @@ export const DeleteAnimeSchema = {
 	},
 } as const;
 
+export const PutAnimeCoverSchema = {
+	tags: ["Anime"],
+	summary: "Upload anime cover",
+	description: "Converts image bytes to WebP, stores it in S3 as {animeId}.webp and sets cover_id to the anime ID.",
+	querystring: AnimeIdRequestQueries,
+	body: AnimeCoverImagePayload,
+	response: {
+		200: OkResponse,
+		400: ErrorResponse,
+		404: ErrorResponse,
+		500: ErrorResponse,
+	},
+} as const;
+
 export const DeleteAnimeCoverSchema = {
 	tags: ["Anime"],
 	summary: "Delete anime cover",
@@ -492,5 +511,3 @@ export const MaxEpisodesSchema = {
 		500: ErrorResponse,
 	},
 } as const;
-// probe
-// probe2
