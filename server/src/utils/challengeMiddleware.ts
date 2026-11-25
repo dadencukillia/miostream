@@ -59,12 +59,12 @@ export interface ChallengeTokenPayload {
 }
 
 export const SolutionTokenRequestQueries = Type.Object({
-  solutionToken: Type.String({
+  solutionToken: Type.Optional(Type.String({
     description: "Solved challenged token",
     examples: [
       "AAAAAAFIaMI.7AAMasEcPDP8L7h2jnAqnQAAAABrB0f-EANjz9L1nbYYVeAqrQ.WRzlfUatkRz-2XDN7FtUELN91vRcpGPlCnWhjCpjuk8"
     ]
-  })
+  }))
 })
 
 export const ChallengeErrorResponse = Type.Interface([ErrorResponse], {
@@ -187,7 +187,7 @@ function serializeChallengeTokenPayload(payload: ChallengeTokenPayload): Uint8Ar
   return token;
 }
 
-function solveChallenge(challengeToken: string): string|false {
+export function solveChallenge(challengeToken: string): string|false {
   const payload = deserializeChallengeToken(challengeToken);
   if (!payload) return false;
 
