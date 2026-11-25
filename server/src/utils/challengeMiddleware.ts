@@ -3,6 +3,7 @@ import { timingSafeEqual } from "node:crypto";
 import * as config from "@config";
 import { ErrorResponse } from "@lib/errorsCollection";
 import Type, { Static } from "typebox";
+import { CryptoHasher } from "bun";
 
 const KEY_LENGTH = 16;
 const KEY_PREFIX_LENGTH = 8;
@@ -20,7 +21,6 @@ type AnyRoutePreHandler = preHandlerAsyncHookHandler<
 function b64uDecode(s: string): Uint8Array | null {
   try {
     const bytes = Uint8Array.fromBase64(s, { alphabet: "base64url" });
-    // відсікаємо неканонічні кодування
     if (bytes.toBase64({ alphabet: "base64url", omitPadding: true }) !== s) return null;
     return bytes;
   } catch {
@@ -28,9 +28,17 @@ function b64uDecode(s: string): Uint8Array | null {
   }
 }
 
-function hmac(data: Uint8Array): Buffer {
+function hmac(scopeSlug: string, data: Uint8Array): Buffer {
+  const slug = new TextEncoder().encode(scopeSlug);
+  if (slug.byteLength === 0 || slug.byteLength > 255)
+    throw new RangeError("invalid scopeSlug");
+
   return Buffer.from(
-    new Bun.CryptoHasher("sha256", config.CHALLENGE_HMAC_SECRET).update(data).digest()
+    new Bun.CryptoHasher("sha256", config.CHALLENGE_HMAC_SECRET)
+      .update(Uint8Array.of(slug.byteLength))
+      .update(slug)
+      .update(data)
+      .digest()
   );
 }
 
@@ -50,11 +58,31 @@ export interface ChallengeTokenPayload {
   keyPrefix: Uint8Array // variable
 }
 
+export const SolutionTokenRequestQueries = Type.Object({
+  solutionToken: Type.String({
+    description: "Solved challenged token",
+    examples: [
+      "AAAAAAFIaMI.7AAMasEcPDP8L7h2jnAqnQAAAABrB0f-EANjz9L1nbYYVeAqrQ.WRzlfUatkRz-2XDN7FtUELN91vRcpGPlCnWhjCpjuk8"
+    ]
+  })
+})
+
 export const ChallengeErrorResponse = Type.Interface([ErrorResponse], {
   challengeToken: Type.String({ description: "Challenge token" })
+}, {
+  examples: [
+    {
+      ok: false,
+      error: "challenge-required",
+      message: "provide challenge solution token",
+      challengeToken: "7AAMasEcPDP8L7h2jnAqnQAAAABrB0f-EANjz9L1nbYYVeAqrQ.WRzlfUatkRz-2XDN7FtUELN91vRcpGPlCnWhjCpjuk8"
+    }
+  ]
 });
 
 export type ChallengeErrorResponseType = Static<typeof ChallengeErrorResponse>;
+
+// Challenge
 
 export function generateChallengeToken(opts: ChallengeOptions): string {
   if (!Number.isInteger(opts.hardLevel) || opts.hardLevel < 1 || opts.hardLevel > 32)
@@ -71,23 +99,18 @@ export function generateChallengeToken(opts: ChallengeOptions): string {
   };
 
   const token = serializeChallengeTokenPayload(payload);
-  const signature = hmac(token).toBase64({ alphabet: "base64url", omitPadding: true });
+  const signature = hmac(opts.scopeSlug, token).toBase64({ alphabet: "base64url", omitPadding: true });
   return `${token.toBase64({ alphabet: "base64url", omitPadding: true })}.${signature}`;
 }
 
-export function verifyChallengeToken(challengeToken: string): ChallengeTokenPayload | false {
+export function deserializeChallengeToken(challengeToken: string): ChallengeTokenPayload|false {
   const split = challengeToken.split(".");
-  if (split.length !== 2) return false;
-  const [payloadPart, signaturePart] = split;
-  if (!payloadPart || !signaturePart) return false;
+  if (split.length === 0) return false;
+  const payloadPart = split[0];
+  if (!payloadPart) return false;
 
   const payloadBytes = b64uDecode(payloadPart);
-  const signatureBytes = b64uDecode(signaturePart);
-  if (!payloadBytes || !signatureBytes || payloadBytes.byteLength < HEADER_SIZE) return false;
-
-  const expected = hmac(payloadBytes);
-  if (signatureBytes.byteLength !== expected.byteLength) return false;
-  if (!timingSafeEqual(signatureBytes, expected)) return false;
+  if (!payloadBytes || payloadBytes.byteLength < HEADER_SIZE) return false;
 
   const buffer = Buffer.from(payloadBytes);
   const expiresAt = buffer.readBigUInt64BE(16);
@@ -110,13 +133,30 @@ export function verifyChallengeToken(challengeToken: string): ChallengeTokenPayl
   };
 }
 
-export function verifySolutionToken(solutionToken: string): ChallengeTokenPayload | false {
+export function verifyChallengeToken(scopeSlug: string, challengeToken: string): ChallengeTokenPayload | false {
+  const split = challengeToken.split(".");
+  if (split.length !== 2) return false;
+  const [payloadPart, signaturePart] = split;
+  if (!payloadPart || !signaturePart) return false;
+
+  const payloadBytes = b64uDecode(payloadPart);
+  const signatureBytes = b64uDecode(signaturePart);
+  if (!payloadBytes || !signatureBytes || payloadBytes.byteLength < HEADER_SIZE) return false;
+
+  const expected = hmac(scopeSlug, payloadBytes);
+  if (signatureBytes.byteLength !== expected.byteLength) return false;
+  if (!timingSafeEqual(signatureBytes, expected)) return false;
+
+  return deserializeChallengeToken(challengeToken);
+}
+
+export function verifySolutionToken(scopeSlug: string, solutionToken: string): ChallengeTokenPayload | false {
   const split = solutionToken.split(".");
   if (split.length !== 3) return false;
   const [solutionPart, payloadPart, signaturePart] = split;
   if (!solutionPart || !payloadPart || !signaturePart) return false;
 
-  const challenge = verifyChallengeToken(`${payloadPart}.${signaturePart}`);
+  const challenge = verifyChallengeToken(scopeSlug, `${payloadPart}.${signaturePart}`);
   if (!challenge) return false;
 
   const solution = b64uDecode(solutionPart);
@@ -147,6 +187,46 @@ function serializeChallengeTokenPayload(payload: ChallengeTokenPayload): Uint8Ar
   return token;
 }
 
+function solveChallenge(challengeToken: string): string|false {
+  const payload = deserializeChallengeToken(challengeToken);
+  if (!payload) return false;
+
+  const key = Buffer.alloc(payload.keyLength);
+  key.set(payload.keyPrefix, 0);
+
+  let solved = false;
+  let dateRecheck = 20;
+
+  while (true) {
+    for (let n = payload.keyLength - 1;; n--) {
+      if (n < payload.keyPrefix.byteLength) return false;
+      const v = key[n];
+      if (v === undefined) return false;
+
+      key[n] = v + 1;
+      if (v !== 255) break;
+    }
+
+    const hash = new Uint8Array(CryptoHasher.hash("sha256", key));
+    if (payload.hashPrefix.every((v, index) => hash[index] === v)) {
+      solved = true;
+      break;
+    }
+
+    if (--dateRecheck < 0) {
+      dateRecheck = 20;
+      if (BigInt(Math.floor(Date.now() / 1000)) >= payload.expiresAt) return false;
+    }
+  }
+
+  if (!solved) return false;
+
+  const solutionPart = new Uint8Array(key).slice(payload.keyPrefix.byteLength).toBase64({ alphabet: "base64url", omitPadding: true });
+  const solutionToken = `${solutionPart}.${challengeToken}`;
+
+  return solutionToken;
+}
+
 export const challengeMiddleware = (opts: ChallengeOptions): AnyRoutePreHandler => async (request: FastifyRequest, reply: FastifyReply) => {
   const fallback = async (_request: FastifyRequest, reply: FastifyReply) => {
     const body: ChallengeErrorResponseType = {
@@ -164,7 +244,7 @@ export const challengeMiddleware = (opts: ChallengeOptions): AnyRoutePreHandler 
   const solutionToken = (request.query as { solutionToken?: unknown }).solutionToken ?? "";
   if (typeof solutionToken !== "string" || solutionToken.length === 0) return await fallback(request, reply);
 
-  const payload = verifySolutionToken(solutionToken);
+  const payload = verifySolutionToken(opts.scopeSlug, solutionToken);
   if (!payload) return await fallback(request, reply);
 
   // TODO: add redis denylist

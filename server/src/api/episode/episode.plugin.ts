@@ -3,6 +3,7 @@ import { EpisodeErrors } from "./episode.errors";
 import { grantAuthMiddleware } from "../auth/auth.middleware";
 import * as schemas from "./episode.schema";
 import * as controllers from "./episode.controller";
+import { challengeMiddleware } from "@utils/challengeMiddleware";
 
 const requireAdmin = grantAuthMiddleware({ userHasRole: ["admin"] });
 
@@ -10,7 +11,11 @@ const modulePlugin: FastifyPluginAsync = async (fastify: FastifyInstance, _opts:
   EpisodeErrors.setupErrorHandler(fastify, [EpisodeErrors], true, true);
 
   fastify.get("/", { schema: schemas.GetEpisodeListSchema }, controllers.getEpisodesList);
-  fastify.get("/:episodeId", { schema: schemas.GetEpisodeSchema }, controllers.getEpisode);
+  fastify.get("/:episodeId", { schema: schemas.GetEpisodeSchema, preHandler: challengeMiddleware({
+    challengeDeadlineSeconds: 10,
+    hardLevel: 2,
+    scopeSlug: "episode"
+  }) }, controllers.getEpisode);
 
   // Staff only restricted endpoints
 

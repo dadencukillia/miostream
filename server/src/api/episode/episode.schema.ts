@@ -2,6 +2,7 @@ import { Type } from "typebox";
 import { ErrorResponse } from "@lib/errorsCollection";
 import { BigIntIdResponseType, Nullable, StringEnum } from "@utils/types";
 import { FastifySchema } from "fastify";
+import { ChallengeErrorResponse, SolutionTokenRequestQueries } from "@utils/challengeMiddleware";
 
 const EPISODE_TAG = "Episode";
 
@@ -125,8 +126,10 @@ export const GetEpisodeSchema: FastifySchema = {
   tags: [EPISODE_TAG],
   summary: "Get additional episode's information",
   params: EpisodeIdRequestParams,
+  querystring: SolutionTokenRequestQueries,
   response: {
     200: EpisodeResponse,
+    403: ChallengeErrorResponse,
     404: ErrorResponse,
     500: ErrorResponse
   },
