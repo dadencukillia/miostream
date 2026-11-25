@@ -38,6 +38,16 @@ export const getEpisode = async (
     Reply: GetEpisodeReturnType
   }>
 ) => {
+  const episode = await services.getEpisodeById(
+    request.server.pg,
+    request.params.animeId,
+    request.params.episodeId.toString()
+  );
+
+  return reply.send({
+    episodeId: request.params.episodeId.toString(),
+    ...episode
+  });
 };
 
 export const postEpisode = async (

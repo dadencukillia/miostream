@@ -5,7 +5,7 @@ export interface EpisodesTreeRoot {
 }
 
 interface EpisodesTreeEpisode {
-  episodeId: string|number,
+  episodeId: string,
   episodeName: string
 }
 
