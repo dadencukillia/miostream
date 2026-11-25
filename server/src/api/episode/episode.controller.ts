@@ -1,5 +1,18 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { AnimeIdRequestParamsType, CreateEpisodeRequestPayloadType, CreateEpisodeReturnType, DeleteEpisodeReturnType, EpisodeIdRequestParamsType, GetEpisodeListReturnType, GetEpisodeReturnType, PutEpisodeReturnType, SetEpisodeAfterRequestParamsType, SetEpisodeAfterReturnType, UpdateEpisodeRequestPayloadType } from "./episode.dto";
+import {
+  AnimeIdRequestParamsType,
+  CreateEpisodeRequestPayloadType,
+  CreateEpisodeReturnType,
+  DeleteEpisodeReturnType,
+  EpisodeIdRequestParamsType,
+  GetEpisodeListReturnType,
+  GetEpisodeReturnType,
+  PutEpisodeReturnType,
+  SetEpisodeAfterRequestParamsType,
+  SetEpisodeAfterReturnType,
+  UpdateEpisodeRequestPayloadType
+} from "./episode.dto";
+import * as services from "./episode.service";
 
 export const getEpisodesList = async (
   request: FastifyRequest<{
@@ -11,6 +24,8 @@ export const getEpisodesList = async (
     Reply: GetEpisodeListReturnType
   }>
 ) => {
+  const tree = await services.getEpisodesTreeByAnime(request.server.pg, request.params.animeId);
+  return reply.send(tree);
 };
 
 export const getEpisode = async (

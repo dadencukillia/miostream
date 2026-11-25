@@ -48,14 +48,26 @@ export const UpdateEpisodeRequestPayload = Type.Object(
 
 // Responses
 
-export const EpisodeListItemResponse = Type.Object({
-  episodeId: BigIntIdResponseType,
-  episodeName: Type.String(),
-  localizationStudio: Type.String(),
-  localizationType: Nullable(LocalizationType),
+export const EpisodeListResponse = Type.Object({
+  sub: Type.Record(Type.String({ description: "Localization studio name" }), Type.Array(
+    Type.Object({
+      episodeId: BigIntIdResponseType,
+      episodeName: Type.String(),
+    })
+  )),
+  dub: Type.Record(Type.String({ description: "Localization studio name" }), Type.Array(
+    Type.Object({
+      episodeId: BigIntIdResponseType,
+      episodeName: Type.String(),
+    })
+  )),
+  unknown: Type.Record(Type.String({ description: "Localization studio name" }), Type.Array(
+    Type.Object({
+      episodeId: BigIntIdResponseType,
+      episodeName: Type.String(),
+    })
+  )),
 });
-
-export const EpisodeListResponse = Type.Array(EpisodeListItemResponse);
 
 export const EpisodeResponse = Type.Object({
   episodeId: BigIntIdResponseType,

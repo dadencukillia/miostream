@@ -1,5 +1,5 @@
 -- name: EpisodesListByAnimeId :many
-SELECT episode_id, episode_name, localization_studio, localization_type, order_index
+SELECT episode_id, episode_name, localization_studio, localization_type
 FROM public.episodes
 WHERE
   anime_id = @anime_id::uuid
@@ -69,4 +69,4 @@ WHERE episode_id = @episode_id::bigint
 RETURNING episode_id, order_index;
 
 -- name: LockAnimeEpisodes :exec
-SELECT pg_advisory_xact_lock(hashtextextended(@anime_id::uuid::text, 0));
+SELECT pg_advisory_xact_lock(hashtextextended((@anime_id::uuid)::text, 0));
