@@ -126,18 +126,16 @@ export async function createEpisode(client: Client, args: CreateEpisodeArgs): Pr
 export const putEpisodeQuery = `-- name: PutEpisode :one
 UPDATE public.episodes
 SET
-  anime_id = $1,
-  source_url = $2,
-  episode_name = $3,
-  localization_studio = $4,
-  localization_type = $5
+  source_url = $1,
+  episode_name = $2,
+  localization_studio = $3,
+  localization_type = $4
 WHERE
-  episode_id = $6::bigint
-  AND anime_id = $7::uuid
+  episode_id = $5::bigint
+  AND anime_id = $6::uuid
 RETURNING episode_id, anime_id, source_url, episode_name, localization_studio, localization_type, order_index`;
 
 export interface PutEpisodeArgs {
-    newAnimeId: string;
     newSourceUrl: string;
     newEpisodeName: string;
     newLocalizationStudio: string;
@@ -159,7 +157,7 @@ export interface PutEpisodeRow {
 export async function putEpisode(client: Client, args: PutEpisodeArgs): Promise<PutEpisodeRow | null> {
     const result = await client.query({
         text: putEpisodeQuery,
-        values: [args.newAnimeId, args.newSourceUrl, args.newEpisodeName, args.newLocalizationStudio, args.newLocalizationType, args.episodeId, args.animeId],
+        values: [args.newSourceUrl, args.newEpisodeName, args.newLocalizationStudio, args.newLocalizationType, args.episodeId, args.animeId],
         rowMode: "array"
     });
     if (result.rows.length !== 1) {

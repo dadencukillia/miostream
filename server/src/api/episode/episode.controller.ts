@@ -96,6 +96,16 @@ export const putEpisode = async (
     Reply: PutEpisodeReturnType
   }>
 ) => {
+  if (!["sub", "dub", null].includes(request.body.newLocalizationType)) {
+    throw EpisodeErrors.error("invalid-localization-type")
+      .withDetails(request.body.newLocalizationType);
+  }
+
+  const updatedEpisode = await services.safePutEpisode(request.server.pg, {
+    ...request.body,
+    episodeId: request.body.episodeId.toString(),
+  });
+  return reply.send(updatedEpisode);
 };
 
 export const deleteEpisode = async (

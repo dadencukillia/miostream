@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import { createEpisode, CreateEpisodeArgs, CreateEpisodeRow, episodeById, EpisodeByIdRow, episodesListByAnimeId, EpisodesListByAnimeIdRow, lockAnimeEpisodes } from "@sqlc/episodes_sql";
+import { createEpisode, CreateEpisodeArgs, CreateEpisodeRow, episodeById, EpisodeByIdRow, episodesListByAnimeId, EpisodesListByAnimeIdRow, lockAnimeEpisodes, putEpisode, PutEpisodeArgs, PutEpisodeRow } from "@sqlc/episodes_sql";
 import { EpisodeErrors } from "./episode.errors";
 import { type EpisodesTreeRoot, episodeTransformList } from "./episode.model";
 
@@ -58,4 +58,28 @@ export async function safeCreateEpisode(
   if (!createdEpisode) throw EpisodeErrors.error("db-create");
 
   return createdEpisode;
+}
+
+export async function safePutEpisode(
+  db: Pool,
+  episode: PutEpisodeArgs 
+): Promise<PutEpisodeRow> {
+  const con = await db.connect();
+  let updatedEpisode: PutEpisodeRow|null;
+
+  try {
+    await con.query("BEGIN;");
+    await lockAnimeEpisodes(con, { animeId: episode.animeId });
+    updatedEpisode = await putEpisode(con, episode);
+    await con.query("COMMIT;");
+  } catch(e) {
+    await con.query("ROLLBACK;").catch(_ => {});
+    throw EpisodeErrors.error("db-update").withDetails(e);
+  } finally {
+    con.release();
+  }
+
+  if (!updatedEpisode) throw EpisodeErrors.error("not-found");
+
+  return updatedEpisode;
 }
