@@ -17,7 +17,7 @@ interface EpisodeTransformListInput {
 }
 
 export const episodeTransformList = (list: EpisodeTransformListInput[]): EpisodesTreeRoot => {
-  const root: EpisodesTreeRoot = { sub: {}, dub: {}, unknown: {} };
+  const root: EpisodesTreeRoot = { sub: Object.create(null), dub: Object.create(null), unknown: Object.create(null) };
 
   for (const lu of list) {
     const unit: EpisodesTreeEpisode = {

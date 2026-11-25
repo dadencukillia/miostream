@@ -3,7 +3,6 @@ import {
   AnimeIdRequestParams,
   CreateEpisodeRequestPayload,
   UpdateEpisodeRequestPayload,
-  EpisodeListItemResponse,
   EpisodeListResponse,
   EpisodeResponse,
   SetEpisodeAfterRequestParams,
@@ -24,7 +23,6 @@ export type UpdateEpisodeRequestPayloadType = Static<typeof UpdateEpisodeRequest
 
 // Responses
 
-export type EpisodeListItemResponseType = Static<typeof EpisodeListItemResponse>;
 export type EpisodeListResponseType = Static<typeof EpisodeListResponse>;
 export type EpisodeResponseType = Static<typeof EpisodeResponse>;
 

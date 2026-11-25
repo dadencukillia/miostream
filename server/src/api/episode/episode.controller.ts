@@ -72,7 +72,7 @@ export const postEpisode = async (
     ...request.body,
     animeId: request.params.animeId
   });
-  return reply.send(createdEpisode);
+  return reply.status(201).send(createdEpisode);
 };
 
 export const setEpisodeAfter = async (
