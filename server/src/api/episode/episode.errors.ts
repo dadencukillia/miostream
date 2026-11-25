@@ -5,5 +5,6 @@ export const EpisodeErrors = new ErrorsSet("episode", {
   "db-create": [500, "database creation error"],
   "db-update": [500, "database updation error"],
   "not-found": [404, "episode not found"],
-  "invalid-localization-type": [400, "invalid specified localization type"]
+  "invalid-localization-type": [400, "invalid specified localization type"],
+  "same-previous-episode-id": [409, "specify another episode id"]
 });

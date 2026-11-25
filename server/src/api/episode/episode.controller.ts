@@ -68,7 +68,10 @@ export const postEpisode = async (
       .withDetails(request.body.localizationType);
   }
 
-  const createdEpisode = await services.safeCreateEpisode(request.server.pg, request.body);
+  const createdEpisode = await services.safeCreateEpisode(request.server.pg, {
+    ...request.body,
+    animeId: request.params.animeId
+  });
   return reply.send(createdEpisode);
 };
 
@@ -82,6 +85,10 @@ export const setEpisodeAfter = async (
     Reply: SetEpisodeAfterReturnType
   }>
 ) => {
+  if (request.params.episodeId.toString().trim() === request.params.prevEpisodeId.toString().trim()) {
+    throw EpisodeErrors.error("same-previous-episode-id").withDetails(request.params.episodeId);
+  }
+
   const prevEpisodeId = request.params.prevEpisodeId.toString() === "start"
     ? null : request.params.prevEpisodeId.toString();
 
@@ -115,7 +122,8 @@ export const putEpisode = async (
 
   const updatedEpisode = await services.safePutEpisode(request.server.pg, {
     ...request.body,
-    episodeId: request.body.episodeId.toString(),
+    episodeId: request.params.episodeId.toString(),
+    animeId: request.params.animeId
   });
   return reply.send(updatedEpisode);
 };
@@ -136,5 +144,5 @@ export const deleteEpisode = async (
     request.params.animeId
   );
 
-  return reply.send(null);
+  return reply.status(204).send(null);
 };
