@@ -250,6 +250,36 @@ export async function episodeSetAfter(client: Client, args: EpisodeSetAfterArgs)
     };
 }
 
+export const deleteEpisodeByIdQuery = `-- name: DeleteEpisodeById :one
+DELETE FROM public.episodes
+WHERE episode_id = $1::bigint
+  AND anime_id = $2::uuid
+RETURNING 1::integer AS success_flag`;
+
+export interface DeleteEpisodeByIdArgs {
+    episodeId: string;
+    animeId: string;
+}
+
+export interface DeleteEpisodeByIdRow {
+    successFlag: number;
+}
+
+export async function deleteEpisodeById(client: Client, args: DeleteEpisodeByIdArgs): Promise<DeleteEpisodeByIdRow | null> {
+    const result = await client.query({
+        text: deleteEpisodeByIdQuery,
+        values: [args.episodeId, args.animeId],
+        rowMode: "array"
+    });
+    if (result.rows.length !== 1) {
+        return null;
+    }
+    const row = result.rows[0];
+    return {
+        successFlag: row[0]
+    };
+}
+
 export const lockAnimeEpisodesQuery = `-- name: LockAnimeEpisodes :exec
 SELECT pg_advisory_xact_lock(hashtextextended(($1::uuid)::text, 0))`;
 

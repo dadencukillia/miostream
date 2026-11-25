@@ -67,5 +67,11 @@ WHERE episode_id = @episode_id::bigint
   )
 RETURNING episode_id, order_index;
 
+-- name: DeleteEpisodeById :one
+DELETE FROM public.episodes
+WHERE episode_id = @episode_id::bigint
+  AND anime_id = @anime_id::uuid
+RETURNING 1::integer AS success_flag;
+
 -- name: LockAnimeEpisodes :exec
 SELECT pg_advisory_xact_lock(hashtextextended((@anime_id::uuid)::text, 0));

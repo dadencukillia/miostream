@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import { createEpisode, CreateEpisodeArgs, CreateEpisodeRow, episodeById, EpisodeByIdRow, episodesListByAnimeId, EpisodesListByAnimeIdRow, lockAnimeEpisodes, putEpisode, PutEpisodeArgs, PutEpisodeRow } from "@sqlc/episodes_sql";
+import { createEpisode, CreateEpisodeArgs, CreateEpisodeRow, deleteEpisodeById, episodeById, EpisodeByIdRow, episodesListByAnimeId, EpisodesListByAnimeIdRow, lockAnimeEpisodes, putEpisode, PutEpisodeArgs, PutEpisodeRow } from "@sqlc/episodes_sql";
 import { EpisodeErrors } from "./episode.errors";
 import { type EpisodesTreeRoot, episodeTransformList } from "./episode.model";
 
@@ -82,4 +82,27 @@ export async function safePutEpisode(
   if (!updatedEpisode) throw EpisodeErrors.error("not-found");
 
   return updatedEpisode;
+}
+
+export async function safeDeleteEpisode(
+  db: Pool,
+  episodeId: string,
+  animeId: string
+) {
+  const con = await db.connect();
+  let count = 0;
+
+  try {
+    await con.query("BEGIN;");
+    await lockAnimeEpisodes(con, { animeId });
+    count = (await deleteEpisodeById(con, { animeId, episodeId }))?.successFlag ?? 0;
+    await con.query("COMMIT;");
+  } catch(e) {
+    await con.query("ROLLBACK;").catch(_ => {});
+    throw EpisodeErrors.error("db-update").withDetails(e);
+  } finally {
+    con.release();
+  }
+
+  if (count === 0) throw EpisodeErrors.error("not-found");
 }

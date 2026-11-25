@@ -118,4 +118,11 @@ export const deleteEpisode = async (
     Reply: DeleteEpisodeReturnType
   }>
 ) => {
+  await services.safeDeleteEpisode(
+    request.server.pg,
+    request.params.episodeId.toString(),
+    request.params.animeId
+  );
+
+  return reply.send(null);
 };
