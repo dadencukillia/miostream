@@ -1,21 +1,23 @@
 import type { FastifyPluginAsync, FastifyInstance, FastifyPluginOptions } from "fastify";
 import { EpisodeErrors } from "./episode.errors";
 import { grantAuthMiddleware } from "../auth/auth.middleware";
+import * as schemas from "./episode.schema";
+import * as controllers from "./episode.controller";
 
 const requireAdmin = grantAuthMiddleware({ userHasRole: ["admin"] });
 
 const modulePlugin: FastifyPluginAsync = async (fastify: FastifyInstance, _opts: FastifyPluginOptions) => {
   EpisodeErrors.setupErrorHandler(fastify, [EpisodeErrors], true, true);
 
-  fastify.get("/", {}, () => {});
-  fastify.get("/:episodeId", {}, () => {});
+  fastify.get("/", { schema: schemas.GetEpisodeListSchema }, controllers.getEpisodesList);
+  fastify.get("/:episodeId", { schema: schemas.GetEpisodeSchema }, controllers.getEpisode);
 
   // Staff only restricted endpoints
 
-  fastify.post("/", { preHandler: requireAdmin }, () => {});
-  fastify.patch("/:episodeId/after/:prevEpisodeId", { preHandler: requireAdmin }, () => {});
-  fastify.put("/:episodeId", { preHandler: requireAdmin }, () => {});
-  fastify.delete("/:episodeId", { preHandler: requireAdmin }, () => {});
+  fastify.post("/", { schema: schemas.CreateEpisodeSchema, preHandler: requireAdmin }, controllers.postEpisode);
+  fastify.patch("/:episodeId/after/:prevEpisodeId", { schema: schemas.SetEpisodeAfterSchema, preHandler: requireAdmin }, controllers.setEpisodeAfter);
+  fastify.put("/:episodeId", {  schema: schemas.PutEpisodeSchema, preHandler: requireAdmin }, controllers.putEpisode);
+  fastify.delete("/:episodeId", { schema: schemas.DeleteEpisodeSchema, preHandler: requireAdmin }, controllers.deleteEpisode);
 };
 
 export default modulePlugin;

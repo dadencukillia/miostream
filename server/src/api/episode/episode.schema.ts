@@ -6,13 +6,6 @@ import { BigIntIdResponseType, Nullable, StringEnum } from "@utils/types";
 
 const LocalizationType = StringEnum(["sub", "dub"]);
 
-const episodeEditableProps = {
-  sourceUrl: Type.String({ format: "uri" }),
-  episodeName: Type.String({ minLength: 1, maxLength: 255 }),
-  localizationStudio: Type.String({ default: "", maxLength: 255 }),
-  localizationType: LocalizationType,
-};
-
 // Params
 
 export const AnimeIdRequestParams = Type.Object({
@@ -20,22 +13,34 @@ export const AnimeIdRequestParams = Type.Object({
 });
 
 export const EpisodeIdRequestParams = Type.Object({
-  animeId: Type.String({ format: "uuid" }),
+  animeId: Type.String({ format: "uuid", description: "Anime UUID" }),
   episodeId: BigIntIdResponseType,
 });
 
 export const SetEpisodeAfterRequestParams = Type.Object({
-  animeId: Type.String({ format: "uuid" }),
+  animeId: Type.String({ format: "uuid", description: "Anime UUID" }),
   episodeId: BigIntIdResponseType,
   prevEpisodeId: Nullable(BigIntIdResponseType),
 });
 
 // Payloads
 
-export const CreateUpdateEpisodeRequestPayload = Type.Object(
+export const CreateEpisodeRequestPayload = Type.Object(
   {
-    ...episodeEditableProps,
-    localizationStudio: Type.Optional(episodeEditableProps.localizationStudio),
+    sourceUrl: Type.String({ format: "uri" }),
+    episodeName: Type.String({ minLength: 1, maxLength: 255 }),
+    localizationStudio: Type.String({ default: "", maxLength: 255 }),
+    localizationType: Type.Optional(LocalizationType),
+  },
+  { additionalProperties: false },
+);
+
+export const UpdateEpisodeRequestPayload = Type.Object(
+  {
+    episodeId: BigIntIdResponseType,
+    sourceUrl: Type.String({ format: "uri" }),
+    episodeName: Type.String({ minLength: 1, maxLength: 255 }),
+    localizationStudio: Type.String({ default: "", maxLength: 255 }),
     localizationType: Type.Optional(LocalizationType),
   },
   { additionalProperties: false },
@@ -81,7 +86,7 @@ export const GetEpisodeSchema = {
 
 export const CreateEpisodeSchema = {
   params: AnimeIdRequestParams,
-  body: CreateUpdateEpisodeRequestPayload,
+  body: CreateEpisodeRequestPayload,
   response: {
     201: EpisodeResponse,
     404: ErrorResponse,
@@ -100,7 +105,7 @@ export const SetEpisodeAfterSchema = {
 
 export const PutEpisodeSchema = {
   params: EpisodeIdRequestParams,
-  body: CreateUpdateEpisodeRequestPayload,
+  body: UpdateEpisodeRequestPayload,
   response: {
     200: EpisodeResponse,
     404: ErrorResponse,

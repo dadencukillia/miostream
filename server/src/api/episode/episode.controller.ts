@@ -1,0 +1,78 @@
+import { FastifyReply, FastifyRequest } from "fastify";
+import { AnimeIdRequestParamsType, CreateEpisodeRequestPayloadType, CreateEpisodeReturnType, DeleteEpisodeReturnType, EpisodeIdRequestParamsType, GetEpisodeListReturnType, GetEpisodeReturnType, PutEpisodeReturnType, SetEpisodeAfterRequestParamsType, SetEpisodeAfterReturnType, UpdateEpisodeRequestPayloadType } from "./episode.dto";
+
+export const getEpisodesList = async (
+  request: FastifyRequest<{
+    Params: AnimeIdRequestParamsType;
+    Reply: GetEpisodeListReturnType
+  }>,
+  reply: FastifyReply<{
+    Params: AnimeIdRequestParamsType;
+    Reply: GetEpisodeListReturnType
+  }>
+) => {
+};
+
+export const getEpisode = async (
+  request: FastifyRequest<{
+    Params: EpisodeIdRequestParamsType;
+    Reply: GetEpisodeReturnType
+  }>,
+  reply: FastifyReply<{
+    Params: EpisodeIdRequestParamsType;
+    Reply: GetEpisodeReturnType
+  }>
+) => {
+};
+
+export const postEpisode = async (
+  request: FastifyRequest<{
+    Params: AnimeIdRequestParamsType;
+    Body: CreateEpisodeRequestPayloadType;
+    Reply: CreateEpisodeReturnType
+  }>,
+  reply: FastifyReply<{
+    Params: AnimeIdRequestParamsType;
+    Body: CreateEpisodeRequestPayloadType;
+    Reply: CreateEpisodeReturnType
+  }>
+) => {
+};
+
+export const setEpisodeAfter = async (
+  request: FastifyRequest<{
+    Params: SetEpisodeAfterRequestParamsType;
+    Reply: SetEpisodeAfterReturnType
+  }>,
+  reply: FastifyReply<{
+    Params: SetEpisodeAfterRequestParamsType;
+    Reply: SetEpisodeAfterReturnType
+  }>
+) => {
+};
+
+export const putEpisode = async (
+  request: FastifyRequest<{
+    Params: EpisodeIdRequestParamsType;
+    Body: UpdateEpisodeRequestPayloadType;
+    Reply: PutEpisodeReturnType
+  }>,
+  reply: FastifyReply<{
+    Params: EpisodeIdRequestParamsType;
+    Body: UpdateEpisodeRequestPayloadType;
+    Reply: PutEpisodeReturnType
+  }>
+) => {
+};
+
+export const deleteEpisode = async (
+  request: FastifyRequest<{
+    Params: EpisodeIdRequestParamsType;
+    Reply: DeleteEpisodeReturnType
+  }>,
+  reply: FastifyReply<{
+    Params: EpisodeIdRequestParamsType;
+    Reply: DeleteEpisodeReturnType
+  }>
+) => {
+};
