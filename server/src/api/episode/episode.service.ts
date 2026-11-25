@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import { episodeById, EpisodeByIdRow, episodesListByAnimeId, EpisodesListByAnimeIdRow } from "@sqlc/episodes_sql";
+import { createEpisode, CreateEpisodeArgs, CreateEpisodeRow, episodeById, EpisodeByIdRow, episodesListByAnimeId, EpisodesListByAnimeIdRow, lockAnimeEpisodes } from "@sqlc/episodes_sql";
 import { EpisodeErrors } from "./episode.errors";
 import { type EpisodesTreeRoot, episodeTransformList } from "./episode.model";
 
@@ -34,4 +34,28 @@ export async function getEpisodeById(
   }
 
   return episode;
+}
+
+export async function safeCreateEpisode(
+  db: Pool,
+  episode: CreateEpisodeArgs
+): Promise<CreateEpisodeRow> {
+  const con = await db.connect();
+  let createdEpisode: CreateEpisodeRow|null;
+
+  try {
+    await con.query("BEGIN;");
+    await lockAnimeEpisodes(con, { animeId: episode.animeId });
+    createdEpisode = await createEpisode(con, episode);
+    await con.query("COMMIT;");
+  } catch(e) {
+    await con.query("ROLLBACK;").catch(_ => {});
+    throw EpisodeErrors.error("db-create").withDetails(e);
+  } finally {
+    con.release();
+  }
+
+  if (!createdEpisode) throw EpisodeErrors.error("db-create");
+
+  return createdEpisode;
 }

@@ -22,7 +22,6 @@ RETURNING *;
 -- name: PutEpisode :one
 UPDATE public.episodes
 SET
-  anime_id = @new_anime_id,
   source_url = @new_source_url,
   episode_name = @new_episode_name,
   localization_studio = @new_localization_studio,

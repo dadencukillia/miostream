@@ -13,6 +13,7 @@ import {
   UpdateEpisodeRequestPayloadType
 } from "./episode.dto";
 import * as services from "./episode.service";
+import { EpisodeErrors } from "./episode.errors";
 
 export const getEpisodesList = async (
   request: FastifyRequest<{
@@ -62,6 +63,13 @@ export const postEpisode = async (
     Reply: CreateEpisodeReturnType
   }>
 ) => {
+  if (!["sub", "dub", null].includes(request.body.localizationType)) {
+    throw EpisodeErrors.error("invalid-localization-type")
+      .withDetails(request.body.localizationType);
+  }
+
+  const createdEpisode = await services.safeCreateEpisode(request.server.pg, request.body);
+  return reply.send(createdEpisode);
 };
 
 export const setEpisodeAfter = async (

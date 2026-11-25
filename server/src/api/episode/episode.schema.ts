@@ -1,4 +1,4 @@
-import { Type } from "typebox";
+import { Null, Type } from "typebox";
 import { ErrorResponse } from "@lib/errorsCollection";
 import { BigIntIdResponseType, Nullable, StringEnum } from "@utils/types";
 
@@ -27,10 +27,11 @@ export const SetEpisodeAfterRequestParams = Type.Object({
 
 export const CreateEpisodeRequestPayload = Type.Object(
   {
+    animeId: Type.String({ format: "uuid", description: "Anime UUID" }),
     sourceUrl: Type.String({ format: "uri" }),
     episodeName: Type.String({ minLength: 1, maxLength: 255 }),
     localizationStudio: Type.String({ default: "", maxLength: 255 }),
-    localizationType: Type.Optional(LocalizationType),
+    localizationType: Nullable(LocalizationType),
   },
   { additionalProperties: false },
 );
@@ -38,10 +39,11 @@ export const CreateEpisodeRequestPayload = Type.Object(
 export const UpdateEpisodeRequestPayload = Type.Object(
   {
     episodeId: BigIntIdResponseType,
-    sourceUrl: Type.String({ format: "uri" }),
-    episodeName: Type.String({ minLength: 1, maxLength: 255 }),
-    localizationStudio: Type.String({ default: "", maxLength: 255 }),
-    localizationType: Type.Optional(LocalizationType),
+    animeId: Type.String({ format: "uuid", description: "Anime UUID" }),
+    newSourceUrl: Type.String({ format: "uri" }),
+    newEpisodeName: Type.String({ minLength: 1, maxLength: 255 }),
+    newLocalizationStudio: Type.String({ default: "", maxLength: 255 }),
+    newLocalizationType: Nullable(LocalizationType),
   },
   { additionalProperties: false },
 );
