@@ -82,6 +82,18 @@ export const setEpisodeAfter = async (
     Reply: SetEpisodeAfterReturnType
   }>
 ) => {
+  const prevEpisodeId = request.params.prevEpisodeId.toString() === "start"
+    ? null : request.params.prevEpisodeId.toString();
+
+  await services.safeSetEpisodeAfterEpisode(
+    request.server.pg,
+    request.params.episodeId.toString(),
+    prevEpisodeId,
+    request.params.animeId
+  );
+
+  const animeList = await services.getEpisodesTreeByAnime(request.server.pg, request.params.animeId);
+  return reply.send(animeList);
 };
 
 export const putEpisode = async (

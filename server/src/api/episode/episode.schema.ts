@@ -1,4 +1,4 @@
-import { Null, Type } from "typebox";
+import { Type } from "typebox";
 import { ErrorResponse } from "@lib/errorsCollection";
 import { BigIntIdResponseType, Nullable, StringEnum } from "@utils/types";
 
@@ -20,7 +20,9 @@ export const EpisodeIdRequestParams = Type.Object({
 export const SetEpisodeAfterRequestParams = Type.Object({
   animeId: Type.String({ format: "uuid", description: "Anime UUID" }),
   episodeId: BigIntIdResponseType,
-  prevEpisodeId: Nullable(BigIntIdResponseType),
+  prevEpisodeId: Type.Union([BigIntIdResponseType, Type.Literal("start")], {
+    description: "Specify another episode's ID here to set the episode after him or set \"start\" to make the episode first"
+  }),
 });
 
 // Payloads
