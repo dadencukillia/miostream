@@ -100,11 +100,23 @@ export const GetUpcomingEpisodesRequestQueries = Type.Object({
     description: "Calendar date to load the schedule for"
 });
 
-export const DeleteUpcomingEpisodeRequestParams = Type.Object({
+export const UpcomingEpisodeRequestParams = Type.Object({
     upcomingEpisodeId: UuidType({ description: "Upcoming episode UUID" })
 }, {
     additionalProperties: false,
-    description: "Upcoming episode to delete"
+    description: "Upcoming episode"
+});
+
+export const UpdateUpcomingEpisodeRequestPayload = Type.Object({
+    episodeName: Type.Optional(Type.String({
+        minLength: 1,
+        maxLength: 200,
+        description: "New episode name/title"
+    })),
+    episodeDate: Type.Optional(UtcDateTimeType)
+}, {
+    additionalProperties: false,
+    description: "Fields allowed to change on an upcoming episode"
 });
 
 export const DeleteUpcomingEpisodeResponse = Type.Object({
@@ -144,10 +156,25 @@ export const DeleteUpcomingEpisodeSchema = {
     tags: [TAG_SCHEDULE],
     summary: "Delete upcoming episode",
     description: "Deletes an upcoming episode from the schedule.",
-    params: DeleteUpcomingEpisodeRequestParams,
+    params: UpcomingEpisodeRequestParams,
     response: {
         200: DeleteUpcomingEpisodeResponse,
         404: ErrorResponse,
+        500: ErrorResponse,
+    },
+} as const;
+
+export const UpdateUpcomingEpisodeSchema = {
+    tags: [TAG_SCHEDULE],
+    summary: "Update upcoming episode",
+    description: "Changes the name and/or release date of an upcoming episode. episodeDate must be an ISO 8601 UTC timestamp ending with Z.",
+    params: UpcomingEpisodeRequestParams,
+    body: UpdateUpcomingEpisodeRequestPayload,
+    response: {
+        200: UpcomingEpisodeResponse,
+        400: ErrorResponse,
+        404: ErrorResponse,
+        409: ErrorResponse,
         500: ErrorResponse,
     },
 } as const;

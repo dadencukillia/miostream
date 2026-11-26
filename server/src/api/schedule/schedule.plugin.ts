@@ -13,6 +13,15 @@ const modulePlugin: FastifyPluginAsync = async (fastify: FastifyInstance, _opts:
         controllers.getUpcomingEpisodes
     );
 
+    fastify.patch(
+        "/:upcomingEpisodeId",
+        {
+            schema: schemas.UpdateUpcomingEpisodeSchema,
+            preHandler: grantAuthMiddleware({ userHasRole: ["admin"] }),
+        },
+        controllers.updateUpcomingEpisode
+    );
+
     fastify.delete(
         "/:upcomingEpisodeId",
         {

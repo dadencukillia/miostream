@@ -175,3 +175,49 @@ export async function deleteUpcomingEpisode(client: Client, args: DeleteUpcoming
     };
 }
 
+export const updateUpcomingEpisodeQuery = `-- name: UpdateUpcomingEpisode :one
+UPDATE public.upcoming_episodes
+SET
+    episode_name = COALESCE($1::text, episode_name),
+    episode_date = CASE
+        WHEN $2::timestamptz IS NULL THEN episode_date
+        ELSE $2::timestamptz
+    END
+WHERE upcoming_episode_id = $3::uuid
+RETURNING
+    upcoming_episode_id,
+    anime_id,
+    episode_name,
+    episode_date`;
+
+export interface UpdateUpcomingEpisodeArgs {
+    episodeName: string | null;
+    episodeDate: Date | null;
+    upcomingEpisodeId: string;
+}
+
+export interface UpdateUpcomingEpisodeRow {
+    upcomingEpisodeId: string;
+    animeId: string;
+    episodeName: string;
+    episodeDate: Date;
+}
+
+export async function updateUpcomingEpisode(client: Client, args: UpdateUpcomingEpisodeArgs): Promise<UpdateUpcomingEpisodeRow | null> {
+    const result = await client.query({
+        text: updateUpcomingEpisodeQuery,
+        values: [args.episodeName, args.episodeDate, args.upcomingEpisodeId],
+        rowMode: "array"
+    });
+    if (result.rows.length !== 1) {
+        return null;
+    }
+    const row = result.rows[0];
+    return {
+        upcomingEpisodeId: row[0],
+        animeId: row[1],
+        episodeName: row[2],
+        episodeDate: row[3]
+    };
+}
+

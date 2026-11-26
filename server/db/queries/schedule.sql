@@ -52,3 +52,18 @@ ORDER BY ue.episode_date ASC, ue.upcoming_episode_id ASC;
 DELETE FROM public.upcoming_episodes
 WHERE upcoming_episode_id = @upcoming_episode_id::uuid
 RETURNING upcoming_episode_id;
+
+-- name: UpdateUpcomingEpisode :one
+UPDATE public.upcoming_episodes
+SET
+    episode_name = COALESCE(sqlc.narg('episode_name')::text, episode_name),
+    episode_date = CASE
+        WHEN sqlc.narg('episode_date')::timestamptz IS NULL THEN episode_date
+        ELSE sqlc.narg('episode_date')::timestamptz
+    END
+WHERE upcoming_episode_id = @upcoming_episode_id::uuid
+RETURNING
+    upcoming_episode_id,
+    anime_id,
+    episode_name,
+    episode_date;

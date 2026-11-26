@@ -48,6 +48,58 @@ export const getUpcomingEpisodes = async (
     };
 };
 
+export const updateUpcomingEpisode = async (
+    client: Pool,
+    upcomingEpisodeId: string,
+    data: dto.UpdateUpcomingEpisodeRequestPayloadType
+): Promise<dto.UpcomingEpisodeResponseType> => {
+    let updated: scheduleSqlc.UpdateUpcomingEpisodeRow | null;
+
+    const episodeName = data.episodeName === undefined
+        ? null
+        : data.episodeName.trim();
+
+    if (episodeName === "") {
+        throw ScheduleErrors.error("schedule-invalid");
+    }
+
+    let episodeDate: Date | null = null;
+    if (data.episodeDate !== undefined) {
+        episodeDate = new Date(String(data.episodeDate));
+        if (Number.isNaN(episodeDate.getTime())) {
+            throw ScheduleErrors.error("schedule-invalid");
+        }
+    }
+
+    try {
+        updated = await scheduleSqlc.updateUpcomingEpisode(client, {
+            upcomingEpisodeId,
+            episodeName,
+            episodeDate,
+        });
+    } catch (e: any) {
+        if (e?.code === DB_UNIQUE_VIOLATION_CODE) {
+            throw ScheduleErrors.error("schedule-episode-already-exists").withDetails(e);
+        }
+        if (DB_INVALID_ID_CODES.includes(e?.code) || DB_INVALID_INPUT_CODES.includes(e?.code)) {
+            throw ScheduleErrors.error("schedule-db-invalid-error").withDetails(e);
+        }
+        throw ScheduleErrors.error("schedule-db-error").withDetails(e);
+    }
+
+    if (!updated) {
+        throw ScheduleErrors.error("schedule-episode-not-found");
+    }
+
+    return {
+        ok: true,
+        upcomingEpisodeId: updated.upcomingEpisodeId,
+        animeId: updated.animeId,
+        episodeName: updated.episodeName,
+        episodeDate: updated.episodeDate,
+    };
+};
+
 export const deleteUpcomingEpisode = async (
     client: Pool,
     upcomingEpisodeId: string
