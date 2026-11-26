@@ -67,3 +67,7 @@ RETURNING
     anime_id,
     episode_name,
     episode_date;
+
+-- name: DeleteExpiredUpcomingEpisodes :exec
+DELETE FROM public.upcoming_episodes
+WHERE episode_date < CURRENT_TIMESTAMP - INTERVAL '1 month';

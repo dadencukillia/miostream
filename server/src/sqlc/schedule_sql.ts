@@ -221,3 +221,15 @@ export async function updateUpcomingEpisode(client: Client, args: UpdateUpcoming
     };
 }
 
+export const deleteExpiredUpcomingEpisodesQuery = `-- name: DeleteExpiredUpcomingEpisodes :exec
+DELETE FROM public.upcoming_episodes
+WHERE episode_date < CURRENT_TIMESTAMP - INTERVAL '1 month'`;
+
+export async function deleteExpiredUpcomingEpisodes(client: Client): Promise<void> {
+    await client.query({
+        text: deleteExpiredUpcomingEpisodesQuery,
+        values: [],
+        rowMode: "array"
+    });
+}
+
