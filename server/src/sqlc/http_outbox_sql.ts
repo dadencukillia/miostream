@@ -1,18 +1,15 @@
 import { QueryArrayConfig, QueryArrayResult } from "pg";
 
-import { IPostgresInterval } from "postgres-interval";
-
 interface Client {
     query: (config: QueryArrayConfig) => Promise<QueryArrayResult>;
 }
 
 export const addHTTPOutboxQuery = `-- name: AddHTTPOutbox :one
-INSERT INTO outbox.http_outbox(outbox_id, url, method, content_type, body, outbox_group)
-VALUES($1, $2, $3, $4, $5, $6)
+INSERT INTO outbox.http_outbox(url, method, content_type, body, outbox_group)
+VALUES($1, $2, $3, $4, $5)
 RETURNING outbox_id, url, method, content_type, body, attempts, next_attempt_at, created_at, outbox_group`;
 
 export interface AddHTTPOutboxArgs {
-    outboxId: string;
     url: string;
     method: string;
     contentType: string | null;
@@ -35,7 +32,7 @@ export interface AddHTTPOutboxRow {
 export async function addHTTPOutbox(client: Client, args: AddHTTPOutboxArgs): Promise<AddHTTPOutboxRow | null> {
     const result = await client.query({
         text: addHTTPOutboxQuery,
-        values: [args.outboxId, args.url, args.method, args.contentType, args.body, args.outboxGroup],
+        values: [args.url, args.method, args.contentType, args.body, args.outboxGroup],
         rowMode: "array"
     });
     if (result.rows.length !== 1) {
@@ -177,12 +174,12 @@ export const failedHTTPOutboxQuery = `-- name: FailedHTTPOutbox :one
 UPDATE outbox.http_outbox
 SET
   attempts = attempts + 1,
-  next_attempt_at = now() + $1::INTERVAL
+  next_attempt_at = now() + ($1::integer || ' milliseconds')::interval
 WHERE outbox_id = $2::BIGINT
 RETURNING outbox_id, url, method, content_type, body, attempts, next_attempt_at, created_at, outbox_group`;
 
 export interface FailedHTTPOutboxArgs {
-    nextTry: IPostgresInterval;
+    nextTryMs: number;
     outboxId: string;
 }
 
@@ -201,7 +198,7 @@ export interface FailedHTTPOutboxRow {
 export async function failedHTTPOutbox(client: Client, args: FailedHTTPOutboxArgs): Promise<FailedHTTPOutboxRow | null> {
     const result = await client.query({
         text: failedHTTPOutboxQuery,
-        values: [args.nextTry, args.outboxId],
+        values: [args.nextTryMs, args.outboxId],
         rowMode: "array"
     });
     if (result.rows.length !== 1) {
@@ -219,5 +216,21 @@ export async function failedHTTPOutbox(client: Client, args: FailedHTTPOutboxArg
         createdAt: row[7],
         outboxGroup: row[8]
     };
+}
+
+export const clearFailedHTTPOutboxQuery = `-- name: ClearFailedHTTPOutbox :exec
+DELETE FROM outbox.http_outbox
+WHERE attempts > $1::integer`;
+
+export interface ClearFailedHTTPOutboxArgs {
+    minAttempts: number;
+}
+
+export async function clearFailedHTTPOutbox(client: Client, args: ClearFailedHTTPOutboxArgs): Promise<void> {
+    await client.query({
+        text: clearFailedHTTPOutboxQuery,
+        values: [args.minAttempts],
+        rowMode: "array"
+    });
 }
 

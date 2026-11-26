@@ -1,6 +1,6 @@
 -- name: AddHTTPOutbox :one
-INSERT INTO outbox.http_outbox(outbox_id, url, method, content_type, body, outbox_group)
-VALUES($1, $2, $3, $4, $5, $6)
+INSERT INTO outbox.http_outbox(url, method, content_type, body, outbox_group)
+VALUES($1, $2, $3, $4, $5)
 RETURNING *;
 
 -- name: GetHTTPOutboxList :many
@@ -53,6 +53,10 @@ RETURNING *;
 UPDATE outbox.http_outbox
 SET
   attempts = attempts + 1,
-  next_attempt_at = now() + @next_try::INTERVAL
+  next_attempt_at = now() + (@next_try_ms::integer || ' milliseconds')::interval
 WHERE outbox_id = @outbox_id::BIGINT
 RETURNING *;
+
+-- name: ClearFailedHTTPOutbox :exec
+DELETE FROM outbox.http_outbox
+WHERE attempts > @min_attempts::integer;
