@@ -48,6 +48,26 @@ export const getUpcomingEpisodes = async (
     };
 };
 
+export const deleteUpcomingEpisode = async (
+    client: Pool,
+    upcomingEpisodeId: string
+): Promise<void> => {
+    let deleted: scheduleSqlc.DeleteUpcomingEpisodeRow | null;
+
+    try {
+        deleted = await scheduleSqlc.deleteUpcomingEpisode(client, { upcomingEpisodeId });
+    } catch (e: any) {
+        if (DB_INVALID_ID_CODES.includes(e?.code)) {
+            throw ScheduleErrors.error("schedule-invalid").withDetails(e);
+        }
+        throw ScheduleErrors.error("schedule-db-error").withDetails(e);
+    }
+
+    if (!deleted) {
+        throw ScheduleErrors.error("schedule-episode-not-found");
+    }
+};
+
 export const createUpcomingEpisode = async (
     client: Pool,
     data: dto.CreateUpcomingEpisodeRequestPayloadType

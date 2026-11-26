@@ -13,6 +13,15 @@ const modulePlugin: FastifyPluginAsync = async (fastify: FastifyInstance, _opts:
         controllers.getUpcomingEpisodes
     );
 
+    fastify.delete(
+        "/:upcomingEpisodeId",
+        {
+            schema: schemas.DeleteUpcomingEpisodeSchema,
+            preHandler: grantAuthMiddleware({ userHasRole: ["admin"] }),
+        },
+        controllers.deleteUpcomingEpisode
+    );
+
     fastify.post(
         "/",
         {

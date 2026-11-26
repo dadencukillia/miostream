@@ -147,3 +147,31 @@ export async function getUpcomingEpisodesByDate(client: Client, args: GetUpcomin
     });
 }
 
+export const deleteUpcomingEpisodeQuery = `-- name: DeleteUpcomingEpisode :one
+DELETE FROM public.upcoming_episodes
+WHERE upcoming_episode_id = $1::uuid
+RETURNING upcoming_episode_id`;
+
+export interface DeleteUpcomingEpisodeArgs {
+    upcomingEpisodeId: string;
+}
+
+export interface DeleteUpcomingEpisodeRow {
+    upcomingEpisodeId: string;
+}
+
+export async function deleteUpcomingEpisode(client: Client, args: DeleteUpcomingEpisodeArgs): Promise<DeleteUpcomingEpisodeRow | null> {
+    const result = await client.query({
+        text: deleteUpcomingEpisodeQuery,
+        values: [args.upcomingEpisodeId],
+        rowMode: "array"
+    });
+    if (result.rows.length !== 1) {
+        return null;
+    }
+    const row = result.rows[0];
+    return {
+        upcomingEpisodeId: row[0]
+    };
+}
+

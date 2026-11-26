@@ -1,6 +1,7 @@
 import type Type from "typebox";
 import type {
     CreateUpcomingEpisodeRequestPayload,
+    DeleteUpcomingEpisodeRequestParams,
     GetUpcomingEpisodesRequestQueries,
     GetUpcomingEpisodesResponse,
     ScheduleAnime,
@@ -12,6 +13,7 @@ export type CreateUpcomingEpisodeRequestPayloadType = Type.Static<typeof CreateU
 export type UpcomingEpisodeResponseType = Type.Static<typeof UpcomingEpisodeResponse>;
 export type UpcomingEpisodeType = Omit<UpcomingEpisodeResponseType, "ok">;
 export type GetUpcomingEpisodesRequestQueriesType = Type.Static<typeof GetUpcomingEpisodesRequestQueries>;
+export type DeleteUpcomingEpisodeRequestParamsType = Type.Static<typeof DeleteUpcomingEpisodeRequestParams>;
 export type GetUpcomingEpisodesResponseType = Type.Static<typeof GetUpcomingEpisodesResponse>;
 export type UpcomingEpisodeItemType = Type.Static<typeof UpcomingEpisodeItem>;
 export type ScheduleAnimeType = Type.Static<typeof ScheduleAnime>;

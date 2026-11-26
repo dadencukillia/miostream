@@ -9,6 +9,7 @@ export const ScheduleErrors = new ErrorsSet("schedule", {
     // Request
     "schedule-invalid": [400, "invalid payload"],
     "schedule-invalid-date": [400, "invalid calendar date"],
+    "schedule-episode-not-found": [404, "upcoming episode not found"],
 
     // Conflict
     "schedule-episode-already-exists": [409, "episode already exists in the schedule"],

@@ -100,6 +100,20 @@ export const GetUpcomingEpisodesRequestQueries = Type.Object({
     description: "Calendar date to load the schedule for"
 });
 
+export const DeleteUpcomingEpisodeRequestParams = Type.Object({
+    upcomingEpisodeId: UuidType({ description: "Upcoming episode UUID" })
+}, {
+    additionalProperties: false,
+    description: "Upcoming episode to delete"
+});
+
+export const DeleteUpcomingEpisodeResponse = Type.Object({
+    ok: Type.Literal(true, { description: "Indicates a successful operation" })
+}, {
+    additionalProperties: false,
+    description: "Upcoming episode deleted"
+});
+
 export const CreateUpcomingEpisodeSchema = {
     tags: [TAG_SCHEDULE],
     summary: "Create upcoming episode",
@@ -122,6 +136,18 @@ export const GetUpcomingEpisodesSchema = {
     response: {
         200: GetUpcomingEpisodesResponse,
         400: ErrorResponse,
+        500: ErrorResponse,
+    },
+} as const;
+
+export const DeleteUpcomingEpisodeSchema = {
+    tags: [TAG_SCHEDULE],
+    summary: "Delete upcoming episode",
+    description: "Deletes an upcoming episode from the schedule.",
+    params: DeleteUpcomingEpisodeRequestParams,
+    response: {
+        200: DeleteUpcomingEpisodeResponse,
+        404: ErrorResponse,
         500: ErrorResponse,
     },
 } as const;

@@ -47,3 +47,8 @@ INNER JOIN public.animes a ON a.anime_id = ue.anime_id
 WHERE ue.episode_date >= @from_date::timestamptz
   AND ue.episode_date < @to_date::timestamptz
 ORDER BY ue.episode_date ASC, ue.upcoming_episode_id ASC;
+
+-- name: DeleteUpcomingEpisode :one
+DELETE FROM public.upcoming_episodes
+WHERE upcoming_episode_id = @upcoming_episode_id::uuid
+RETURNING upcoming_episode_id;
