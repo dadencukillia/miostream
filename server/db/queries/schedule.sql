@@ -6,10 +6,44 @@ INSERT INTO public.upcoming_episodes(
 ) VALUES (
     @anime_id::uuid,
     @episode_name::text,
-    (@episode_date::timestamp AT TIME ZONE 'UTC')
+    @episode_date::timestamptz
 )
 RETURNING
     upcoming_episode_id,
     anime_id,
     episode_name,
     episode_date;
+
+-- name: GetUpcomingEpisodesByDate :many
+SELECT
+    ue.upcoming_episode_id,
+    ue.episode_name,
+    ue.episode_date,
+    a.anime_id,
+    a.slug,
+    a.title_ua,
+    a.title_en,
+    a.title_original,
+    a.cover_id,
+    a.production_studio,
+    a.mal_id,
+    a.anilist_id,
+    a.hikka_id,
+    a.imdb_id,
+    a.year_released,
+    a.avg_episode_duration,
+    a.episodes_count,
+    a.age_restriction,
+    a.anime_status,
+    a.anime_format,
+    ARRAY(
+        SELECT g.genre_type
+        FROM public.genres g
+        WHERE g.anime_id = a.anime_id
+        ORDER BY g.genre_type
+    )::text[] AS genres
+FROM public.upcoming_episodes ue
+INNER JOIN public.animes a ON a.anime_id = ue.anime_id
+WHERE ue.episode_date >= @from_date::timestamptz
+  AND ue.episode_date < @to_date::timestamptz
+ORDER BY ue.episode_date ASC, ue.upcoming_episode_id ASC;

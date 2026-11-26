@@ -2,11 +2,51 @@ import type { Pool } from "pg";
 import * as scheduleSqlc from "@sqlc/schedule_sql";
 import { ScheduleErrors } from "./schedule.errors";
 import type * as dto from "./schedule.dto";
+import { toUpcomingEpisodeItem } from "./schedule.model";
+import { parseCalendarDateToUtcMs } from "@utils/time";
 
 const DB_INVALID_ID_CODES: readonly string[] = ["22P02", "22003"];
 const DB_INVALID_INPUT_CODES: readonly string[] = ["23514", "22P02", "22003", "22001"];
 const DB_DATA_NOT_FOUND_CODE = "23503";
 const DB_UNIQUE_VIOLATION_CODE = "23505";
+
+const MS_PER_HOUR = 3_600_000;
+const LOWER_TZ_OFFSET_HOURS = 14;
+const UPPER_TZ_OFFSET_HOURS = 12;
+const DAY_HOURS = 24;
+
+const resolveUtcWindow = (date: string): { from: Date; to: Date } => {
+    const startUtcMs = parseCalendarDateToUtcMs(date.trim());
+
+    if (startUtcMs === null || new Date(startUtcMs).toISOString().slice(0, 10) !== date.trim()) {
+        throw ScheduleErrors.error("schedule-invalid-date");
+    }
+
+    return {
+        from: new Date(startUtcMs - LOWER_TZ_OFFSET_HOURS * MS_PER_HOUR),
+        to: new Date(startUtcMs + (DAY_HOURS + UPPER_TZ_OFFSET_HOURS) * MS_PER_HOUR),
+    };
+};
+
+export const getUpcomingEpisodes = async (
+    client: Pool,
+    query: dto.GetUpcomingEpisodesRequestQueriesType
+): Promise<dto.GetUpcomingEpisodesResponseType> => {
+    const { from, to } = resolveUtcWindow(query.date);
+
+    let rows: scheduleSqlc.GetUpcomingEpisodesByDateRow[];
+
+    try {
+        rows = await scheduleSqlc.getUpcomingEpisodesByDate(client, { fromDate: from, toDate: to });
+    } catch (e: any) {
+        throw ScheduleErrors.error("schedule-db-error").withDetails(e);
+    }
+
+    return {
+        ok: true,
+        items: rows.map(toUpcomingEpisodeItem),
+    };
+};
 
 export const createUpcomingEpisode = async (
     client: Pool,
@@ -14,11 +54,16 @@ export const createUpcomingEpisode = async (
 ): Promise<dto.UpcomingEpisodeResponseType> => {
     let created: scheduleSqlc.CreateUpcomingEpisodeRow | null;
 
+    const episodeDate = new Date(String(data.episodeDate));
+    if (Number.isNaN(episodeDate.getTime())) {
+        throw ScheduleErrors.error("schedule-invalid");
+    }
+
     try {
         created = await scheduleSqlc.createUpcomingEpisode(client, {
             animeId: data.animeId,
             episodeName: data.episodeName.trim(),
-            episodeDate: String(data.episodeDate),
+            episodeDate,
         });
     } catch (e: any) {
         if (e?.code === DB_DATA_NOT_FOUND_CODE) {

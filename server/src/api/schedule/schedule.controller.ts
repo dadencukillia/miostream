@@ -4,6 +4,23 @@ import { ScheduleErrors } from "./schedule.errors";
 import type * as dto from "./schedule.dto";
 import * as services from "./schedule.service";
 
+export const getUpcomingEpisodes = async (
+    request: FastifyRequest<{
+        Querystring: dto.GetUpcomingEpisodesRequestQueriesType;
+    }>,
+    reply: FastifyReply<{
+        Querystring: dto.GetUpcomingEpisodesRequestQueriesType;
+        Reply: dto.GetUpcomingEpisodesResponseType;
+    }>
+) => {
+    const result = await services.getUpcomingEpisodes(
+        request.server.pg,
+        request.query
+    );
+
+    return reply.status(200).send(result);
+};
+
 export const createUpcomingEpisode = async (
     request: FastifyRequest<{
         Body: dto.CreateUpcomingEpisodeRequestPayloadType;

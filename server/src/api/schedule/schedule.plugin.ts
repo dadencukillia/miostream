@@ -7,6 +7,12 @@ import { grantAuthMiddleware } from "@/api/auth/auth.middleware";
 const modulePlugin: FastifyPluginAsync = async (fastify: FastifyInstance, _opts: FastifyPluginOptions) => {
     ScheduleErrors.setupErrorHandler(fastify, [ScheduleErrors], true, true);
 
+    fastify.get(
+        "/",
+        { schema: schemas.GetUpcomingEpisodesSchema },
+        controllers.getUpcomingEpisodes
+    );
+
     fastify.post(
         "/",
         {
