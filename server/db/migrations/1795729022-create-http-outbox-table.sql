@@ -15,6 +15,14 @@ CREATE TABLE outbox.http_outbox(
   outbox_group TEXT -- to make sure the only first in the group will be dispatched
 );
 
+CREATE INDEX idx_http_outbox_group_order
+  ON outbox.http_outbox(outbox_group, outbox_id)
+  WHERE outbox_group IS NOT NULL;
+
+CREATE INDEX idx_http_outbox_due_ungrouped
+  ON outbox.http_outbox(next_attempt_at, outbox_id)
+  WHERE outbox_group IS NULL;
+
 -- migrate:down
 DROP TABLE IF EXISTS outbox.http_outbox;
 DROP SCHEMA IF EXISTS outbox;
