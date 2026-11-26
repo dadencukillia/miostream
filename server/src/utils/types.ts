@@ -52,6 +52,7 @@ export const DateTimeType = Type.Unsafe<Date | string>(Type.String({
 
 export const BigIntIdResponseType = Type.Unsafe<string | number>(Type.Integer({
     minimum: 1,
+    maximum: Number.MAX_SAFE_INTEGER,
     description: 'Unique numeric entity identifier',
     examples: [1024]
 }));

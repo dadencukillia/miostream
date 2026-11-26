@@ -34,6 +34,7 @@ export const DB_PASS = readSecret("DB_PASS", "DB_PASS_FILE", "");
 export const DB_URL = `postgresql://postgres:${DB_PASS}@${POSTGRES_HOST}/${DB_NAME}`;
 export const RUSTFS_ACCESS_KEY = readSecret("RUSTFS_ACCESS_KEY", "RUSTFS_ACCESS_KEY_FILE", "");
 export const RUSTFS_SECRET_KEY = readSecret("RUSTFS_SECRET_KEY", "RUSTFS_SECRET_KEY_FILE", "");
+export const CHALLENGE_HMAC_SECRET = Uint8Array.fromHex(require(readSecret("CHALLENGE_HMAC_SECRET", "CHALLENGE_HMAC_SECRET_FILE", "")));
 
 // Authentication
 
