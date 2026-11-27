@@ -3,7 +3,7 @@ import { addHTTPOutbox } from "@sqlc/http_outbox_sql";
 import { envIndexGenerator, HybridIndex } from "@utils/meilisearch";
 import { Client } from "pg";
 
-interface AnimeIndexEntry {
+export interface AnimeIndexEntry {
   animeId: string,
   titleUa: string,
   titleEn: string,

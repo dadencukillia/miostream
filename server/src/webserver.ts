@@ -6,6 +6,7 @@ import api from "@/api/api.plugin";
 import cdn from "@/cdn/cdn.plugin";
 import healthcheck from "@/healthcheck";
 import { openapiJSONPlugin, openapiUIPlugin } from "@/openapi";
+import { outboxPlugin } from "./cronjobs";
 
 // Modules
 
@@ -47,6 +48,11 @@ const webServerModules = {
     connections: [],
     plugin: openapiUIPlugin,
   } as FastifyWebServerModule,
+  cronjobOutbox: {
+    endpoint: "/",
+    connections: [],
+    plugin: outboxPlugin,
+  } as FastifyWebServerModule,
 } as const;
 
 // Config
@@ -62,7 +68,7 @@ export interface WebServerConfiguration {
 }
 
 const defaultWebServerConfiguration: Required<WebServerConfiguration> = {
-  modules: ["api", "cdn", "healthcheck", "openapi"],
+  modules: ["api", "cdn", "healthcheck", "openapi", "cronjobOutbox"],
   port: 8080
 }
 
