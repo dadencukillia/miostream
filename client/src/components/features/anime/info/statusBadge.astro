@@ -1,0 +1,52 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+import { Badge } from "@ui/badge";
+import { cn } from 'cn';
+
+// Config
+
+interface AnimeStatusConfig {
+  label: string,
+  color: string
+};
+
+export const animeStatuses = {
+  upcoming: {
+    label: "Анонсовано",
+    color: "#1d4ed8",
+  } as AnimeStatusConfig,
+  ongoing: {
+    label: "Онґоїнґ",
+    color: "#15803d",
+  } as AnimeStatusConfig,
+  cancelled: {
+    label: "Скасовано",
+    color: "#b91c1c",
+  } as AnimeStatusConfig,
+  finished: {
+    label: "Завершено",
+    color: "#475530",
+  } as AnimeStatusConfig,
+} as const;
+
+// Props
+
+interface Props extends HTMLAttributes<"span"> {
+  animeStatus: keyof typeof animeStatuses 
+};
+
+const { animeStatus, class: className, ...spanAttrs } = Astro.props;
+
+// Values
+
+const statusValues = animeStatuses[animeStatus];
+---
+
+<Badge
+  variant="secondary"
+  style={{ backgroundColor: statusValues.color }}
+  className={ cn("text-background dark:text-foreground", className) }
+  { ...spanAttrs }
+>
+  { statusValues.label }
+</Badge>

@@ -1,0 +1,31 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+import { Badge } from "@ui/badge";
+import { formatSpan } from "@utils/time";
+
+import PlayIcon from "~icons/hugeicons/play";
+
+// Props
+
+interface Props extends HTMLAttributes<"span"> {
+  episodesCount: number,
+  avgEpisodeDuration: number
+};
+
+const { episodesCount, avgEpisodeDuration, class: className, ...spanAttrs } = Astro.props;
+
+// Values
+
+const totalWatchMinutes = avgEpisodeDuration * episodesCount;
+const totalWatchFormat = formatSpan(totalWatchMinutes);
+---
+
+<Badge 
+  variant="ghost"
+  title={ totalWatchMinutes + " хв = " + totalWatchFormat }
+  className={ className }
+  { ...spanAttrs }
+>
+  <PlayIcon />
+  { episodesCount } × { avgEpisodeDuration } хв
+</Badge>

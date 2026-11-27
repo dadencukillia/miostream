@@ -1,0 +1,232 @@
+---
+import AppShell from "@layouts/appShell.astro";
+import HtmlLayout from "@layouts/htmlLayout.astro";
+import { convScore10toSymetric5 } from "@utils/score";
+import { Button } from "@ui/button";
+
+import TitleSection from "@components/features/anime/info/titleSection.astro";
+import AgeRestrictionBadge, { restrictions } from "@components/features/anime/info/ageRestrictionBadge.astro";
+import StatusBadge, { animeStatuses } from "@components/features/anime/info/statusBadge.astro";
+import ScoreBadge from "@components/features/anime/info/scoreBadge.astro";
+import EpisodesBadge from "@components/features/anime/info/episodesBadge.astro";
+import GenreBadgesLine, { animeGenres } from "@components/features/anime/info/genreBadgesLine";
+import FormatLabel, { animeFormats } from "@components/features/anime/info/formatLabel.astro";
+import ProductionLabel from "@components/features/anime/info/productionLabel.astro";
+import AnimePlayer from "@components/features/anime/player/player";
+import AnimeEpisodes, { Episode } from "@components/features/anime/player/episodes";
+import TextShortcutter from "@components/common/textShortcutter";
+
+import ArrowRightDoubleIcon from "~icons/hugeicons/arrow-right-double";
+import ArrowLeftDoubleIcon from "~icons/hugeicons/arrow-left-double";
+
+const { identifier } = Astro.params;
+
+interface AnimeInfo {
+  animeId: string,
+  slug: string,
+  titleUa: string,
+  titleEn: string,
+  titleOriginal: string,
+  animeDescription: string,
+  coverUrl: string,
+  productionStudio: string,
+  yearReleased: number,
+  avgEpisodeDuration: number,
+  episodesCount: number,
+  ageRestriction: keyof typeof restrictions,
+  animeStatus: keyof typeof animeStatuses,
+  animeFormat: keyof typeof animeFormats,
+  score: number,
+  genres: (typeof animeGenres[number])[]
+};
+
+const animeInfo: AnimeInfo = {
+  animeId: identifier!,
+  slug: "jujutsu-kaisen",
+  titleUa: "Магічна битва",
+  titleEn: "Jujutsu Kaisen",
+  titleOriginal: "呪術廻戦",
+  animeDescription: "Рятуючи друзів від монстрів, старшокласник Ітадорі Юджі ковтає проклятий палець і стає вмістилищем могутнього демона Сукуни. Замість негайної страти юнак отримує шанс вступити до школи магів, щоб зібрати всі артефакти прокляття та знищити їх разом із собою.",
+  coverUrl: "https://img.hikka.io/insecure/rs:fit:480:686:0:0/plain/https://cdn.hikka.io/content/anime/jujutsu-kaisen-3c90f8/j6q8tohk59EM8je8HpWKTg.jpg",
+  productionStudio: "MAPPA",
+  yearReleased: 2020,
+  avgEpisodeDuration: 23,
+  episodesCount: 24,
+  ageRestriction: "r",
+  animeStatus: "finished",
+  animeFormat: "ova",
+  score: 8.5,
+  genres: ["action", "award_winning", "fantasy", "supernatural", "school", "shounen", "survival", "otaku_culture", "parody", "performing_arts", "pets", "team_sports", "time_travel", "urban_fantasy"]
+};
+
+const score5 = convScore10toSymetric5(animeInfo.score);
+
+const episodesMock: Episode[] = [
+  {
+    localizationStudio: "ShoDo",
+    localizationType: "dub",
+    episodeName: "Серія 1: Маг і сталевий палець",
+    sourceUrl: "https://example.com/stream/jujutsu-kaisen/1/dub"
+  },
+  {
+    localizationStudio: "Awuro",
+    localizationType: "sub",
+    episodeName: "Серія 1: Маг і сталевий палець",
+    sourceUrl: "https://example.com/stream/jujutsu-kaisen/1/sub"
+  },
+  {
+    localizationStudio: "Цікава ідея",
+    localizationType: "dub",
+    episodeName: "Серія 2: Для себе",
+    sourceUrl: "https://example.com/stream/jujutsu-kaisen/2/dub"
+  },
+  {
+    localizationStudio: "Treba Translation",
+    localizationType: "sub",
+    episodeName: "Серія 2: Для себе",
+    sourceUrl: "https://example.com/stream/jujutsu-kaisen/2/sub"
+  },
+  {
+    localizationStudio: "ShoDo",
+    localizationType: "dub",
+    episodeName: "Серія 3: Дівчина з металевим характером",
+    sourceUrl: "https://example.com/stream/jujutsu-kaisen/3/dub"
+  },
+  {
+    localizationStudio: "AniRev",
+    localizationType: "sub",
+    episodeName: "Серія 3: Дівчина з металевим характером",
+    sourceUrl: "https://example.com/stream/jujutsu-kaisen/3/sub"
+  },
+  {
+    localizationStudio: "DubClub",
+    localizationType: "dub",
+    episodeName: "Серія 4: Умовно засуджений нуль",
+    sourceUrl: "https://example.com/stream/jujutsu-kaisen/4/dub"
+  },
+  {
+    localizationStudio: "Awuro",
+    localizationType: "sub",
+    episodeName: "Серія 4: Умовно засуджений нуль",
+    sourceUrl: "https://example.com/stream/jujutsu-kaisen/4/sub"
+  },
+  {
+    localizationStudio: "Tak Treba Production",
+    localizationType: "dub",
+    episodeName: "Серія 5: Залізне покарання",
+    sourceUrl: "https://example.com/stream/jujutsu-kaisen/5/dub"
+  },
+  {
+    localizationStudio: "Цікава ідея",
+    localizationType: "sub",
+    episodeName: "Серія 5: Залізне покарання",
+    sourceUrl: "https://example.com/stream/jujutsu-kaisen/5/sub"
+  },
+  {
+    localizationStudio: "ShoDo",
+    localizationType: "dub",
+    episodeName: "Серія 6: Після дощу",
+    sourceUrl: "https://example.com/stream/jujutsu-kaisen/6/dub"
+  },
+  {
+    localizationStudio: "Treba Translation",
+    localizationType: "sub",
+    episodeName: "Серія 6: Після дощу",
+    sourceUrl: "https://example.com/stream/jujutsu-kaisen/6/sub"
+  },
+  {
+    localizationStudio: "DubClub",
+    localizationType: "dub",
+    episodeName: "Серія 7: Штурм",
+    sourceUrl: "https://example.com/stream/jujutsu-kaisen/7/dub"
+  },
+  {
+    localizationStudio: "AniRev",
+    localizationType: "sub",
+    episodeName: "Серія 7: Штурм",
+    sourceUrl: "https://example.com/stream/jujutsu-kaisen/7/sub"
+  },
+  {
+    localizationStudio: "Awuro",
+    localizationType: "dub",
+    episodeName: "Серія 8: Нудна ніч",
+    sourceUrl: "https://example.com/stream/jujutsu-kaisen/8/dub"
+  },
+  {
+    localizationStudio: "Цікава ідея",
+    localizationType: "sub",
+    episodeName: "Серія 8: Нудна ніч",
+    sourceUrl: "https://example.com/stream/jujutsu-kaisen/8/sub"
+  }
+];
+---
+
+<HtmlLayout title={ `${ animeInfo.titleUa } — MioStream` }>
+  <AppShell>
+    <div class="flex flex-col-reverse lg:flex-row w-full">
+
+      {/* player, comments section */}
+
+      <div class="flex-1 pt-3 pb-7 lg:mt-5">
+        <AnimeEpisodes episodes={ episodesMock } client:load>
+          <div class="px-container">
+            <AnimePlayer sourceUrl="" previewImageUrl="https://m.media-amazon.com/images/M/MV5BMmIyNGE1OTctMzlkMS00YzYyLWEwODctZjBhZWIyYTZkNmEwXkEyXkFqcGc@._V1_.jpg" />
+          </div>
+        </AnimeEpisodes>
+      </div>
+
+      {/* info section */}
+
+      <Button 
+        id="toggleAnimeInfoBar"
+        variant="secondary"
+        className="fixed mt-5 right-0 translate-x-[-10%] aspect-square w-auto h-auto hidden">
+        <ArrowLeftDoubleIcon />
+      </Button>
+
+      <div id="animeInfoBar" class="w-full lg:max-w-[300px] xl:max-w-[400px] my-3 py-3 px-container lg:px-3">
+        <div class="hidden lg:hidden" /> {/* loads up lg:hidden tailwindcss class */}
+
+        <Button 
+          id="toggleAnimeInfoBar"
+          variant="secondary"
+          className="absolute translate-x-[-50%] aspect-square w-auto h-auto hidden lg:block">
+          <ArrowRightDoubleIcon />
+        </Button>
+
+        <img
+          class="rounded-xl w-full h-[300px] lg:h-auto lg:aspect-square object-cover object-top sm:object-center"
+          src={ animeInfo.coverUrl }
+          alt={ animeInfo.titleEn + " cover" }>
+
+        <TitleSection ua={ animeInfo.titleUa } en={ animeInfo.titleEn } original={ animeInfo.titleOriginal } />
+
+        <div class="mt-2 gap-1 flex flex-row flex-wrap">
+          <AgeRestrictionBadge restriction={ animeInfo.ageRestriction } />
+          <StatusBadge animeStatus={ animeInfo.animeStatus } />
+          <ScoreBadge score5={ score5 } />
+          <EpisodesBadge episodesCount={ animeInfo.episodesCount } avgEpisodeDuration={ animeInfo.avgEpisodeDuration } />
+        </div>
+
+        <div class="mt-2 gap-1 flex flex-row flex-wrap">
+          <GenreBadgesLine genres={ animeInfo.genres } limit={ 9 } client:idle />
+        </div>
+
+        <FormatLabel class="mt-5" animeFormat={ animeInfo.animeFormat } />
+        <ProductionLabel studio={ animeInfo.productionStudio } yearReleased={ animeInfo.yearReleased } />
+
+        <p class="mt-2 text-sm text-secondary-foreground">
+          <TextShortcutter linesLimit={ 3 } client:idle>{ animeInfo.animeDescription }</TextShortcutter>
+        </p>
+      </div>
+    </div>
+  </AppShell>
+</HtmlLayout>
+
+<script>
+  document.querySelectorAll("#toggleAnimeInfoBar").forEach(e => e.addEventListener("click", () => {
+    document.querySelector("#animeInfoBar")?.classList.toggle("lg:hidden");
+
+    document.querySelectorAll("#toggleAnimeInfoBar").forEach(e => e.classList.toggle("lg:block"));
+  }));
+</script>
