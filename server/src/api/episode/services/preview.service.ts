@@ -31,39 +31,30 @@ export async function updateEpisodePreviewImage(
 		throw PreviewErrors.error("invalid-image").withDetails(e);
 	}
 
-	// Update preview_id in database and store image in S3 atomically
+	// Store preview file in S3
 
-	const con = await db.connect();
+	try {
+		await setPreviewById(s3, episodeId, webpImage);
+	} catch (e) {
+		throw PreviewErrors.error("new-preview-s3-store").withDetails(e);
+	}
+
+	// Update preview_id in the database
+
 	let dbResponse: SetEpisodePreviewRow | null;
 
 	try {
-		await con.query("BEGIN;");
-
-		try {
-			dbResponse = await setEpisodePreview(con, {
-				episodeId,
-				animeId,
-			});
-		} catch (e) {
-			throw PreviewErrors.error("update-preview-db").withDetails(e);
-		}
-
-		if (dbResponse == null) {
-			throw EpisodeErrors.error("not-found");
-		}
-
-		try {
-			await setPreviewById(s3, episodeId, webpImage);
-		} catch (e) {
-			throw PreviewErrors.error("new-preview-s3-store").withDetails(e);
-		}
-
-		await con.query("COMMIT;");
+		dbResponse = await setEpisodePreview(db, {
+			episodeId,
+			animeId,
+		});
 	} catch (e) {
-		await con.query("ROLLBACK;").catch(_ => { });
-		throw e;
-	} finally {
-		con.release();
+		throw PreviewErrors.error("update-preview-db").withDetails(e);
+	}
+
+	if (dbResponse == null) {
+		await removePreviewById(s3, episodeId).catch(() => { });
+		throw EpisodeErrors.error("not-found");
 	}
 
 	return dbResponse;
