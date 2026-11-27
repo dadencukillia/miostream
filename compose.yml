@@ -28,6 +28,7 @@ services:
       OAUTH_STATE_HMAC_SECRET_FILE: /run/secrets/oauth_state_hmac_secret
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
       OAUTH_CLIENT_SECRET_FILE: /run/secrets/oauth_client_secret
+      CHALLENGE_HMAC_SECRET_FILE: /run/secrets/challenge_hmac_secret
       POSTGRES_HOST: postgresql:5432
       REDIS_HOST: redis:6379
       RUSTFS_HOST: rustfs:9000
@@ -46,6 +47,7 @@ services:
       - session_hmac_secret
       - oauth_state_hmac_secret
       - oauth_client_secret
+      - challenge_hmac_secret
     healthcheck:
       test: ["CMD-SHELL", "wget -qO - http://127.0.0.1:8080/healthcheck"]
       interval: 10s
@@ -150,3 +152,5 @@ secrets:
     environment: OAUTH_STATE_HMAC_SECRET
   oauth_client_secret:
     environment: OAUTH_CLIENT_SECRET
+  challenge_hmac_secret:
+    environment: CHALLENGE_HMAC_SECRET
