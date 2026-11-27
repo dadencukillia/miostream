@@ -1,7 +1,9 @@
 import {
 	DeleteObjectCommand,
 	GetObjectCommand,
+	HeadObjectCommand,
 	NoSuchKey,
+	NotFound,
 	PutObjectCommand,
 	type S3Client,
 } from "@aws-sdk/client-s3";
@@ -13,6 +15,26 @@ export type PreviewS3Result =
 	| { notModified: false; content: Uint8Array; etag?: string };
 
 const formatPreviewKey = (previewId: string): string => `${previewId.trim()}.webp`;
+
+const isNotFoundError = (e: any): boolean =>
+	e instanceof NoSuchKey ||
+	e instanceof NotFound ||
+	e?.$metadata?.httpStatusCode === 404;
+
+const getPreviewEtag = async (s3: S3Client, previewId: string): Promise<string | null | undefined> => {
+	try {
+		const head = await s3.send(new HeadObjectCommand({
+			Bucket: BUCKET_NAME,
+			Key: formatPreviewKey(previewId),
+		}));
+		return head.ETag;
+	} catch (e) {
+		if (isNotFoundError(e)) {
+			return null;
+		}
+		throw e;
+	}
+};
 
 export const setPreviewById = async (
 	s3: S3Client,
@@ -52,11 +74,23 @@ export const getPreviewById = async (
 			etag: object.ETag,
 		};
 	} catch (e: any) {
-		if (e instanceof NoSuchKey) {
+		if (isNotFoundError(e)) {
 			return null;
 		}
 		if (e?.$metadata?.httpStatusCode === 304 || e?.name === "NotModified") {
-			return { notModified: true, etag: ifNoneMatch };
+			const etagFromError: string | undefined =
+				e?.ETag ?? e?.$response?.headers?.etag;
+
+			if (etagFromError) {
+				return { notModified: true, etag: etagFromError };
+			}
+
+			const headEtag = await getPreviewEtag(s3, previewId);
+			if (headEtag === null) {
+				return null;
+			}
+
+			return { notModified: true, etag: headEtag };
 		}
 
 		throw e;
