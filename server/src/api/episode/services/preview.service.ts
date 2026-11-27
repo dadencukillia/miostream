@@ -1,11 +1,73 @@
+import sharp from "sharp";
 import type { Pool } from "pg";
 import type { S3Client } from "@aws-sdk/client-s3";
 import { EpisodeErrors, PreviewErrors } from "../episode.errors";
-import { removePreviewById } from "@/cdn/preview/preview.shared";
+import { removePreviewById, setPreviewById } from "@/cdn/preview/preview.shared";
 import {
 	resetEpisodePreviewReturningOld,
+	setEpisodePreview,
 	type ResetEpisodePreviewReturningOldRow,
+	type SetEpisodePreviewRow,
 } from "@sqlc/episodes_sql";
+
+const WEBP_QUALITY = 80;
+
+export async function updateEpisodePreviewImage(
+	s3: S3Client,
+	db: Pool,
+	animeId: string,
+	episodeId: string,
+	imageContent: Buffer
+): Promise<SetEpisodePreviewRow> {
+	// Process image (convert to WebP without resizing)
+
+	let webpImage: Buffer;
+
+	try {
+		webpImage = await sharp(imageContent)
+			.webp({ quality: WEBP_QUALITY })
+			.toBuffer();
+	} catch (e) {
+		throw PreviewErrors.error("invalid-image").withDetails(e);
+	}
+
+	// Update preview_id in database and store image in S3 atomically
+
+	const con = await db.connect();
+	let dbResponse: SetEpisodePreviewRow | null;
+
+	try {
+		await con.query("BEGIN;");
+
+		try {
+			dbResponse = await setEpisodePreview(con, {
+				episodeId,
+				animeId,
+			});
+		} catch (e) {
+			throw PreviewErrors.error("update-preview-db").withDetails(e);
+		}
+
+		if (dbResponse == null) {
+			throw EpisodeErrors.error("not-found");
+		}
+
+		try {
+			await setPreviewById(s3, episodeId, webpImage);
+		} catch (e) {
+			throw PreviewErrors.error("new-preview-s3-store").withDetails(e);
+		}
+
+		await con.query("COMMIT;");
+	} catch (e) {
+		await con.query("ROLLBACK;").catch(_ => { });
+		throw e;
+	} finally {
+		con.release();
+	}
+
+	return dbResponse;
+}
 
 export async function resetEpisodePreview(
 	s3: S3Client,

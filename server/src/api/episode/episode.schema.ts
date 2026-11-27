@@ -56,6 +56,11 @@ export const UpdateEpisodeRequestPayload = Type.Object(
   { additionalProperties: false },
 );
 
+export const UpdateEpisodePreviewRequestPayload = Type.String({
+  contentEncoding: "base64",
+  description: "Raw image binary encoded as a base64 string. The image is converted to WebP without resizing and stored in S3",
+});
+
 // Responses
 
 export const EpisodeListResponse = Type.Object({
@@ -185,6 +190,22 @@ export const DeleteEpisodeSchema: FastifySchema = {
 };
 
 // Preview
+
+export const UpdateEpisodePreviewSchema: FastifySchema = {
+  tags: [EPISODE_TAG],
+  summary: "Upload episode preview",
+  description: "Uploads an episode preview image, converts it to WebP, stores it in S3, and sets preview_id in the database.",
+  params: EpisodeIdRequestParams,
+  body: UpdateEpisodePreviewRequestPayload,
+  response: {
+    200: EpisodeResponse,
+    400: ErrorResponse,
+    401: ErrorResponse,
+    403: ErrorResponse,
+    404: ErrorResponse,
+    500: ErrorResponse,
+  },
+};
 
 export const DeleteEpisodePreviewSchema: FastifySchema = {
   tags: [EPISODE_TAG],

@@ -3,6 +3,7 @@ import {
   AnimeIdRequestParams,
   CreateEpisodeRequestPayload,
   UpdateEpisodeRequestPayload,
+  UpdateEpisodePreviewRequestPayload,
   EpisodeListResponse,
   EpisodeResponse,
   SetEpisodeAfterRequestParams,
@@ -20,6 +21,7 @@ export type EpisodeIdRequestParamsType = Static<typeof EpisodeIdRequestParams>;
 
 export type CreateEpisodeRequestPayloadType = Static<typeof CreateEpisodeRequestPayload>;
 export type UpdateEpisodeRequestPayloadType = Static<typeof UpdateEpisodeRequestPayload>;
+export type UpdateEpisodePreviewRequestPayloadType = Static<typeof UpdateEpisodePreviewRequestPayload>;
 
 // Responses
 
@@ -34,4 +36,5 @@ export type CreateEpisodeReturnType = EpisodeResponseType | ErrorResponseReturnT
 export type SetEpisodeAfterReturnType = EpisodeListResponseType | ErrorResponseReturnType;
 export type PutEpisodeReturnType = EpisodeResponseType | ErrorResponseReturnType;
 export type DeleteEpisodeReturnType = null | ErrorResponseReturnType;
+export type UpdateEpisodePreviewReturnType = EpisodeResponseType | ErrorResponseReturnType;
 export type DeleteEpisodePreviewReturnType = null | ErrorResponseReturnType;

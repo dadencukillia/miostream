@@ -25,6 +25,7 @@ const modulePlugin: FastifyPluginAsync = async (fastify: FastifyInstance, _opts:
   fastify.post("/", { schema: schemas.CreateEpisodeSchema, preHandler: requireAdmin }, controllers.postEpisode);
   fastify.patch("/:episodeId/after/:prevEpisodeId", { schema: schemas.SetEpisodeAfterSchema, preHandler: requireAdmin }, controllers.setEpisodeAfter);
   fastify.put("/:episodeId", { schema: schemas.PutEpisodeSchema, preHandler: requireAdmin }, controllers.putEpisode);
+  fastify.put("/:episodeId/preview", { schema: schemas.UpdateEpisodePreviewSchema, preHandler: requireAdmin }, controllers.updateEpisodePreview);
   fastify.delete("/:episodeId/preview", { schema: schemas.DeleteEpisodePreviewSchema, preHandler: requireAdmin }, controllers.deleteEpisodePreview);
   fastify.delete("/:episodeId", { schema: schemas.DeleteEpisodeSchema, preHandler: requireAdmin }, controllers.deleteEpisode);
 };

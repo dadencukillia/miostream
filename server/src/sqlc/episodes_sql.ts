@@ -345,3 +345,50 @@ export async function resetEpisodePreviewReturningOld(client: Client, args: Rese
     };
 }
 
+export const setEpisodePreviewQuery = `-- name: SetEpisodePreview :one
+UPDATE public.episodes
+SET
+  "preview_id" = "episode_id"
+WHERE
+  "episode_id" = $1::bigint
+  AND "anime_id" = $2::uuid
+RETURNING episode_id, anime_id, source_url, episode_name, localization_studio, localization_type, order_index, preview_id`;
+
+export interface SetEpisodePreviewArgs {
+    episodeId: string;
+    animeId: string;
+}
+
+export interface SetEpisodePreviewRow {
+    episodeId: string;
+    animeId: string;
+    sourceUrl: string;
+    episodeName: string;
+    localizationStudio: string;
+    localizationType: string | null;
+    orderIndex: number;
+    previewId: string | null;
+}
+
+export async function setEpisodePreview(client: Client, args: SetEpisodePreviewArgs): Promise<SetEpisodePreviewRow | null> {
+    const result = await client.query({
+        text: setEpisodePreviewQuery,
+        values: [args.episodeId, args.animeId],
+        rowMode: "array"
+    });
+    if (result.rows.length !== 1) {
+        return null;
+    }
+    const row = result.rows[0];
+    return {
+        episodeId: row[0],
+        animeId: row[1],
+        sourceUrl: row[2],
+        episodeName: row[3],
+        localizationStudio: row[4],
+        localizationType: row[5],
+        orderIndex: row[6],
+        previewId: row[7]
+    };
+}
+

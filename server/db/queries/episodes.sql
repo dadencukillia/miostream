@@ -91,3 +91,12 @@ WHERE e.episode_id = o.episode_id
 RETURNING
   o."episode_id",
   o."preview_id" AS old_preview_id;
+
+-- name: SetEpisodePreview :one
+UPDATE public.episodes
+SET
+  "preview_id" = "episode_id"
+WHERE
+  "episode_id" = @episode_id::bigint
+  AND "anime_id" = @anime_id::uuid
+RETURNING *;

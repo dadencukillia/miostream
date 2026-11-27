@@ -12,6 +12,8 @@ import {
   PutEpisodeReturnType,
   SetEpisodeAfterRequestParamsType,
   SetEpisodeAfterReturnType,
+  UpdateEpisodePreviewRequestPayloadType,
+  UpdateEpisodePreviewReturnType,
   UpdateEpisodeRequestPayloadType
 } from "./episode.dto";
 import * as services from "./services/episode.service";
@@ -151,6 +153,29 @@ export const deleteEpisode = async (
 };
 
 // Preview
+
+export const updateEpisodePreview = async (
+  request: FastifyRequest<{
+    Params: EpisodeIdRequestParamsType;
+    Body: UpdateEpisodePreviewRequestPayloadType;
+    Reply: UpdateEpisodePreviewReturnType;
+  }>,
+  reply: FastifyReply<{
+    Params: EpisodeIdRequestParamsType;
+    Body: UpdateEpisodePreviewRequestPayloadType;
+    Reply: UpdateEpisodePreviewReturnType;
+  }>
+) => {
+  const updatedEpisode = await previewServices.updateEpisodePreviewImage(
+    request.server.s3,
+    request.server.pg,
+    request.params.animeId,
+    request.params.episodeId.toString(),
+    Buffer.from(request.body, "base64")
+  );
+
+  return reply.status(200).send(updatedEpisode);
+};
 
 export const deleteEpisodePreview = async (
   request: FastifyRequest<{
