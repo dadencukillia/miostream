@@ -13,14 +13,18 @@ import type {
 	MPAA_RATINGS,
 	PaginationResponse,
 	UpdateAnimeRequestPayload,
+    AnimeSearchResponse,
+    SearchQueryRequestParams,
 } from "./anime.schema";
 
 export type AnimeResponseType = Type.Static<typeof AnimeResponse>;
+export type AnimeSearchResponseType = Type.Static<typeof AnimeSearchResponse>;
 export type CreateAnimeRequestPayloadType = Type.Static<typeof CreateAnimeRequestPayload>;
 export type UpdateAnimeRequestPayloadType = Type.Static<typeof UpdateAnimeRequestPayload>;
 export type ListAnimesRequestQueriesType = Type.Static<typeof ListAnimesRequestQueries>;
 export type AnimeListResponseType = Type.Static<typeof AnimeListResponse>;
 export type PaginationResponseType = Type.Static<typeof PaginationResponse>;
+export type SearchQueryRequestParamsType = Type.Static<typeof SearchQueryRequestParams>;
 export type AnimeIdRequestParamsType = Type.Static<typeof AnimeIdRequestParams>;
 export type AnimeIdOrSlugRequestParamsType = Type.Static<typeof AnimeIdOrSlugRequestParams>;
 

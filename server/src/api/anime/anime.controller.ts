@@ -5,6 +5,8 @@ import type {
 	AnimeIdOrSlugRequestParamsType,
 	CreateAnimeRequestPayloadType,
 	UpdateAnimeRequestPayloadType,
+    SearchQueryRequestParamsType,
+    AnimeSearchResponseType,
 } from "./anime.dto";
 import * as animeService from "./anime.service";
 import { AnimeErrors } from "./anime.errors";
@@ -153,3 +155,27 @@ export const maxEpisodes = async (
 	const result = await animeService.getAnimesWithMaxEpisodes(request.server.pg);
 	return reply.status(200).send(result);
 };
+
+export const searchAnimes = async (
+  request: FastifyRequest<{
+    Params: SearchQueryRequestParamsType;
+    Reply: AnimeSearchResponseType
+  }>,
+  reply: FastifyReply<{
+    Params: SearchQueryRequestParamsType;
+    Reply: AnimeSearchResponseType
+  }>
+) => {
+  const REGEX = /\p{C}/gu;
+  const query = request.params.query.replace(REGEX, "").trim();
+
+  if (query.length === 0) {
+    throw AnimeErrors.error("anime-invalid")
+      .withMessage("query is not correct");
+  }
+
+  return reply.send(await animeService.getAnimesBySearchQuery(
+    request.server.pg,
+    query
+  ));
+}

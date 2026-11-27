@@ -2,6 +2,7 @@ import { generateTransformer } from "@lib/modelTransformer";
 import type {
 	AgeRestrictionType,
 	AnimeFormatType,
+	AnimeSearchResponseType,
 	AnimeStatusType,
 	GenreType,
 } from "./anime.dto";
@@ -57,3 +58,33 @@ export const toAnimeModel = generateTransformer({
 		genres: toGenres(row.genres),
 	}),
 });
+
+export type AnimeTransformSearchResultInput = {
+  animeId: string,
+  slug: string,
+  titleUa: string,
+  titleEn: string,
+  titleOriginal: string,
+  coverId: string | null,
+  yearReleased: number | null,
+  ageRestriction: string | null,
+  animeStatus: string | null,
+  animeFormat: string;
+};
+
+export type AnimeTransformSearchResultOutput = AnimeSearchResponseType[number];
+
+export const toAnimeSearchModel = <T extends AnimeTransformSearchResultInput>(input: T): AnimeTransformSearchResultOutput => {
+  return {
+    animeId: input.animeId,
+    slug: input.slug,
+    titleUa: input.titleUa,
+    titleEn: input.titleEn,
+    titleOriginal: input.titleOriginal,
+    coverUrl: toCoverUrl(input.coverId),
+    yearReleased: input.yearReleased,
+    ageRestriction: toAgeRestriction(input.ageRestriction),
+    animeStatus: toAnimeStatus(input.animeStatus),
+    animeFormat: toAnimeFormat(input.animeFormat),
+  };
+};

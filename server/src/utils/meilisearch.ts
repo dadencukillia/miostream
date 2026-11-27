@@ -62,7 +62,9 @@ export class HybridIndex<T extends RecordAny> extends Index<T> {
         embedder: "default"
       } : undefined,
       locales: this._locales.length === 0 ? undefined : this._locales,
-      filter
+      filter,
+      rankingScoreThreshold: 0.75,
+      limit: 10
     });
   }
 }

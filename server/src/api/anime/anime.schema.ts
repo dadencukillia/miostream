@@ -185,6 +185,22 @@ export const AnimeResponse = Type.Object(
 	},
 );
 
+export const AnimeSearchResponse = Type.Array(Type.Object(
+	{
+		animeId: Type.String({ format: "uuid", description: "Unique anime identifier (UUID)" }),
+		slug: Type.String({ description: "URL-friendly unique anime slug" }),
+		titleUa: Type.String({ description: "Anime title in Ukrainian" }),
+		titleEn: Type.String({ description: "Anime title in English" }),
+		titleOriginal: Type.String({ description: "Original anime title" }),
+		coverUrl: Type.String({ description: "URL to anime cover image" }),
+		yearReleased: Nullable(Type.Integer({ description: "Year of release" })),
+		ageRestriction: Nullable(StringEnum(MPAA_RATINGS, { description: "MPAA age rating" })),
+		animeStatus: Nullable(StringEnum(ANIME_STATUSES, { description: "Anime release status" })),
+		animeFormat: StringEnum(ANIME_FORMATS, { description: "Anime format" }),
+	},
+	{ additionalProperties: false },
+));
+
 export const OkResponse = Type.Object({
 	ok: Type.Literal(true),
 });
@@ -241,6 +257,14 @@ export const AnimeIdOrSlugRequestParams = Type.Object({
     animeIdSchema,
     Type.String({ description: "URL-friendly anime slug", minLength: 1, maxLength: 200, examples: [ "jujutsu-kaisen-season-1-24242" ] })
   ]),
+});
+
+export const SearchQueryRequestParams = Type.Object({
+  query: Type.String({
+    minLength: 1, maxLength: 100,
+    description: "Keywords used to search for anime",
+    examples: ["One Pease"]
+  }),
 });
 
 export const AnimeIdRequestParams = Type.Object({
@@ -481,6 +505,17 @@ export const MaxEpisodesSchema = {
 	description: "Returns available animes released in the current year.",
 	response: {
 		200: AvailableAnimesResponse,
+		500: ErrorResponse,
+	},
+} as const;
+
+export const AnimeSearchSchema = {
+	tags: ["Anime"],
+	summary: "Proccesses a search across all available animes by the query",
+	description: "Returns available animes that fits into the query.",
+  params: SearchQueryRequestParams,
+	response: {
+		200: AnimeSearchResponse,
 		500: ErrorResponse,
 	},
 } as const;

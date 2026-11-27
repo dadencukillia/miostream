@@ -7,9 +7,10 @@ import type {
 	CreateAnimeRequestPayloadType,
 	GenreType,
 	UpdateAnimeRequestPayloadType,
+    AnimeSearchResponseType,
 } from "./anime.dto";
 import { AnimeErrors } from "./anime.errors";
-import { toAnimeModel } from "./anime.model";
+import { toAnimeModel, toAnimeSearchModel } from "./anime.model";
 import {
 	countAnimes,
 	createAnime as createAnimeQuery,
@@ -26,8 +27,10 @@ import {
 	getStudiosAboveAverageEpisodes,
 	getOngoingAnimes,
 	getAvailableAnimesByCurrentYear,
+    getAnimesByIds,
+    GetAnimesByIdsRow,
 } from "@sqlc/animes_sql";
-import { addOutboxMeilisearchPutTask } from "./meili.repo";
+import { addOutboxMeilisearchPutTask, animeSearchQuery } from "./meili.repo";
 function handleDbError(error: unknown): never {
 	const dbError = error as {
 		code?: string;
@@ -260,6 +263,34 @@ export async function getAnimesAboveAverageEpisodes(db: Pool) {
 
 export async function getAnimesWithMaxEpisodes(db: Pool) {
 	return getAvailableAnimesByCurrentYear(db).catch(handleDbError);
+}
+
+export async function getAnimesBySearchQuery(db: Pool, searchQuery: string): Promise<AnimeSearchResponseType> {
+  let idsList: string[] = [];
+  try {
+    idsList = await animeSearchQuery(searchQuery);
+  } catch(e) {
+    throw AnimeErrors.error("service-unavailable").withDetails(e);
+  }
+
+  if (idsList.length === 0) return [];
+
+  let animes: GetAnimesByIdsRow[] = [];
+  try {
+    animes = await getAnimesByIds(db, { idsList });
+  } catch(e) {
+    throw AnimeErrors.error("service-unavailable").withDetails(e);
+  }
+
+  const idsOrder = new Map(animes.map(v => [
+    v.animeId, idsList.indexOf(v.animeId)
+  ]));
+
+  const sortedAnimes = animes.sort((a, b) => {
+    return (idsOrder.get(a.animeId) ?? 0) - (idsOrder.get(b.animeId) ?? 0);
+  });
+  
+  return sortedAnimes.map(a => toAnimeSearchModel(a));
 }
 
 
