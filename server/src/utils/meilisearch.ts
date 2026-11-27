@@ -15,19 +15,12 @@ export function embedderFromEnv(): Embedder|undefined {
     "apiKey": embedderApiKey,
     "request": {
       "model": embedderModel,
-      "input": [
-        "{{text}}",
-        "{{..}}"
-      ],
+      "input": "{{text}}",
       "encoding_format": "float"
     },
     "response": {
-      "data": [
-        {
-          "embedding": "{{embedding}}"
-        },
-        "{{..}}"
-      ]
+      "data": "{{embedding}}"
+      
     }
   }
 }
@@ -86,58 +79,44 @@ export async function cliAddAnimes(animes: RecordAny[]) {
   const chunksCount = Math.ceil(animes.length / CHUNK_SIZE);
 
   console.log(`Found ${animes.length} anime entries`);
-  console.log(`Chunks by ${CHUNK_SIZE} anime entries`);
+  console.log(`Chunk by ${CHUNK_SIZE} anime entries`);
 
   const index = await envIndexGenerator("animes", "anime_id");
 
-  const tasks: number[] = [];
-  for (let chunkIndex = 0; chunkIndex < chunksCount; chunkIndex++) {
-    const chunkContent = animes.slice(chunkIndex * CHUNK_SIZE, (chunkIndex + 1) * CHUNK_SIZE);
-    const task = await index.addDocuments(chunkContent);
-    tasks.push(task.taskUid);
-  }
-
   const writer = Bun.stdout.writer();
   const printProgressLine = async (done: number) => {
-    const progressLineLength = 12;
+    const progressLineLength = 30;
     const progressLineValue = Math.round(done / chunksCount * progressLineLength);
-    await writer.write(`${done}/${chunksCount} [${ "=".repeat(progressLineValue) }${ " ".repeat(progressLineLength - progressLineValue) }]            \r`);
+    const paddedDone = done.toString().padStart(progressLineLength.toString().length, "0");
+    await writer.write(`  ${paddedDone}/${chunksCount}: [${ "▪".repeat(progressLineValue) }${ "▫".repeat(progressLineLength - progressLineValue) }]\r`);
     await writer.flush();
   };
 
-  const checkTasks = async (): Promise<{
-    done: number,
-    failed: number,
-    taskErrors: MeilisearchErrorResponse[]
-  }> => {
-    let done = 0;
-    let failed = 0;
-    let taskErrors: MeilisearchErrorResponse[] = [];
-    for await (const task of tasks) {
-      const info = await index.tasks.getTask(task);
-      if (info.status === "succeeded") done++;
-      else if (info.status === "failed") {
-        failed++;
-        if (info.error) taskErrors.push(info.error);
-      }
+  let done = 0;
+  let failed = 0;
+  const taskErrors: MeilisearchErrorResponse[] = [];
+  for (let chunkIndex = 0; chunkIndex < chunksCount; chunkIndex++) {
+    const chunkContent = animes.slice(chunkIndex * CHUNK_SIZE, (chunkIndex + 1) * CHUNK_SIZE);
+    const task = await index.addDocuments(chunkContent);
+    await printProgressLine(chunkIndex);
+
+    const info = await index.tasks.waitForTask(task.taskUid, {
+      timeout: 0
+    });
+    if (info.status === "succeeded") {
+      done++;
+    } else if (info.status === "failed") {
+      failed++;
+      if (info.error) taskErrors.push(info.error);
     }
-
-    return { done, failed, taskErrors };
-  };
-
-  while(true) {
-    const result = await checkTasks();
-    const totalProccessed = result.done + result.failed;
-    await printProgressLine(totalProccessed);
-    if (totalProccessed === chunksCount) {
-      console.log(`${result.done} chunks added successfully`);
-      console.log(`${result.failed} chunks failed`);
-      result.taskErrors.forEach(e => console.log(e));
-      break;
-    }
-
-    await Bun.sleep(3_000);
   }
+
+  await printProgressLine(done + failed);
+  console.log("");
+
+  console.log(`${done} chunks added successfully`);
+  console.log(`${failed} chunks failed`);
+  taskErrors.forEach(e => console.log(e));
 }
 
 export async function cliSyncAnimeMeilisearch() {
