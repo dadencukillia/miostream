@@ -77,28 +77,30 @@ export const EpisodeListResponse = Type.Object({
       episodeName: EpisodeName,
     })
   )),
-}, { examples: [
-  {
-    sub: {
-      SpicyVoice: [
-        { episodeId: "12", episodeName: "EP1 - Hello, truck-kun" },
-        { episodeId: "10", episodeName: "EP2 - Unlucky merchant" },
-      ],
-      NewEraSub: [
-        { episodeId: "14", episodeName: "EP1 - Hello, truck-kun" },
-        { episodeId: "25", episodeName: "EP2 - Unlucky merchant" },
-        { episodeId: "26", episodeName: "EP3 - The road to the capital" },
-      ]
-    },
-    dub: {
-      MasterDub: [
-        { episodeById: "5", episodeName: "EP0.5 - Greet a twit" },
-        { episodeById: "6", episodeName: "EP1 - Hello, truck-kun" },
-      ]
-    },
-    unknown: {}
-  }
-] });
+}, {
+  examples: [
+    {
+      sub: {
+        SpicyVoice: [
+          { episodeId: "12", episodeName: "EP1 - Hello, truck-kun" },
+          { episodeId: "10", episodeName: "EP2 - Unlucky merchant" },
+        ],
+        NewEraSub: [
+          { episodeId: "14", episodeName: "EP1 - Hello, truck-kun" },
+          { episodeId: "25", episodeName: "EP2 - Unlucky merchant" },
+          { episodeId: "26", episodeName: "EP3 - The road to the capital" },
+        ]
+      },
+      dub: {
+        MasterDub: [
+          { episodeById: "5", episodeName: "EP0.5 - Greet a twit" },
+          { episodeById: "6", episodeName: "EP1 - Hello, truck-kun" },
+        ]
+      },
+      unknown: {}
+    }
+  ]
+});
 
 export const EpisodeResponse = Type.Object({
   episodeId: BigIntIdResponseType,
@@ -179,5 +181,23 @@ export const DeleteEpisodeSchema: FastifySchema = {
     204: Type.Null(),
     404: ErrorResponse,
     500: ErrorResponse
+  },
+};
+
+// Preview
+
+export const DeleteEpisodePreviewSchema: FastifySchema = {
+  tags: [EPISODE_TAG],
+  summary: "Delete episode preview",
+  description: "Permanently removes the episode preview image from S3 and resets preview_id in the database.",
+  params: EpisodeIdRequestParams,
+  response: {
+    204: Type.Null({ description: "Episode preview removed successfully" }),
+    400: ErrorResponse,
+    401: ErrorResponse,
+    403: ErrorResponse,
+    404: ErrorResponse,
+    409: ErrorResponse,
+    500: ErrorResponse,
   },
 };

@@ -75,3 +75,19 @@ RETURNING 1::integer AS success_flag;
 
 -- name: LockAnimeEpisodes :exec
 SELECT pg_advisory_xact_lock(hashtextextended((@anime_id::uuid)::text, 0));
+
+-- name: ResetEpisodePreviewReturningOld :one
+WITH old_vals AS (
+  SELECT preview_id, episode_id
+  FROM public.episodes
+  WHERE "episode_id" = @episode_id::bigint
+    AND "anime_id" = @anime_id::uuid
+  FOR UPDATE
+) UPDATE public.episodes e
+SET
+  "preview_id" = NULL
+FROM old_vals o
+WHERE e.episode_id = o.episode_id
+RETURNING
+  o."episode_id",
+  o."preview_id" AS old_preview_id;

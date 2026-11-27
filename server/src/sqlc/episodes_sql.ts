@@ -82,7 +82,7 @@ VALUES(
   $1, $2, $3, $4, $5,
   (SELECT coalesce(max(order_index), 0) + 100 FROM public.episodes WHERE anime_id = $1)
 )
-RETURNING episode_id, anime_id, source_url, episode_name, localization_studio, localization_type, order_index`;
+RETURNING episode_id, anime_id, source_url, episode_name, localization_studio, localization_type, order_index, preview_id`;
 
 export interface CreateEpisodeArgs {
     animeId: string;
@@ -100,6 +100,7 @@ export interface CreateEpisodeRow {
     localizationStudio: string;
     localizationType: string | null;
     orderIndex: number;
+    previewId: string | null;
 }
 
 export async function createEpisode(client: Client, args: CreateEpisodeArgs): Promise<CreateEpisodeRow | null> {
@@ -119,7 +120,8 @@ export async function createEpisode(client: Client, args: CreateEpisodeArgs): Pr
         episodeName: row[3],
         localizationStudio: row[4],
         localizationType: row[5],
-        orderIndex: row[6]
+        orderIndex: row[6],
+        previewId: row[7]
     };
 }
 
@@ -133,7 +135,7 @@ SET
 WHERE
   episode_id = $5::bigint
   AND anime_id = $6::uuid
-RETURNING episode_id, anime_id, source_url, episode_name, localization_studio, localization_type, order_index`;
+RETURNING episode_id, anime_id, source_url, episode_name, localization_studio, localization_type, order_index, preview_id`;
 
 export interface PutEpisodeArgs {
     newSourceUrl: string;
@@ -152,6 +154,7 @@ export interface PutEpisodeRow {
     localizationStudio: string;
     localizationType: string | null;
     orderIndex: number;
+    previewId: string | null;
 }
 
 export async function putEpisode(client: Client, args: PutEpisodeArgs): Promise<PutEpisodeRow | null> {
@@ -171,7 +174,8 @@ export async function putEpisode(client: Client, args: PutEpisodeArgs): Promise<
         episodeName: row[3],
         localizationStudio: row[4],
         localizationType: row[5],
-        orderIndex: row[6]
+        orderIndex: row[6],
+        previewId: row[7]
     };
 }
 
@@ -297,5 +301,47 @@ export async function lockAnimeEpisodes(client: Client, args: LockAnimeEpisodesA
         values: [args.animeId],
         rowMode: "array"
     });
+}
+
+export const resetEpisodePreviewReturningOldQuery = `-- name: ResetEpisodePreviewReturningOld :one
+WITH old_vals AS (
+  SELECT preview_id, episode_id
+  FROM public.episodes
+  WHERE "episode_id" = $1::bigint
+    AND "anime_id" = $2::uuid
+  FOR UPDATE
+) UPDATE public.episodes e
+SET
+  "preview_id" = NULL
+FROM old_vals o
+WHERE e.episode_id = o.episode_id
+RETURNING
+  o."episode_id",
+  o."preview_id" AS old_preview_id`;
+
+export interface ResetEpisodePreviewReturningOldArgs {
+    episodeId: string;
+    animeId: string;
+}
+
+export interface ResetEpisodePreviewReturningOldRow {
+    episodeId: string;
+    oldPreviewId: string | null;
+}
+
+export async function resetEpisodePreviewReturningOld(client: Client, args: ResetEpisodePreviewReturningOldArgs): Promise<ResetEpisodePreviewReturningOldRow | null> {
+    const result = await client.query({
+        text: resetEpisodePreviewReturningOldQuery,
+        values: [args.episodeId, args.animeId],
+        rowMode: "array"
+    });
+    if (result.rows.length !== 1) {
+        return null;
+    }
+    const row = result.rows[0];
+    return {
+        episodeId: row[0],
+        oldPreviewId: row[1]
+    };
 }
 

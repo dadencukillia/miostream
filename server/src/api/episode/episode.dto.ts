@@ -34,3 +34,4 @@ export type CreateEpisodeReturnType = EpisodeResponseType | ErrorResponseReturnT
 export type SetEpisodeAfterReturnType = EpisodeListResponseType | ErrorResponseReturnType;
 export type PutEpisodeReturnType = EpisodeResponseType | ErrorResponseReturnType;
 export type DeleteEpisodeReturnType = null | ErrorResponseReturnType;
+export type DeleteEpisodePreviewReturnType = null | ErrorResponseReturnType;
