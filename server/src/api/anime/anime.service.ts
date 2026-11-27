@@ -27,6 +27,7 @@ import {
 	getOngoingAnimes,
 	getAvailableAnimesByCurrentYear,
 } from "@sqlc/animes_sql";
+import { addOutboxMeilisearchPutTask } from "./meili.repo";
 function handleDbError(error: unknown): never {
 	const dbError = error as {
 		code?: string;
@@ -379,6 +380,9 @@ async function repoCreateAnime(
 				genres: input.genres,
 			});
 		}
+
+    await addOutboxMeilisearchPutTask(client, inserted);
+
 		return getAnimeById(client, { animeId: inserted.animeId });
 	});
 }
@@ -448,6 +452,9 @@ async function repoUpdateAnime(
 				await createAnimeGenres(client, { animeId, genres });
 			}
 		}
+
+    await addOutboxMeilisearchPutTask(client, updated);
+
 		return getAnimeById(client, { animeId });
 	});
 }

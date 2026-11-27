@@ -93,6 +93,10 @@ ORDER BY
     a.anime_id DESC
 LIMIT sqlc.arg('limit')::int OFFSET sqlc.arg('offset')::int;
 
+-- name: GetAnimesByIds :many
+SELECT * FROM public.animes
+WHERE anime_id = ANY(@ids_list::uuid[]);
+
 -- name: CountAnimes :one
 SELECT COUNT(*)::int AS total
 FROM public.animes a
@@ -283,32 +287,28 @@ SET
         ELSE COALESCE(sqlc.narg('anime_status')::anime_status_enum, anime_status)
     END,
     "anime_format"         = COALESCE(@anime_format::anime_format_enum, anime_format),
-    "available"            = COALESCE(@available::boolean, available),
-    "updated_at"           = NOW()
+    "available"            = COALESCE(@available::boolean, available)
 WHERE "anime_id" = @anime_id::uuid
 RETURNING *;
 
 -- name: UpdateAnimeStatusById :one
 UPDATE public.animes
 SET
-    "anime_status" = @anime_status::anime_status_enum,
-    "updated_at"   = NOW()
+    "anime_status" = @anime_status::anime_status_enum
 WHERE "anime_id" = @anime_id::uuid
 RETURNING *;
 
 -- name: UpdateAnimeAvailableById :one
 UPDATE public.animes
 SET
-    "available"  = @available::boolean,
-    "updated_at" = NOW()
+    "available"  = @available::boolean
 WHERE "anime_id" = @anime_id::uuid
 RETURNING *;
 
 -- name: IncrementAnimeEpisodesById :one
 UPDATE public.animes
 SET
-    "episodes_count" = GREATEST(episodes_count, @episodes_count::smallint),
-    "updated_at"     = NOW()
+    "episodes_count" = GREATEST(episodes_count, @episodes_count::smallint)
 WHERE "anime_id" = @anime_id::uuid
 RETURNING *;
 

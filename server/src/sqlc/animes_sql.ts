@@ -254,6 +254,67 @@ export async function listAnimes(client: Client, args: ListAnimesArgs): Promise<
     });
 }
 
+export const getAnimesByIdsQuery = `-- name: GetAnimesByIds :many
+SELECT anime_id, slug, title_ua, title_en, title_original, anime_description, production_studio, mal_id, anilist_id, hikka_id, imdb_id, year_released, avg_episode_duration, episodes_count, age_restriction, anime_status, anime_format, available, cover_id FROM public.animes
+WHERE anime_id = ANY($1::uuid[])`;
+
+export interface GetAnimesByIdsArgs {
+    idsList: string[];
+}
+
+export interface GetAnimesByIdsRow {
+    animeId: string;
+    slug: string;
+    titleUa: string;
+    titleEn: string;
+    titleOriginal: string;
+    animeDescription: string;
+    productionStudio: string;
+    malId: string | null;
+    anilistId: string | null;
+    hikkaId: string | null;
+    imdbId: string | null;
+    yearReleased: number | null;
+    avgEpisodeDuration: number;
+    episodesCount: number;
+    ageRestriction: string | null;
+    animeStatus: string | null;
+    animeFormat: string;
+    available: boolean;
+    coverId: string | null;
+}
+
+export async function getAnimesByIds(client: Client, args: GetAnimesByIdsArgs): Promise<GetAnimesByIdsRow[]> {
+    const result = await client.query({
+        text: getAnimesByIdsQuery,
+        values: [args.idsList],
+        rowMode: "array"
+    });
+    return result.rows.map(row => {
+        return {
+            animeId: row[0],
+            slug: row[1],
+            titleUa: row[2],
+            titleEn: row[3],
+            titleOriginal: row[4],
+            animeDescription: row[5],
+            productionStudio: row[6],
+            malId: row[7],
+            anilistId: row[8],
+            hikkaId: row[9],
+            imdbId: row[10],
+            yearReleased: row[11],
+            avgEpisodeDuration: row[12],
+            episodesCount: row[13],
+            ageRestriction: row[14],
+            animeStatus: row[15],
+            animeFormat: row[16],
+            available: row[17],
+            coverId: row[18]
+        };
+    });
+}
+
 export const countAnimesQuery = `-- name: CountAnimes :one
 SELECT COUNT(*)::int AS total
 FROM public.animes a
@@ -731,8 +792,7 @@ SET
         ELSE COALESCE($17::anime_status_enum, anime_status)
     END,
     "anime_format"         = COALESCE($18::anime_format_enum, anime_format),
-    "available"            = COALESCE($19::boolean, available),
-    "updated_at"           = NOW()
+    "available"            = COALESCE($19::boolean, available)
 WHERE "anime_id" = $20::uuid
 RETURNING anime_id, slug, title_ua, title_en, title_original, anime_description, production_studio, mal_id, anilist_id, hikka_id, imdb_id, year_released, avg_episode_duration, episodes_count, age_restriction, anime_status, anime_format, available, cover_id`;
 
@@ -817,8 +877,7 @@ export async function updateAnimeById(client: Client, args: UpdateAnimeByIdArgs)
 export const updateAnimeStatusByIdQuery = `-- name: UpdateAnimeStatusById :one
 UPDATE public.animes
 SET
-    "anime_status" = $1::anime_status_enum,
-    "updated_at"   = NOW()
+    "anime_status" = $1::anime_status_enum
 WHERE "anime_id" = $2::uuid
 RETURNING anime_id, slug, title_ua, title_en, title_original, anime_description, production_studio, mal_id, anilist_id, hikka_id, imdb_id, year_released, avg_episode_duration, episodes_count, age_restriction, anime_status, anime_format, available, cover_id`;
 
@@ -885,8 +944,7 @@ export async function updateAnimeStatusById(client: Client, args: UpdateAnimeSta
 export const updateAnimeAvailableByIdQuery = `-- name: UpdateAnimeAvailableById :one
 UPDATE public.animes
 SET
-    "available"  = $1::boolean,
-    "updated_at" = NOW()
+    "available"  = $1::boolean
 WHERE "anime_id" = $2::uuid
 RETURNING anime_id, slug, title_ua, title_en, title_original, anime_description, production_studio, mal_id, anilist_id, hikka_id, imdb_id, year_released, avg_episode_duration, episodes_count, age_restriction, anime_status, anime_format, available, cover_id`;
 
@@ -953,8 +1011,7 @@ export async function updateAnimeAvailableById(client: Client, args: UpdateAnime
 export const incrementAnimeEpisodesByIdQuery = `-- name: IncrementAnimeEpisodesById :one
 UPDATE public.animes
 SET
-    "episodes_count" = GREATEST(episodes_count, $1::smallint),
-    "updated_at"     = NOW()
+    "episodes_count" = GREATEST(episodes_count, $1::smallint)
 WHERE "anime_id" = $2::uuid
 RETURNING anime_id, slug, title_ua, title_en, title_original, anime_description, production_studio, mal_id, anilist_id, hikka_id, imdb_id, year_released, avg_episode_duration, episodes_count, age_restriction, anime_status, anime_format, available, cover_id`;
 

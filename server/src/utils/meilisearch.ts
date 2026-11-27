@@ -1,5 +1,5 @@
 import * as config from "@config";
-import { Config, Embedder, Index, RecordAny } from "meilisearch";
+import { Config, Embedder, Filter, Index, RecordAny } from "meilisearch";
 
 export function embedderFromEnv(): Embedder|undefined {
   const embedderUrl = config.EMBEDDER_URL.trim();
@@ -56,12 +56,13 @@ export class HybridIndex<T extends RecordAny> extends Index<T> {
     });
   }
 
-  public async hybridSearch(query: string) {
+  public async hybridSearch(query: string, filter?: Filter) {
     return super.search(query, {
       hybrid: this._embedderSet ? {
         embedder: "default"
       } : undefined,
-      locales: this._locales.length === 0 ? undefined : this._locales
+      locales: this._locales.length === 0 ? undefined : this._locales,
+      filter
     });
   }
 }
