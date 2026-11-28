@@ -56,6 +56,11 @@ export const UpdateEpisodeRequestPayload = Type.Object(
   { additionalProperties: false },
 );
 
+export const UpdateEpisodePreviewRequestPayload = Type.String({
+  contentEncoding: "base64",
+  description: "Raw image binary encoded as a base64 string. The image is converted to WebP without resizing and stored in S3",
+});
+
 // Responses
 
 export const EpisodeListResponse = Type.Object({
@@ -77,28 +82,30 @@ export const EpisodeListResponse = Type.Object({
       episodeName: EpisodeName,
     })
   )),
-}, { examples: [
-  {
-    sub: {
-      SpicyVoice: [
-        { episodeId: "12", episodeName: "EP1 - Hello, truck-kun" },
-        { episodeId: "10", episodeName: "EP2 - Unlucky merchant" },
-      ],
-      NewEraSub: [
-        { episodeId: "14", episodeName: "EP1 - Hello, truck-kun" },
-        { episodeId: "25", episodeName: "EP2 - Unlucky merchant" },
-        { episodeId: "26", episodeName: "EP3 - The road to the capital" },
-      ]
-    },
-    dub: {
-      MasterDub: [
-        { episodeById: "5", episodeName: "EP0.5 - Greet a twit" },
-        { episodeById: "6", episodeName: "EP1 - Hello, truck-kun" },
-      ]
-    },
-    unknown: {}
-  }
-] });
+}, {
+  examples: [
+    {
+      sub: {
+        SpicyVoice: [
+          { episodeId: "12", episodeName: "EP1 - Hello, truck-kun" },
+          { episodeId: "10", episodeName: "EP2 - Unlucky merchant" },
+        ],
+        NewEraSub: [
+          { episodeId: "14", episodeName: "EP1 - Hello, truck-kun" },
+          { episodeId: "25", episodeName: "EP2 - Unlucky merchant" },
+          { episodeId: "26", episodeName: "EP3 - The road to the capital" },
+        ]
+      },
+      dub: {
+        MasterDub: [
+          { episodeById: "5", episodeName: "EP0.5 - Greet a twit" },
+          { episodeById: "6", episodeName: "EP1 - Hello, truck-kun" },
+        ]
+      },
+      unknown: {}
+    }
+  ]
+});
 
 export const EpisodeResponse = Type.Object({
   episodeId: BigIntIdResponseType,
@@ -179,5 +186,39 @@ export const DeleteEpisodeSchema: FastifySchema = {
     204: Type.Null(),
     404: ErrorResponse,
     500: ErrorResponse
+  },
+};
+
+// Preview
+
+export const UpdateEpisodePreviewSchema: FastifySchema = {
+  tags: [EPISODE_TAG],
+  summary: "Upload episode preview",
+  description: "Uploads an episode preview image, converts it to WebP, stores it in S3, and sets preview_id in the database.",
+  params: EpisodeIdRequestParams,
+  body: UpdateEpisodePreviewRequestPayload,
+  response: {
+    200: EpisodeResponse,
+    400: ErrorResponse,
+    401: ErrorResponse,
+    403: ErrorResponse,
+    404: ErrorResponse,
+    500: ErrorResponse,
+  },
+};
+
+export const DeleteEpisodePreviewSchema: FastifySchema = {
+  tags: [EPISODE_TAG],
+  summary: "Delete episode preview",
+  description: "Permanently removes the episode preview image from S3 and resets preview_id in the database.",
+  params: EpisodeIdRequestParams,
+  response: {
+    204: Type.Null({ description: "Episode preview removed successfully" }),
+    400: ErrorResponse,
+    401: ErrorResponse,
+    403: ErrorResponse,
+    404: ErrorResponse,
+    409: ErrorResponse,
+    500: ErrorResponse,
   },
 };

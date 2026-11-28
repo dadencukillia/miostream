@@ -1,7 +1,22 @@
 import { Pool } from "pg";
-import { createEpisode, CreateEpisodeArgs, CreateEpisodeRow, deleteEpisodeById, episodeById, EpisodeByIdRow, episodeSetAfter, episodesListByAnimeId, EpisodesListByAnimeIdRow, lockAnimeEpisodes, putEpisode, PutEpisodeArgs, PutEpisodeRow, reorderEpisodes } from "@sqlc/episodes_sql";
-import { EpisodeErrors } from "./episode.errors";
-import { type EpisodesTreeRoot, episodeTransformList } from "./episode.model";
+import {
+  createEpisode,
+  CreateEpisodeArgs,
+  CreateEpisodeRow,
+  deleteEpisodeById,
+  episodeById,
+  EpisodeByIdRow,
+  episodeSetAfter,
+  episodesListByAnimeId,
+  EpisodesListByAnimeIdRow,
+  lockAnimeEpisodes,
+  putEpisode,
+  PutEpisodeArgs,
+  PutEpisodeRow,
+  reorderEpisodes
+} from "@sqlc/episodes_sql";
+import { EpisodeErrors } from "../episode.errors";
+import { type EpisodesTreeRoot, episodeTransformList } from "../episode.model";
 
 export async function getEpisodesTreeByAnime(
   db: Pool,
@@ -10,7 +25,7 @@ export async function getEpisodesTreeByAnime(
   let episodesList: EpisodesListByAnimeIdRow[];
   try {
     episodesList = await episodesListByAnimeId(db, { animeId });
-  } catch(e) {
+  } catch (e) {
     throw EpisodeErrors.error("db-read").withDetails(e);
   }
 
@@ -25,7 +40,7 @@ export async function getEpisodeById(
   let episode: EpisodeByIdRow | null;
   try {
     episode = await episodeById(db, { animeId, episodeId });
-  } catch(e) {
+  } catch (e) {
     throw EpisodeErrors.error("db-read").withDetails(e);
   }
 
@@ -41,15 +56,15 @@ export async function safeCreateEpisode(
   episode: CreateEpisodeArgs
 ): Promise<CreateEpisodeRow> {
   const con = await db.connect();
-  let createdEpisode: CreateEpisodeRow|null;
+  let createdEpisode: CreateEpisodeRow | null;
 
   try {
     await con.query("BEGIN;");
     await lockAnimeEpisodes(con, { animeId: episode.animeId });
     createdEpisode = await createEpisode(con, episode);
     await con.query("COMMIT;");
-  } catch(e) {
-    await con.query("ROLLBACK;").catch(_ => {});
+  } catch (e) {
+    await con.query("ROLLBACK;").catch(_ => { });
     throw EpisodeErrors.error("db-create").withDetails(e);
   } finally {
     con.release();
@@ -62,18 +77,18 @@ export async function safeCreateEpisode(
 
 export async function safePutEpisode(
   db: Pool,
-  episode: PutEpisodeArgs 
+  episode: PutEpisodeArgs
 ): Promise<PutEpisodeRow> {
   const con = await db.connect();
-  let updatedEpisode: PutEpisodeRow|null;
+  let updatedEpisode: PutEpisodeRow | null;
 
   try {
     await con.query("BEGIN;");
     await lockAnimeEpisodes(con, { animeId: episode.animeId });
     updatedEpisode = await putEpisode(con, episode);
     await con.query("COMMIT;");
-  } catch(e) {
-    await con.query("ROLLBACK;").catch(_ => {});
+  } catch (e) {
+    await con.query("ROLLBACK;").catch(_ => { });
     throw EpisodeErrors.error("db-update").withDetails(e);
   } finally {
     con.release();
@@ -87,7 +102,7 @@ export async function safePutEpisode(
 export async function safeSetEpisodeAfterEpisode(
   db: Pool,
   episodeId: string,
-  prevEpisodeId: string|null,
+  prevEpisodeId: string | null,
   animeId: string,
 ) {
   const con = await db.connect();
@@ -101,8 +116,8 @@ export async function safeSetEpisodeAfterEpisode(
     }) ? true : false;
     await reorderEpisodes(con, { animeId });
     await con.query("COMMIT;");
-  } catch(e) {
-    await con.query("ROLLBACK;").catch(_ => {});
+  } catch (e) {
+    await con.query("ROLLBACK;").catch(_ => { });
     throw EpisodeErrors.error("db-update").withDetails(e);
   } finally {
     con.release();
@@ -124,8 +139,8 @@ export async function safeDeleteEpisode(
     await lockAnimeEpisodes(con, { animeId });
     count = (await deleteEpisodeById(con, { animeId, episodeId }))?.successFlag ?? 0;
     await con.query("COMMIT;");
-  } catch(e) {
-    await con.query("ROLLBACK;").catch(_ => {});
+  } catch (e) {
+    await con.query("ROLLBACK;").catch(_ => { });
     throw EpisodeErrors.error("db-update").withDetails(e);
   } finally {
     con.release();

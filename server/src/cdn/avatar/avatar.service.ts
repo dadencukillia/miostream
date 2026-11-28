@@ -1,16 +1,16 @@
 import type { FastifyBaseLogger } from "fastify";
 import type { S3Client } from "@aws-sdk/client-s3";
-import { getAvatarById } from "./avatarBucket.repo";
+import { getAvatarById } from "./avatar.repo";
 import { AvatarErrors } from "./avatar.errors";
 
 // Services
 
 export async function getAvatar(s3: S3Client, logger: FastifyBaseLogger, avatarId: string): Promise<Buffer> {
-  let avatar: Uint8Array|null;
+  let avatar: Uint8Array | null;
 
   try {
     avatar = await getAvatarById(s3, avatarId);
-  } catch(e) {
+  } catch (e) {
     logger.error(e);
 
     throw AvatarErrors

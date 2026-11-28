@@ -1,1 +1,1 @@
-export { setAvatarById, removeAvatarById } from "./avatarBucket.repo";
+export { setAvatarById, removeAvatarById } from "./avatar.repo";

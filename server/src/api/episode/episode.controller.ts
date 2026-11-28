@@ -1,8 +1,10 @@
 import { FastifyReply, FastifyRequest } from "fastify";
+import "@context";
 import {
   AnimeIdRequestParamsType,
   CreateEpisodeRequestPayloadType,
   CreateEpisodeReturnType,
+  DeleteEpisodePreviewReturnType,
   DeleteEpisodeReturnType,
   EpisodeIdRequestParamsType,
   GetEpisodeListReturnType,
@@ -10,9 +12,12 @@ import {
   PutEpisodeReturnType,
   SetEpisodeAfterRequestParamsType,
   SetEpisodeAfterReturnType,
+  UpdateEpisodePreviewRequestPayloadType,
+  UpdateEpisodePreviewReturnType,
   UpdateEpisodeRequestPayloadType
 } from "./episode.dto";
-import * as services from "./episode.service";
+import * as services from "./services/episode.service";
+import * as previewServices from "./services/preview.service";
 import { EpisodeErrors } from "./episode.errors";
 
 export const getEpisodesList = async (
@@ -142,6 +147,51 @@ export const deleteEpisode = async (
     request.server.pg,
     request.params.episodeId.toString(),
     request.params.animeId
+  );
+
+  return reply.status(204).send(null);
+};
+
+// Preview
+
+export const updateEpisodePreview = async (
+  request: FastifyRequest<{
+    Params: EpisodeIdRequestParamsType;
+    Body: UpdateEpisodePreviewRequestPayloadType;
+    Reply: UpdateEpisodePreviewReturnType;
+  }>,
+  reply: FastifyReply<{
+    Params: EpisodeIdRequestParamsType;
+    Body: UpdateEpisodePreviewRequestPayloadType;
+    Reply: UpdateEpisodePreviewReturnType;
+  }>
+) => {
+  const updatedEpisode = await previewServices.updateEpisodePreviewImage(
+    request.server.s3,
+    request.server.pg,
+    request.params.animeId,
+    request.params.episodeId.toString(),
+    Buffer.from(request.body, "base64")
+  );
+
+  return reply.status(200).send(updatedEpisode);
+};
+
+export const deleteEpisodePreview = async (
+  request: FastifyRequest<{
+    Params: EpisodeIdRequestParamsType;
+    Reply: DeleteEpisodePreviewReturnType;
+  }>,
+  reply: FastifyReply<{
+    Params: EpisodeIdRequestParamsType;
+    Reply: DeleteEpisodePreviewReturnType;
+  }>
+) => {
+  await previewServices.resetEpisodePreview(
+    request.server.s3,
+    request.server.pg,
+    request.params.animeId,
+    request.params.episodeId.toString()
   );
 
   return reply.status(204).send(null);
