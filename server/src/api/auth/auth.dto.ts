@@ -1,10 +1,14 @@
 import type { Static } from "typebox";
 import { ErrorResponse } from "@lib/errorsCollection";
+import type { UserResponseType } from "@/api/user/user.dto";
 import {
     AccessTokenResponse,
+    LoginRequestPayload,
+    LogoutRequestQueries,
     OAuthCallbackRequestQueries,
     OAuthRedirectRequestQueries,
-    LogoutRequestQueries
+    RegisterRequestPayload,
+    UpdatePasswordRequestPayload,
 } from "./auth.schema";
 
 export type ErrorResponseType = Static<typeof ErrorResponse>;
@@ -13,11 +17,17 @@ export type ErrorResponseType = Static<typeof ErrorResponse>;
 export type AccessTokenResponseType = Static<typeof AccessTokenResponse>;
 
 // Requests
+export type RegisterRequestPayloadType = Static<typeof RegisterRequestPayload>;
+export type LoginRequestPayloadType = Static<typeof LoginRequestPayload>;
+export type UpdatePasswordRequestPayloadType = Static<typeof UpdatePasswordRequestPayload>;
 export type OAuthRedirectRequestQueriesType = Static<typeof OAuthRedirectRequestQueries>;
 export type OAuthCallbackRequestQueriesType = Static<typeof OAuthCallbackRequestQueries>;
 export type LogoutRequestQueriesType = Static<typeof LogoutRequestQueries>;
 
 // Controller Return Types
+export type RegisterReturnType = UserResponseType | ErrorResponseType;
+export type LoginReturnType = UserResponseType | ErrorResponseType;
+export type UpdatePasswordReturnType = null | ErrorResponseType;
 export type RedirectToProviderReturnType = ErrorResponseType | undefined;
 export type OAuthCallbackReturnType = ErrorResponseType | undefined;
 export type AccessTokenReturnType = AccessTokenResponseType | ErrorResponseType;

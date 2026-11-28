@@ -303,6 +303,85 @@ export async function getUserById(client: Client, args: GetUserByIdArgs): Promis
     };
 }
 
+export const getUserByEmailOrNicknameQuery = `-- name: GetUserByEmailOrNickname :one
+SELECT 
+    "user_id",
+    "nickname",
+    "full_name",
+    "email",
+    "password_hash",
+    "bio",
+    "avatar_id",
+    "max_streak",
+    "timezone",
+    "streak_start_date",
+    "last_watch_date",
+    "profile_frame_url",
+    "profile_background_url",
+    "user_role",
+    "user_status",
+    "created_at",
+    "updated_at"
+FROM public.users
+WHERE lower("email") = lower($1::text)
+    OR lower("nickname") = lower($1::text)
+LIMIT 1`;
+
+export interface GetUserByEmailOrNicknameArgs {
+    identifier: string;
+}
+
+export interface GetUserByEmailOrNicknameRow {
+    userId: string;
+    nickname: string;
+    fullName: string;
+    email: string;
+    passwordHash: string | null;
+    bio: string;
+    avatarId: string | null;
+    maxStreak: number;
+    timezone: string;
+    streakStartDate: Date | null;
+    lastWatchDate: Date | null;
+    profileFrameUrl: string | null;
+    profileBackgroundUrl: string | null;
+    userRole: string;
+    userStatus: string;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export async function getUserByEmailOrNickname(client: Client, args: GetUserByEmailOrNicknameArgs): Promise<GetUserByEmailOrNicknameRow | null> {
+    const result = await client.query({
+        text: getUserByEmailOrNicknameQuery,
+        values: [args.identifier],
+        rowMode: "array"
+    });
+    if (result.rows.length !== 1) {
+        return null;
+    }
+    const row = result.rows[0];
+    return {
+        userId: row[0],
+        nickname: row[1],
+        fullName: row[2],
+        email: row[3],
+        passwordHash: row[4],
+        bio: row[5],
+        avatarId: row[6],
+        maxStreak: row[7],
+        timezone: row[8],
+        streakStartDate: row[9],
+        lastWatchDate: row[10],
+        profileFrameUrl: row[11],
+        profileBackgroundUrl: row[12],
+        userRole: row[13],
+        userStatus: row[14],
+        createdAt: row[15],
+        updatedAt: row[16]
+    };
+}
+
 export const getUserByNicknameQuery = `-- name: GetUserByNickname :one
 SELECT 
     "user_id",

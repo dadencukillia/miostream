@@ -42,7 +42,6 @@ export type UpdateUserProfileReturnType = UserResponseType | ErrorResponseType;
 export type UpdateUserAvatarReturnType = UserResponseType | ErrorResponseType;
 export type DeleteUserAvatarReturnType = null | ErrorResponseType;
 export type UpdateUserCustomizationReturnType = UserResponseType | ErrorResponseType;
-export type UpdateUserPasswordReturnType = null | ErrorResponseType;
 export type UpdateUserStatusReturnType = UserResponseType | ErrorResponseType;
 export type UpdateUserRoleReturnType = UserResponseType | ErrorResponseType;
 export type DeleteUserReturnType = null | ErrorResponseType;

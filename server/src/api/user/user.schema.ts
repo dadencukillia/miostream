@@ -415,19 +415,6 @@ export const UpdateUserCustomizationSchema = {
     },
 } as const;
 
-export const UpdateUserPasswordSchema = {
-    tags: [TAG_USER],
-    summary: "Change account password",
-    description: "Changes password for the authenticated user.",
-    body: UpdateUserPasswordRequestPayload,
-    response: {
-        204: Type.Null({ description: "Password changed successfully" }),
-        400: ErrorResponse,
-        404: ErrorResponse,
-        500: ErrorResponse,
-    },
-} as const;
-
 export const DeleteUserSchema = {
     tags: [TAG_USER],
     summary: "Delete authenticated user account",

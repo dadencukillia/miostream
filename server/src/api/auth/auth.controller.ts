@@ -2,10 +2,12 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import type * as dto from "./auth.dto";
 import * as config from "@config";
 import { AuthErrors } from "./auth.errors";
+import * as credentialsServices from "./services/credentials.service";
 import * as oauthProviderServices from "./services/oauthProvider.service";
 import * as tokenServices from "./services/token.service";
 import * as sessionServices from "./services/session.service";
 import { cookieValue, setCookie } from "@utils/cookies";
+import { transformOk } from "@utils/transformers";
 import { deleteSessionById } from "@sqlc/sessions_sql";
 
 // Helpers
@@ -29,6 +31,65 @@ const setSessionCookie = (reply: FastifyReply, sessionToken: string, maxAge: num
     });
 
 // Controllers
+
+export const register = async (
+    request: FastifyRequest<{
+        Body: dto.RegisterRequestPayloadType;
+        Reply: dto.RegisterReturnType;
+    }>,
+    reply: FastifyReply<{
+        Body: dto.RegisterRequestPayloadType;
+        Reply: dto.RegisterReturnType;
+    }>
+) => {
+    const user = await credentialsServices.registerUser(request.server.pg, request.body);
+
+    const metadata = oauthProviderServices.parseClientMetadata(request.headers, request.ip);
+    const session = await sessionServices.newUserSession(request.server.pg, user.userId, metadata);
+
+    setSessionCookie(reply, session.sessionToken, config.AuthAdjustments.SESSION_MAX_AGE_SECONDS);
+
+    return reply.status(201).send(transformOk(user));
+};
+
+export const login = async (
+    request: FastifyRequest<{
+        Body: dto.LoginRequestPayloadType;
+        Reply: dto.LoginReturnType;
+    }>,
+    reply: FastifyReply<{
+        Body: dto.LoginRequestPayloadType;
+        Reply: dto.LoginReturnType;
+    }>
+) => {
+    const user = await credentialsServices.loginUser(request.server.pg, request.body);
+
+    const metadata = oauthProviderServices.parseClientMetadata(request.headers, request.ip);
+    const session = await sessionServices.newUserSession(request.server.pg, user.userId, metadata);
+
+    setSessionCookie(reply, session.sessionToken, config.AuthAdjustments.SESSION_MAX_AGE_SECONDS);
+
+    return reply.status(200).send(transformOk(user));
+};
+
+export const updatePassword = async (
+    request: FastifyRequest<{
+        Body: dto.UpdatePasswordRequestPayloadType;
+        Reply: dto.UpdatePasswordReturnType;
+    }>,
+    reply: FastifyReply<{
+        Body: dto.UpdatePasswordRequestPayloadType;
+        Reply: dto.UpdatePasswordReturnType;
+    }>
+) => {
+    await credentialsServices.updateUserPassword(
+        request.server.pg,
+        request.auth!.userId,
+        request.body
+    );
+
+    return reply.status(204).send(null);
+};
 
 export const redirectToProvider = async (
     request: FastifyRequest<{
@@ -127,26 +188,26 @@ export const logout = async (
         Reply: null
     }>
 ) => {
-  const redirect = () => reply.redirect(request.query.redirect ?? "/", 302);
+    const redirect = () => reply.redirect(request.query.redirect ?? "/", 302);
 
-  const sessionToken = cookieValue(request, config.AuthAdjustments.SESSION_COOKIE_NAME);
-  if (!sessionToken) return redirect();
+    const sessionToken = cookieValue(request, config.AuthAdjustments.SESSION_COOKIE_NAME);
+    if (!sessionToken) return redirect();
 
-  const { sessionId } = await sessionServices.useRefreshToken(request.server.pg, sessionToken, {
-    tokenRotationMillis: -1
-  });
+    const { sessionId } = await sessionServices.useRefreshToken(request.server.pg, sessionToken, {
+        tokenRotationMillis: -1
+    });
 
-  try {
-    await deleteSessionById(request.server.pg, { sessionId: sessionId.toString() });
-  } catch(e) {
-    throw AuthErrors
-      .error("auth-db-failed")
-      .withDetails(e);
-  }
+    try {
+        await deleteSessionById(request.server.pg, { sessionId: sessionId.toString() });
+    } catch (e) {
+        throw AuthErrors
+            .error("auth-db-failed")
+            .withDetails(e);
+    }
 
-  setSessionCookie(reply, "", 0);
+    setSessionCookie(reply, "", 0);
 
-  // TODO: make denylist in Redis
+    // TODO: make denylist in Redis
 
-  return redirect();
+    return redirect();
 }
